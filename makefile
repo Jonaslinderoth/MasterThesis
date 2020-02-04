@@ -11,19 +11,18 @@ EXE=main
 EXEFILE = main
 
 SOURCEDIR = src
-SOURCES=$(shell find $(SOURCEDIR) -name '*.cu')
-OBJECTS=$(SOURCES:.cu=.o)
-DEPS=$(SOURCES:.cu=.d)
+SOURCES=$(shell find $(SOURCEDIR) -name '*.cu') $(shell find $(SOURCEDIR) -name '*.cpp')
+OBJECTS= $(patsubst %.cu, %.o, $(patsubst %.cpp, %.o, $(SOURCES)))
+
+#$(SOURCES:.cu=.o)
+DEPS=$(patsubst %.cu, %.d, $(patsubst %.cpp, %.d, $(SOURCES)))
 
 BUILD_DIR=build
 EXE_DIR=bin
-
+	
 TEST = test
 TESTDIR = test
-TESTFILES = $(shell find $(TESTDIR) -name '*.cu')
-
-
-
+TESTFILES = $(shell find $(TESTDIR) -name '*.cu') $(shell find $(TESTDIR) -name '*.cpp')
 
 
 
@@ -55,7 +54,7 @@ ${BUILD_DIR}/%.o: %.cu
 #Target for test 	
 $(EXE_DIR)/$(TEST): $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(TESTFILES)
 	mkdir -p $(EXE_DIR)
-	$(CXX) $(CXXFLAGS) $(TESTDIR)/*.cu $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBGTEST) $(LIBS) -o $@
+	$(CXX) $(CXXFLAGS) $(TESTFILES) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBGTEST) $(LIBS) -o $@
 
 
 clean:
