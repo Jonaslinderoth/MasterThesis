@@ -52,6 +52,7 @@
 *.fatbin
 
 
+#nsight#
 .ptp-sync*
 .cproject
 .project
@@ -59,4 +60,4 @@
 .settings
 bin
 build
-# End of https://www.gitignore.io/api/c++,cuda
+
