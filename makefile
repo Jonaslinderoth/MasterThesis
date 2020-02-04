@@ -13,8 +13,6 @@ EXEFILE = main
 SOURCEDIR = src
 SOURCES=$(shell find $(SOURCEDIR) -name '*.cu') $(shell find $(SOURCEDIR) -name '*.cpp')
 OBJECTS= $(patsubst %.cu, %.o, $(patsubst %.cpp, %.o, $(SOURCES)))
-
-#$(SOURCES:.cu=.o)
 DEPS=$(patsubst %.cu, %.d, $(patsubst %.cpp, %.d, $(SOURCES)))
 
 BUILD_DIR=build
@@ -26,8 +24,13 @@ TESTFILES = $(shell find $(TESTDIR) -name '*.cu') $(shell find $(TESTDIR) -name 
 
 
 
+
 all: $(sources) $(EXE_DIR)/${EXE}  $(EXE_DIR)/${TEST}
 	
+b: 
+	echo $(DEPS)
+	echo $(SOURCES)
+	echo $(OBJECTS)	
 
 test: $(EXE_DIR)/${TEST}
 	./$(EXE_DIR)/${TEST}
@@ -40,16 +43,25 @@ $(EXE_DIR)/$(EXE): $(BUILD_DIR)/$(EXEFILE).o $(BUILD_DIR)/$(EXEFILE).d $(addpref
 
 
 
-${BUILD_DIR}/%.d: %.cu
+${BUILD_DIR}/%.d: %.cu main.cu
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(addprefix $(BUILD_DIR)/, $(shell find $(SOURCEDIR) -type d)) 
 	$(CXX) -MT $(@:.d=.o) -MM $(CXXFLAGS) $^ > $@
 
+${BUILD_DIR}/%.d: %.cpp
+	mkdir -p $(BUILD_DIR)
+	mkdir -p $(addprefix $(BUILD_DIR)/, $(shell find $(SOURCEDIR) -type d)) 
+	$(CXX) -MT $(@:.d=.o) -MM $(CXXFLAGS) $^ > $@
 
 ${BUILD_DIR}/%.o: %.cu
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(BUILD_DIR)/$(SOURCEDIR)
 	${CXX} $(CXXFLAGS) -c $^ -o $@
+	
+${BUILD_DIR}/%.o: %.cpp
+	mkdir -p $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)/$(SOURCEDIR)
+	${CXX} $(CXXFLAGS) -c $^ -o $@	
 
 #Target for test 	
 $(EXE_DIR)/$(TEST): $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(TESTFILES)
