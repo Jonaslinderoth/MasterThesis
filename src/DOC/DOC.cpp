@@ -26,7 +26,6 @@ std::pair<std::vector<std::vector<float>>, std::vector<bool>> DOC::findCluster()
 	float maxValue = 0;
 
 	for(int i = 1; i < (float)2/a; i++){
-
 		auto p = this->pickRandom();
 		for(int j = 1; j < m; j++){
 
@@ -79,7 +78,7 @@ int DOC::size() {
 }
 
 std::vector<float> DOC::pickRandom() {
-	int i = rand() % this->size();
+	int i = this->randInt(0,this->size()-1,1).at(0);
 	return this->data.at(i);
 }
 
@@ -93,3 +92,5 @@ std::vector<bool> DOC::findDimensions(std::vector<float> centroid,
 	}
 	return result;
 }
+
+
