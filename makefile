@@ -46,12 +46,12 @@ $(EXE_DIR)/$(EXE): $(BUILD_DIR)/$(EXEFILE).o $(BUILD_DIR)/$(EXEFILE).d $(addpref
 ${BUILD_DIR}/%.d: %.cu main.cu
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(addprefix $(BUILD_DIR)/, $(shell find $(SOURCEDIR) -type d)) 
-	$(CXX) -MT $(@:.d=.o) -MM $(CXXFLAGS) $^ > $@
+	$(CXX) -MT $(@:.d=.o) -M $(CXXFLAGS) $^ > $@
 
 ${BUILD_DIR}/%.d: %.cpp
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(addprefix $(BUILD_DIR)/, $(shell find $(SOURCEDIR) -type d)) 
-	$(CXX) -MT $(@:.d=.o) -MM $(CXXFLAGS) $^ > $@
+	$(CXX) -MT $(@:.d=.o) -M $(CXXFLAGS) $^ > $@
 
 ${BUILD_DIR}/%.o: %.cu
 	mkdir -p $(BUILD_DIR)
