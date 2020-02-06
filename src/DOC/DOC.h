@@ -8,33 +8,41 @@
 class DOC{
 public:
 	DOC();
-	DOC(std::vector<std::vector<float>> input);
+	DOC(std::vector<std::vector<float>*>* input);
+	DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float width);
 
-	bool addPoint(std::vector<float> point);
-	std::pair<std::vector<std::vector<float>>, std::vector<bool>> findCluster();
+	bool addPoint(std::vector<float>* point);
+	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>> findCluster();
 	std::vector<float> findKClusters(int k);
 	int size();
-	std::vector<float> pickRandom();
-	std::vector<bool> findDimensions(std::vector<float> centroid, std::vector<std::vector<float>> points, float width);
+	std::vector<std::vector<float>*>* pickRandom(int n);
+	std::vector<bool> findDimensions(std::vector<float>* centroid, std::vector<std::vector<float>*>* points, float width);
+
 	float mu(int a, int b){
-		return pow(a*((float) 1/0.5),b);
-	}
+		return a*pow(((float) 1/this->beta),b);
+	};
+
 	const std::vector<int>& getRandomStub() const {
 		return randomStub;
-	}
+	};
 
 	void setRandomStub(const std::vector<int>& randomStub) {
 		this->randomStub = randomStub;
-	}
-
-	;
-private:
-	bool trueRandom = true;
-	std::vector<std::vector<float>> data;
-	std::vector<int> randomStub;
-	void setRandom(bool value){
-		this->trueRandom = value;
 	};
+
+	void setRandom(bool value){
+			this->trueRandom = value;
+	};
+
+
+
+private:
+	float alpha;
+	float beta;
+	float width;
+	bool trueRandom = true;
+	std::vector<std::vector<float>*>* data;
+	std::vector<int> randomStub;
 
 	std::vector<int> randInt(int upper, int n){
 		return randInt(0,upper, n);
