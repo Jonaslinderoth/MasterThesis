@@ -126,7 +126,7 @@ TEST(testHyperCube, testPointContained4){
 	std::vector<float>* point2   = new std::vector<float>{0, -10, 10, 10, 10, 10, 10, 10, 10, 10};
 	std::vector<float>* point3   = new std::vector<float>{0, 20, -30, 40, 50, 60, 70, 80, 90, 100};
 	
-	std::vector<bool>* dimms  = new std::vector<bool>{true, false};
+	std::vector<bool>* dimms = new std::vector<bool>{true, false};
 	float width = 5;
 	auto c = HyperCube(centroid, width, dimms);
 	SUCCEED();

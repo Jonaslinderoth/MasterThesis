@@ -2,6 +2,8 @@
 #include <iostream>
 #include "../src/DOC/DOC.h"
 #include <vector>
+#include "testData.h"
+#include <cmath>
 
 
 
@@ -200,4 +202,30 @@ TEST(testDOC, testMu){
 	EXPECT_EQ(d.mu(3,2), 48);
 	EXPECT_EQ(d.mu(3,3), 192);
 	EXPECT_EQ(d.mu(3,4), 768);
+}
+
+
+TEST(testDOC, testFindCluster3){
+	std::vector<std::vector<float>*>* data = data_4dim2cluster();
+
+	//std::cout << a << ", " << b << std::endl;
+
+	DOC d = DOC(data, 0.1, 0.25, 5);
+	auto res = d.findCluster();
+	SUCCEED();
+
+
+	EXPECT_TRUE(res.second->at(0));
+	EXPECT_FALSE(res.second->at(1));
+	EXPECT_FALSE(res.second->at(2));
+	EXPECT_FALSE(res.second->at(3));
+
+	EXPECT_LT(abs((int)res.first->size()-(int)numPoints_4dim2cluster()), 10);
+
+	for(int i = 0; i< data->size(); i++){
+		delete data->at(i);
+	}
+	delete data;
+	delete res.first;
+	delete res.second;
 }
