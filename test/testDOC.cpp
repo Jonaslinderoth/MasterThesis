@@ -65,9 +65,9 @@ TEST(testDOC, testFindDimensions){
 	v->push_back(&point4);
 
 	auto res = d.findDimensions(&centroid, v,5);
-	EXPECT_TRUE(res.at(0));
-	EXPECT_FALSE(res.at(1));
-	EXPECT_FALSE(res.at(2));
+	EXPECT_TRUE(res->at(0));
+	EXPECT_FALSE(res->at(1));
+	EXPECT_FALSE(res->at(2));
 }
 
 
@@ -89,9 +89,9 @@ TEST(testDOC, testFindDimensions2){
 	v->push_back(&point5);
 
 	auto res = d.findDimensions(&centroid, v,5);
-	EXPECT_FALSE(res.at(0));
-	EXPECT_FALSE(res.at(1));
-	EXPECT_FALSE(res.at(2));
+	EXPECT_FALSE(res->at(0));
+	EXPECT_FALSE(res->at(1));
+	EXPECT_FALSE(res->at(2));
 
 }
 
@@ -125,8 +125,8 @@ TEST(testDOC, testFindCluster){
 	std::cout << std::endl;
 	*/
 
-	EXPECT_TRUE(res.second.at(0));
-	EXPECT_FALSE(res.second.at(1));
+	EXPECT_TRUE(res.second->at(0));
+	EXPECT_FALSE(res.second->at(1));
 
 	int count = 0;
 	EXPECT_EQ(res.first->size(), 1200);
@@ -180,10 +180,17 @@ TEST(testDOC, testFindCluster2){
 	SUCCEED();
 
 
-	EXPECT_TRUE(res.second.at(0));
-	EXPECT_FALSE(res.second.at(1));
+	EXPECT_TRUE(res.second->at(0));
+	EXPECT_FALSE(res.second->at(1));
 
 	EXPECT_EQ(res.first->size(), 306);
+
+	for(int i = 0; i< data->size(); i++){
+		delete data->at(i);
+	}
+	delete data;
+	delete res.first;
+	delete res.second;
 }
 
 TEST(testDOC, testMu){
