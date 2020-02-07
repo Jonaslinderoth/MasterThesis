@@ -4,6 +4,8 @@
 *.ptx
 *.cubin
 *.fatbin
+*.dat
+*.txt
 
 
 # Created by https://www.gitignore.io/api/c++,cuda
