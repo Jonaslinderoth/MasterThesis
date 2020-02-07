@@ -4,8 +4,9 @@
 #include <math.h>
 #include <random>
 #include <iostream>
+#include "../Cluster.h"
 
-class DOC{
+class DOC : public Cluster{
 public:
 	DOC();
 	DOC(std::vector<std::vector<float>*>* input);
@@ -13,7 +14,6 @@ public:
 
 	bool addPoint(std::vector<float>* point);
 	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster();
-	std::vector<float> findKClusters(int k);
 	int size();
 	std::vector<std::vector<float>*>* pickRandom(int n);
 	std::vector<bool>* findDimensions(std::vector<float>* centroid, std::vector<std::vector<float>*>* points, float width);

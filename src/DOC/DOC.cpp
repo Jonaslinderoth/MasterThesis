@@ -3,13 +3,14 @@
 #include <iostream>
 #include <math.h>       /* log */
 #include <algorithm>
+#include "../Cluster.h"
 
 DOC::DOC(): DOC(new std::vector<std::vector<float>*>){}
 
 DOC::DOC(std::vector<std::vector<float>*>* input): DOC(input, 0.1, 0.25, 15) {}
 
-DOC::DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float width){
-	this->data = input;
+DOC::DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float width): Cluster::Cluster(input) {
+  this->data = input;
 	this->alpha = alpha;
 	this->width = width;
 	this->beta = beta;
@@ -81,10 +82,6 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 	return result;
 }
 
-std::vector<float> DOC::findKClusters(int k) {
-	std::vector<float> res;
-	return res;
-}
 
 bool DOC::addPoint(std::vector<float>* point) {
 	data->push_back(point);
