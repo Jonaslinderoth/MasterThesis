@@ -16,12 +16,53 @@ DOC::DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float
 
 }
 
+float DOC::findCandidateCluster(std::vector<float>* p, std::vector<std::vector<float>*>* X,
+			       std::vector<std::vector<float>*>* resC, std::vector<bool>* resD, int d, float maxValue){
+
+  auto D = this->findDimensions(p,X,this->width);
+  delete X;
+  std::vector<std::vector<float>*>* C = new std::vector<std::vector<float>*>;
+  auto b_pD = HyperCube(p,this->width,D);
+
+  for(int l = 0; l < this->data->size(); l++){
+    auto point = this->data->at(l);
+    if (b_pD.pointContained(point)){
+      C->push_back(point);
+    }
+
+  }
+  int Dsum = 0;
+  std::for_each(D->begin(), D->end(), [&] (int n) {
+      Dsum += D->at(n);
+    });
+			
+  // to not find too small clusters, then we prefer it to pick
+  // larger clusters with larger dimensions
+  if(C->size() < this->alpha*this->data->size()){ 
+    delete C;
+    delete D;
+    D = new std::vector<bool>(d,false);
+    C = new std::vector<std::vector<float>*>;
+  }
+			
+  float current = mu(C->size(), Dsum);
+  if(current > maxValue){
+    *resD = *D;
+    *resC = *C;
+    maxValue = current;
+  }else{
+    delete C;
+    delete D;
+  }
+  return maxValue;
+};
+
 std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluster() {
 	float d = this->data->at(0)->size();
 	float r = log2(2*d)/log2(1/(2*this->beta));
 	float m = pow((2/this->alpha),2) * log(4);
 
-	auto resD = new std::vector<bool>;
+	std::vector<bool>* resD = new std::vector<bool>;
 	std::vector<std::vector<float>*>* resC = new std::vector<std::vector<float>*>;
 	float maxValue = 0;
 
@@ -31,34 +72,7 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 		delete p_vec;
 		for(int j = 1; j < m; j++){
 			std::vector<std::vector<float>*>* X = this->pickRandom(r);
-			auto D = this->findDimensions(p,X,this->width);
-			std::vector<std::vector<float>*>* C = new std::vector<std::vector<float>*>;
-			auto b_pD = HyperCube(p,this->width,D);
-
-			for(int l = 0; l < this->data->size(); l++){
-				auto point = this->data->at(l);
-				if (b_pD.pointContained(point)){
-					C->push_back(point);
-				}
-
-			}
-			int Dsum = 0;
-			std::for_each(D->begin(), D->end(), [&] (int n) {
-			    Dsum += D->at(n);
-			});
-			float current = mu(C->size(), Dsum);
-			if(current > maxValue){
-				resD = D;
-				resC = C;
-				maxValue = current;
-			}else{
-				delete C;
-				delete D;
-			}
-
-
-			delete X;
-
+			maxValue = this->findCandidateCluster(p,X,resC,resD, d, maxValue);	
 		}
 
 	}

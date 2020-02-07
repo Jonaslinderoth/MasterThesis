@@ -229,3 +229,47 @@ TEST(testDOC, testFindCluster3){
 	delete res.first;
 	delete res.second;
 }
+
+
+TEST(testDOC, testFindCluster4Bad){
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+
+	for(int i = 0; i < 600; i+=10){
+	  std::vector<float>* point1 = new std::vector<float>;
+		for(float j = 0; j < 20; j++){
+		  point1->push_back(i);
+		}
+		data->push_back(point1);
+	}
+
+
+	for(int i = 0; i < 5; i+=1){
+	  std::vector<float>* point1 = new std::vector<float>;
+		for(float j = 0; j < 20; j++){
+		  point1->push_back(i);
+		}
+		data->push_back(point1);
+	}
+
+	
+	//std::cout << a << ", " << b << std::endl;
+
+	DOC d = DOC(data, 0.1, 0.25, 5);
+	auto res = d.findCluster();
+	SUCCEED();
+
+	
+	EXPECT_EQ(res.second->size(), 20);
+	for(int i = 0; i < 20; i++){
+	  EXPECT_FALSE(res.second->at(i));
+	}
+
+	EXPECT_EQ(res.first->size(), 65);
+
+	for(int i = 0; i< data->size(); i++){
+		delete data->at(i);
+	}
+	delete data;
+	delete res.first;
+	delete res.second;
+}

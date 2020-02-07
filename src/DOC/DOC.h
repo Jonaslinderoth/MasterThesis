@@ -34,8 +34,9 @@ public:
 			this->trueRandom = value;
 	};
 
-
-
+	float findCandidateCluster(std::vector<float>* p, std::vector<std::vector<float>*>* X,
+				  std::vector<std::vector<float>*>* resC, std::vector<bool>* resD, int d, float maxValue);
+	
 private:
 	float alpha;
 	float beta;
