@@ -36,6 +36,11 @@ public:
 
 	float findCandidateCluster(std::vector<float>* p, std::vector<std::vector<float>*>* X,
 				  std::vector<std::vector<float>*>* resC, std::vector<bool>* resD, int d, float maxValue);
+
+	void setData(std::vector<std::vector<float>*>* input){
+	  std::cout << "from DOC setData called2" << std::endl;
+	  this->data = input;
+	};
 	
 private:
 	float alpha;

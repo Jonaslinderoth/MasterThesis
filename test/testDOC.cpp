@@ -207,7 +207,6 @@ TEST(testDOC, testMu){
 
 TEST(testDOC, testFindCluster3){
 	std::vector<std::vector<float>*>* data = data_4dim2cluster();
-
 	//std::cout << a << ", " << b << std::endl;
 
 	DOC d = DOC(data, 0.1, 0.25, 5);
