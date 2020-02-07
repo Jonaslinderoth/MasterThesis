@@ -90,12 +90,43 @@ bool DataGeneratorBuilder::build()
 		}
 		numberOfDimensions = maxDim;
 	}
+	//need to fix make the outLiers.
+	unsigned int numberOfOutLiers = 0;
+	Cluster outLiers;
+	for(std::vector<Cluster>::iterator it = allClusters.begin() ; it != allClusters.end() ; ++it){
+		unsigned int outLiersInThisCluster = 0;
+		float outLierPercentage = it->getOutLierPercentage();
+		//error checking.
+		if(outLierPercentage > 100.0001){
+			std::cout << "outlier percentage to big" << outLierPercentage << std::endl;
+			outLierPercentage = 100;
+		}
+		if(outLierPercentage < 0.0000001){
+			std::cout << "negative outlier percentage" << outLierPercentage << std::endl;
+			outLierPercentage = 0;
+		}
+		outLiersInThisCluster = it->getAmmount()*outLierPercentage/100;
+		if(outLiersInThisCluster > 0){
+			numberOfOutLiers += outLiersInThisCluster;
+			it->setAmmount(it->getAmmount()-outLiersInThisCluster);
+		}
+	}
+	BoundsForUniformDistribution outLiersBoundsForUniformDistribution;
+	MeanAndVarianceForNormalDistribution outLiersMeanAndVarianceForNormalDistribution;
+	outLiers.addDimension(uniformDistribution,outLiersBoundsForUniformDistribution,outLiersMeanAndVarianceForNormalDistribution,21,(numberOfDimensions-1));
+	outLiers.setAmmount(numberOfOutLiers);
+	if(numberOfOutLiers > 0){
+		outLiers.setOutLierPercentage(100);
+		allClusters.push_back(outLiers);
+	}
+
 
 	std::vector<std::vector<DistributionType>> distribuitionTypeForEachClusterForEachDimension;
 	std::vector<std::vector<BoundsForUniformDistribution>> uniBoundsForEachClusterForEachDimension;
 	std::vector<std::vector<MeanAndVarianceForNormalDistribution>> meanAndVarianceForNormalDistributionForEachClusterForEachDimension;
 	std::vector<std::vector<float>> constantForEachClusterForEachDimension;
 	std::vector<unsigned int> ammount;
+
 
 	for(std::vector<Cluster>::iterator it = allClusters.begin() ; it != allClusters.end() ; ++it){
 		distribuitionTypeForEachClusterForEachDimension.push_back(it->getDistributionTypeForEachDimension());
@@ -104,6 +135,10 @@ bool DataGeneratorBuilder::build()
 		constantForEachClusterForEachDimension.push_back(it->getConstantForEachDimension());
 		ammount.push_back(it->getAmmount());
 	}
+
+
+
+
 
 	numberOfClusters = allClusters.size();
 
@@ -116,16 +151,6 @@ bool DataGeneratorBuilder::build()
 				constantForEachClusterForEachDimension,
 				ammount);
 
-	/*
-	DataGenerator DG = DataGenerator(fileName,
-			numberOfDimensions ,
-				numberOfClusters ,
-				distribuitionTypeForEachClusterForEachDimension ,
-				uniBoundsForEachClusterForEachDimension ,
-				meanAndVarianceForNormalDistributionForEachClusterForEachDimension,
-				constantForEachClusterForEachDimension,
-				ammount);
-	*/
 
 }
 
@@ -343,3 +368,111 @@ bool DataGeneratorBuilder::deleteFiles(std::vector<std::string> vecOfFilesNames)
 return true;
 }
 
+bool DataGeneratorBuilder::buildUClusters(unsigned int ammountOfPoint,
+		unsigned int ammountOfClusters,
+		unsigned int with,
+		unsigned int dimensions,
+		unsigned dimensionUsed,
+		float outLiersPersentage) {
+	if(ammountOfClusters == 0){
+		return false;
+	}
+
+	//need to calculate the points in each cluster , and because of integer division i need to take care of the rest.
+	std::vector<unsigned int> ammountOfPointPerCluster;
+	unsigned int pointsPerCluster = ammountOfPoint/ammountOfClusters;
+	for(int clusterIndex = 0 ; clusterIndex < ammountOfClusters ; ++clusterIndex){
+		ammountOfPointPerCluster.push_back(ammountOfPoint);
+	}
+	ammountOfPointPerCluster.at(0) += ammountOfPoint % ammountOfClusters;
+
+
+	std::vector<Cluster> vecOfClusters;
+	for(int clusterIndex = 0 ; clusterIndex < ammountOfClusters ; ++clusterIndex){
+		Cluster c;
+		c.setOutLierPercentage(outLiersPersentage);
+		c.setAmmount(ammountOfPointPerCluster.at(clusterIndex));
+		vecOfClusters.push_back(c);
+	}
+
+
+	//i need to pick with dimension to "work with".
+	std::vector<int> vecOfDimensions;
+	for(int i = 0 ; i < dimensions ; ++i){
+		vecOfDimensions.push_back(i);
+	}
+
+	//check that we have enoth dimensions to work with
+	if(dimensionUsed >= dimensions){
+		return false;
+	}
+	DataGeneratorBuilder dgb;
+
+
+	//pick the dimensions
+	std::vector<int> dimensionChosen;
+	for(int i = 0 ; i < dimensionUsed ; ++i){
+		unsigned int chosen = (unsigned int)rand()%vecOfDimensions.size();
+		dimensionChosen.push_back(vecOfDimensions.at(chosen));
+		vecOfDimensions.erase(vecOfDimensions.begin()+chosen);
+	}
+
+
+	std::vector<BoundsForUniformDistribution> previusClusterBounds;
+	for(int i = 0 ; i < dimensionChosen.size() ; ++i){
+		BoundsForUniformDistribution boundsForUniformDistribution;
+		int maxRange = ((int)boundsForUniformDistribution.upper-(int)boundsForUniformDistribution.lower-with);
+		int lowerRange = ((int)rand()%maxRange)+(int)boundsForUniformDistribution.lower;
+		int upperRange = lowerRange + with;
+		boundsForUniformDistribution.lower = lowerRange;
+		boundsForUniformDistribution.upper = upperRange;
+		previusClusterBounds.push_back(boundsForUniformDistribution);
+	}
+
+	float variace = ((float)with)/12;
+
+	std::cout << "here1" << std::endl;
+	for(std::vector<Cluster>::iterator cluster = vecOfClusters.begin() ; cluster != vecOfClusters.end() ; ++cluster){
+		unsigned int dimensionIndex = 0;
+		BoundsForUniformDistribution basicBoundsForUniformDistribution;
+		MeanAndVarianceForNormalDistribution basicMeanAndVarianceForNormalDistribution;
+		cluster->addDimension(uniformDistribution,basicBoundsForUniformDistribution,basicMeanAndVarianceForNormalDistribution,21,dimensions-1);
+		for(std::vector<int>::iterator dim = dimensionChosen.begin() ; dim != dimensionChosen.end() ; ++dim){
+			int lowerRange = 0;
+			int upperRange = 0;
+			if((int)rand()%2 == 0){
+				lowerRange = previusClusterBounds.at(dimensionIndex).lower;
+				upperRange = previusClusterBounds.at(dimensionIndex).upper;
+				if((int)rand()%2 == 0){
+					variace = -variace;
+				}
+				lowerRange += variace;
+				upperRange += variace;
+				if(lowerRange < basicBoundsForUniformDistribution.lower or upperRange > basicBoundsForUniformDistribution.upper){
+					lowerRange -= (2*variace);
+					upperRange -= (2*variace);
+				}
+			}else{
+				vecOfDimensions.push_back(*dim);
+				unsigned int chosen = (unsigned int)rand()%vecOfDimensions.size();
+				*dim = (vecOfDimensions.at(chosen));
+				vecOfDimensions.erase(vecOfDimensions.begin()+chosen);
+				BoundsForUniformDistribution boundsForUniformDistribution;
+				int maxRange = ((int)boundsForUniformDistribution.upper-(int)boundsForUniformDistribution.lower-with);
+				lowerRange = ((int)rand()%maxRange)+(int)boundsForUniformDistribution.lower;
+				upperRange = lowerRange + with;
+			}
+
+			//now set the range in the struct
+			BoundsForUniformDistribution boundsForUniformDistribution;
+			boundsForUniformDistribution.lower = lowerRange;
+			boundsForUniformDistribution.upper = upperRange;
+			previusClusterBounds.at(dimensionIndex) = boundsForUniformDistribution;
+			cluster->addDimension(uniformDistribution,boundsForUniformDistribution,basicMeanAndVarianceForNormalDistribution,21,*dim);
+			dimensionIndex++;
+		}
+		dgb.addCluster(*cluster);
+	}
+	dgb.build();
+	return true;
+}

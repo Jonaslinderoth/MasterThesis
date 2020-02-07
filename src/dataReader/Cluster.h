@@ -48,9 +48,11 @@ public:
 	std::vector<MeanAndVarianceForNormalDistribution> getMeanAndVarianceForNormalDistributionForEachDimension();
 	bool setAmmount(unsigned int ammount_);
 	unsigned int getAmmount();
+	bool setOutLierPercentage(float outLiers_);
+	float getOutLierPercentage();
 	virtual ~Cluster();
-
 private:
+	float outLierPercentage;
 	unsigned int ammount;
 	std::vector<float> constantForEachDimension;
 	std::vector<DistributionType> distributionTypeForEachDimension;

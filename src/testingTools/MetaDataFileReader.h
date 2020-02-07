@@ -22,7 +22,7 @@
 
 class MetaDataFileReader {
 public:
-	MetaDataFileReader(std::string fileName_);
+	MetaDataFileReader(std::string fileName_ = "test1");
 	unsigned int getDimensions();
 	std::vector<Cluster> getClusters();
 	virtual ~MetaDataFileReader();

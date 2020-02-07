@@ -31,7 +31,9 @@ MetaDataFileReader::MetaDataFileReader(std::string fileName_) {
 				clusterLines.push_back(line);
 				Cluster cluster;
 				std::vector<std::string> parts = this->splitString(line,',');
+
 				for(std::vector<std::string>::iterator iter = parts.begin() ; iter != parts.end() ; ++iter){
+
 					if((*iter).compare("u") == 0){
 						BoundsForUniformDistribution boundsForUniformDistribution;
 						float constant;
@@ -39,7 +41,6 @@ MetaDataFileReader::MetaDataFileReader(std::string fileName_) {
 						boundsForUniformDistribution.lower = std::stof(*iter);
 						++iter;
 						boundsForUniformDistribution.upper = std::stof(*iter);
-						++iter;
 						cluster.addDimension(uniformDistribution,boundsForUniformDistribution);
 					}else if((*iter).compare("n") == 0){
 						BoundsForUniformDistribution boundsForUniformDistribution;

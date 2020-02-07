@@ -9,6 +9,7 @@
 
 Cluster::Cluster() {
 	ammount = 128;
+	outLierPercentage = 0.0;
 	// TODO Auto-generated constructor stub
 
 }
@@ -71,4 +72,11 @@ std::vector<MeanAndVarianceForNormalDistribution> Cluster::getMeanAndVarianceFor
 	return meanAndVarianceForNormalDistributionForEachDimension;
 }
 
+bool Cluster::setOutLierPercentage(float outLiers_) {
+	outLierPercentage = outLiers_;
+	return true;
+}
 
+float Cluster::getOutLierPercentage() {
+	return outLierPercentage;
+}
