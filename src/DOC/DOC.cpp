@@ -58,7 +58,6 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 
 
 			delete X;
-			// todo: delete X, delete D and C if not the current best,
 
 		}
 
