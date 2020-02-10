@@ -9,6 +9,7 @@
 
 TEST(testDOC, testConstructor){
 	DOC d = DOC();
+	d.setSeed(1);
 	SUCCEED();
 	EXPECT_EQ(d.size(), 0);
 }
@@ -16,6 +17,7 @@ TEST(testDOC, testConstructor){
 
 TEST(testDOC, testConstructor2){
 	DOC d = DOC(new std::vector<std::vector<float>*>);
+	d.setSeed(1);
 	SUCCEED();
 	EXPECT_EQ(d.size(), 0);
 }
@@ -29,12 +31,14 @@ TEST(testDOC, testConstructor3){
 	v1->push_back(1.3);
 	v->push_back(v1);
 	DOC d = DOC(v);
+	d.setSeed(1);
 	SUCCEED();
 	EXPECT_EQ(d.size(), 1);
 }
 
 TEST(testDOC, testAddPoint){
 	DOC d = DOC(new std::vector<std::vector<float>*>);
+	d.setSeed(1);
 	SUCCEED();
 	EXPECT_EQ(d.size(), 0);
 	auto v1 = new std::vector<float>;
@@ -53,7 +57,8 @@ TEST(testDOC, testAddPoint){
 
 TEST(testDOC, testFindDimensions){
 	DOC d = DOC(new std::vector<std::vector<float>*>);
-
+	d.setSeed(1);
+	
 	std::vector<float> centroid{20, 20, 20};
 	std::vector<float> point1{20, 20, 20};
 	std::vector<float> point2{20, 10, 20};
@@ -75,7 +80,7 @@ TEST(testDOC, testFindDimensions){
 
 TEST(testDOC, testFindDimensions2){
 	DOC d = DOC();
-
+	d.setSeed(1);
 	std::vector<float> centroid{20, 20, 20};
 	std::vector<float> point1{20, 20, 20};
 	std::vector<float> point2{20, 10, 20};
@@ -108,6 +113,7 @@ TEST(testDOC, testFindCluster){
 		}
 	}
 	DOC d = DOC(data, 0.1, 0.25, 5);
+	d.setSeed(1);
 	auto res = d.findCluster();
 	SUCCEED();
 
@@ -134,28 +140,7 @@ TEST(testDOC, testFindCluster){
 	EXPECT_EQ(res.first->size(), 1200);
 }
 
-TEST(testDOC, testHardcodedRandom){
-	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
-		for(float i = 0; i < 100; i++){
-			for(float j = 9; j < 12; j++){
-				std::vector<float>* point1 = new std::vector<float>{j,i};
-				data->push_back(point1);
-			}
-		}
-		DOC d = DOC(data);
-		/*
-		d.setRandom(false);
-		d.setRandomStub({0,1,2,3,4});
-		auto s = d.pickRandom(10);
-		EXPECT_EQ(s->at(0), data->at(0));
-		EXPECT_EQ(s->at(1), data->at(1));
-		EXPECT_EQ(s->at(2), data->at(2));
-		EXPECT_EQ(s->at(3), data->at(3));
-		EXPECT_EQ(s->at(4), data->at(4));
-		EXPECT_EQ(s->at(5), data->at(0));
-		EXPECT_NE(s->at(5), data->at(1));
-		*/
-}
+
 
 
 TEST(testDOC, testFindCluster2){
@@ -180,6 +165,7 @@ TEST(testDOC, testFindCluster2){
 	//std::cout << a << ", " << b << std::endl;
 
 	DOC d = DOC(data, 0.1, 0.25, 5);
+	d.setSeed(1);
 	auto res = d.findCluster();
 	SUCCEED();
 
@@ -213,6 +199,7 @@ TEST(testDOC, testFindCluster3){
 	//std::cout << a << ", " << b << std::endl;
 
 	DOC d = DOC(data, 0.1, 0.25, 5);
+	d.setSeed(1);
 	auto res = d.findCluster();
 	SUCCEED();
 
@@ -238,6 +225,7 @@ TEST(tesDOC, testFindKClusters){
 
 
 	DOC d = DOC(data, 0.1, 0.25, 5);
+	d.setSeed(1);
 	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(0);
 	
 	SUCCEED();
@@ -250,6 +238,7 @@ TEST(tesDOC, testFindKClusters2){
 
 
 	DOC d = DOC(data, 0.1, 0.25, 5);
+	d.setSeed(1);
 	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(1);
 	
 	SUCCEED();
@@ -327,6 +316,7 @@ TEST(testDOC, testFindKClusters3){
 
 
 	DOC d = DOC(data, 0.1, 0.25, 6);
+	d.setSeed(1);
 	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(2);
 	
 	SUCCEED();
@@ -364,12 +354,11 @@ TEST(testDOC, testFindKClusters5){
 		data3->push_back(data->at(i));
 	}
 	
-	DOC d = DOC(data, 0.4, 0.25, 3);
 	DOC d1 = DOC(data1, 0.4, 0.25, 3);
 	DOC d2 = DOC(data2, 0.4, 0.25, 3);
 	DOC d3 = DOC(data3, 0.4, 0.25, 3);
 
-	d.setSeed(1);
+
 	d1.setSeed(1);
 	d2.setSeed(1);
 	d3.setSeed(1);
