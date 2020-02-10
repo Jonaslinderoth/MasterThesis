@@ -7,13 +7,14 @@
 
 class DOC{
 public:
-	DOC();
-	DOC(std::vector<std::vector<float>*>* input);
+ DOC();
+ DOC(std::vector<std::vector<float>*>* input);
 	DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float width);
 
 	bool addPoint(std::vector<float>* point);
 	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster();
-	std::vector<float> findKClusters(int k);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> findKClusters(int k);
+	
 	int size();
 	std::vector<std::vector<float>*>* pickRandom(int n);
 	std::vector<bool>* findDimensions(std::vector<float>* centroid, std::vector<std::vector<float>*>* points, float width);

@@ -65,10 +65,7 @@ TEST(dataGenerationTests, testOutLiers){
 
 TEST(dataGenerationTests, testUBuilder){
 	DataGeneratorBuilder dgb;
-	if(!dgb.buildUClusters(1000,5,100,5,3)){
-		std::cout << "not good" << std::endl;
-	}
-
+	EXPECT_TRUE(dgb.buildUClusters(1000,5,100,5,3));
 	SUCCEED();
 }
 

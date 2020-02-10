@@ -101,7 +101,7 @@ bool DataGeneratorBuilder::build()
 			std::cout << "outlier percentage to big" << outLierPercentage << std::endl;
 			outLierPercentage = 100;
 		}
-		if(outLierPercentage < 0.0000001){
+		if(outLierPercentage < -.0000001){
 			std::cout << "negative outlier percentage" << outLierPercentage << std::endl;
 			outLierPercentage = 0;
 		}
@@ -292,9 +292,9 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 
 	for(int pointIndex = 0 ; pointIndex < totalSize ; ++pointIndex){
 		unsigned goo = pointIndex;
-		if(goo%400000 == 0){
-			std::cout << pointIndex << std::endl;
-		}
+		//if(goo%400000 == 0){
+		//	std::cout << pointIndex << std::endl;
+		//}
 
 		unsigned int chosenClusterIndex = 0;
 		unsigned int randomNumber = rand() % (totalSize-pointIndex);
@@ -431,7 +431,6 @@ bool DataGeneratorBuilder::buildUClusters(unsigned int ammountOfPoint,
 
 	float variace = ((float)with)/12;
 
-	std::cout << "here1" << std::endl;
 	for(std::vector<Cluster>::iterator cluster = vecOfClusters.begin() ; cluster != vecOfClusters.end() ; ++cluster){
 		unsigned int dimensionIndex = 0;
 		BoundsForUniformDistribution basicBoundsForUniformDistribution;

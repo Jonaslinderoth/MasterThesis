@@ -1,3 +1,4 @@
+
 #include "DOC.h"
 #include "HyperCube.h"
 #include <iostream>
@@ -56,7 +57,6 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 				delete D;
 			}
 
-
 			delete X;
 			// todo: delete X, delete D and C if not the current best,
 
@@ -68,8 +68,11 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 	return result;
 }
 
-std::vector<float> DOC::findKClusters(int k) {
-	std::vector<float> res;
+std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> findKClusters(int k){
+	auto res = std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>>();
+	for(int i = 0; i < k; i++){
+		//res.push_back(this->findCluster());
+	}
 	return res;
 }
 
