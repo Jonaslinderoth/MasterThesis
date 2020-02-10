@@ -1,39 +1,30 @@
 #include <iostream>
-#include <vector>
-#include "src/DOC/DOC.h"
-int main(){
-	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
-		int a = 0;
-		for(float i = 9; i <= 12; i++){
-			for(float j = 9; j <= 12; j++){
-				std::vector<float>* point1 = new std::vector<float>{i,j};
-				data->push_back(point1);
-				a++;
-			}
-		}
+#include <chrono>
+#include <random>
 
-		int b = 0;
-		for(float i = 60; i <= 65; i++){
-			for(float j = 0; j <= 50; j++){
-				std::vector<float>* point1 = new std::vector<float>{i,j};
-				data->push_back(point1);
-				b++;
-			}
-		}
+int main ()
+{
+  typedef std::chrono::high_resolution_clock myclock;
+  myclock::time_point beginning = myclock::now();
 
+  // obtain a seed from a user string:
+  std::string str;
+  std::cout << "Please, enter a seed: ";
+  std::getline(std::cin,str);
+  std::seed_seq seed1 (str.begin(),str.end());
 
-		DOC d = DOC(data, 0.1, 0.25, 5);
-		auto res = d.findCluster();
+  // obtain a seed from the timer
+  myclock::duration d = myclock::now() - beginning;
+  unsigned seed2 = d.count();
 
+  std::mt19937 generator (seed1);   // mt19937 is a standard mersenne_twister_engine
+  std::cout << "Your seed produced: " << generator() << std::endl;
 
+  generator.seed (1);
+  std::cout << "1: " << generator() << std::endl;
 
+  generator.seed (1);
+  std::cout << "2: " << generator() << std::endl;
 
-
-		delete res.first;
-		delete res.second;
-		for(int i = 0; i< data->size(); i++){
-			delete data->at(i);
-		}
-		delete data;
-
+  return 0;
 }

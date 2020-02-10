@@ -6,9 +6,9 @@
 #include <iostream>
 
 class DOC{
-public:
- DOC();
- DOC(std::vector<std::vector<float>*>* input);
+ public:
+	DOC();
+	DOC(std::vector<std::vector<float>*>* input);
 	DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float width);
 
 	bool addPoint(std::vector<float>* point);
@@ -23,44 +23,33 @@ public:
 		return a*pow(((float) 1/this->beta),b);
 	};
 
-	const std::vector<int>& getRandomStub() const {
-		return randomStub;
-	};
-
-	void setRandomStub(const std::vector<int>& randomStub) {
-		this->randomStub = randomStub;
-	};
-
-	void setRandom(bool value){
-			this->trueRandom = value;
-	};
-
+	void setSeed(int s){
+		this->gen.seed(s);
+	}
 
 
 private:
 	float alpha;
 	float beta;
 	float width;
-	bool trueRandom = true;
 	std::vector<std::vector<float>*>* data;
-	std::vector<int> randomStub;
-
+	std::mt19937 gen;
+	size_t seed = std::random_device()();
+	
 	std::vector<int> randInt(int upper, int n){
 		return randInt(0,upper, n);
 	};
 	std::vector<int> randInt(int lower, int upper, int n){
 		std::vector<int> res = std::vector<int>();
-		if (this->trueRandom){
-			std::random_device rd;  //Will be used to obtain a seed for the random number engine
-			std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-			std::uniform_int_distribution<> dis(lower, upper); //inclusive
-			for(int i = 0; i < n; i++){
-				res.push_back(dis(gen));
-			}
-		}else{
-			for(int i = 0; i < n; i++){
-					res.push_back(this->randomStub.at(i%(this->randomStub.size())));
-			}
+				
+		//std::random_device rd;  //Will be used to obtain a seed for the random number engine
+		//std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+		std::uniform_int_distribution<> dis(lower, upper); //inclusive
+
+		for(int i = 0; i < n; i++){
+			auto a = dis(gen);
+
+			res.push_back(a);
 		}
 		return res;
 	};

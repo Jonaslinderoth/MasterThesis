@@ -4,7 +4,7 @@ include config.mk
 CXX = nvcc
 
 # -g -G for instrumntation for debugger
-CXXFLAGS=-I. -arch=sm_37 -g -G 
+CXXFLAGS=-I. -arch=sm_37 -O2 #-g -G
 LIBS = -lpthread
 
 EXE=main
@@ -26,7 +26,12 @@ TESTFILES = $(shell find $(TESTDIR) -name '*.cu') $(shell find $(TESTDIR) -name 
 
 
 all: $(sources) $(EXE_DIR)/${EXE}  $(EXE_DIR)/${TEST}
-	
+
+
+.PHONY: all multi
+multi:
+	make -j4 all
+
 b: 
 	echo $(DEPS)
 	echo $(SOURCES)

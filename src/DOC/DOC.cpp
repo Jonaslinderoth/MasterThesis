@@ -14,6 +14,7 @@ DOC::DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float
 	this->alpha = alpha;
 	this->width = width;
 	this->beta = beta;
+	this->gen.seed(this->seed);
 
 }
 
@@ -58,8 +59,6 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 			}
 
 			delete X;
-			// todo: delete X, delete D and C if not the current best,
-
 		}
 
 	}
@@ -68,10 +67,24 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 	return result;
 }
 
-std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> findKClusters(int k){
-	auto res = std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>>();
+std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > DOC::findKClusters(int k){
+	auto res = std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> >();
 	for(int i = 0; i < k; i++){
-		//res.push_back(this->findCluster());
+
+		if(this->data->size() <= 0) {break;}
+		auto cluster = this->findCluster();
+		int head = cluster.first->size()-1;
+		for(int j = this->data->size()-1; j >=0  ;j-- ){
+			if (this->data->at(j) == cluster.first->at(head)){
+				auto temp = this->data->at(j);
+				this->data->at(j) = this->data->at(this->data->size()-1);
+				this->data->at(this->data->size()-1) = temp;
+				this->data->pop_back();
+				head--;
+				if(head < 0){break;}
+			}
+		}
+		res.push_back(cluster);
 	}
 	return res;
 }
@@ -84,6 +97,7 @@ bool DOC::addPoint(std::vector<float>* point) {
 int DOC::size() {
 	return data->size();
 }
+
 
 std::vector<std::vector<float>*>* DOC::pickRandom(int n) {
 	std::vector<int> is = this->randInt(0,this->size()-1,n);

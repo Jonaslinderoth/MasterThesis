@@ -39,7 +39,7 @@ TEST(testDOC, testAddPoint){
 	EXPECT_EQ(d.size(), 0);
 	auto v1 = new std::vector<float>;
 		v1->push_back(1.1);
-		v1->push_back(1.2);
+		v1->push_back(.2);
 		v1->push_back(1.3);
 	auto v2 = new std::vector<float>;
 		v2->push_back(2.1);
@@ -143,6 +143,7 @@ TEST(testDOC, testHardcodedRandom){
 			}
 		}
 		DOC d = DOC(data);
+		/*
 		d.setRandom(false);
 		d.setRandomStub({0,1,2,3,4});
 		auto s = d.pickRandom(10);
@@ -153,6 +154,7 @@ TEST(testDOC, testHardcodedRandom){
 		EXPECT_EQ(s->at(4), data->at(4));
 		EXPECT_EQ(s->at(5), data->at(0));
 		EXPECT_NE(s->at(5), data->at(1));
+		*/
 }
 
 
@@ -229,3 +231,213 @@ TEST(testDOC, testFindCluster3){
 	delete res.first;
 	delete res.second;
 }
+
+
+TEST(tesDOC, testFindKClusters){
+	std::vector<std::vector<float>*>* data = data_4dim2cluster();
+
+
+	DOC d = DOC(data, 0.1, 0.25, 5);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(0);
+	
+	SUCCEED();
+	EXPECT_EQ(res.size(), 0);
+
+}
+
+TEST(tesDOC, testFindKClusters2){
+	std::vector<std::vector<float>*>* data = data_4dim2cluster();
+
+
+	DOC d = DOC(data, 0.1, 0.25, 5);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(1);
+	
+	SUCCEED();
+	EXPECT_EQ(res.size(), 1);
+	EXPECT_TRUE(res.at(0).second->at(0));
+	EXPECT_FALSE(res.at(0).second->at(1));
+	EXPECT_FALSE(res.at(0).second->at(2));
+	EXPECT_FALSE(res.at(0).second->at(3));
+
+	EXPECT_LT(abs((int)res.at(0).first->size()-(int)numPoints_4dim2cluster()), 10);
+
+	for(int i = 0; i< data->size(); i++){
+		delete data->at(i);
+	}
+	delete data;
+	delete res.at(0).first;
+	delete res.at(0).second;
+}
+
+bool pointEQ(std::vector<float>* a1, std::vector<float>* a2){
+	bool output = true;
+	EXPECT_EQ(a1->size(), a2->size());
+	
+	for(int i = 0; i < a1->size(); i++){
+		output = false;
+		for(int j = 0; j < a2->size(); j++){
+			auto b1 = a1->at(i);
+			auto b2 = a2->at(j);
+			output = b1 == b2;
+			if(output){
+				break;
+			}
+		}
+		EXPECT_TRUE(output);			
+	}
+}
+
+bool disjoint(std::vector<std::vector<float>*>* a1, std::vector<std::vector<float>*>* a2){
+	bool output = true;
+
+	for(int i = 0; i < a1->size(); i++){
+		for(int j = 0; j < a2->size(); j++){
+			auto b1 = a1->at(i);
+			auto b2 = a2->at(j);
+			output = b1 == b2;
+			EXPECT_FALSE(b1 == b2);			
+		}
+	}
+	return output;
+}
+
+
+bool equal(std::vector<std::vector<float>*>* a1, std::vector<std::vector<float>*>* a2){
+	bool output = true;
+	EXPECT_EQ(a1->size(), a2->size());
+	
+	for(int i = 0; i < a1->size(); i++){
+		output = false;
+		for(int j = 0; j < a2->size(); j++){
+			auto b1 = a1->at(i);
+			auto b2 = a2->at(j);
+			output = b1 == b2;
+			if(output){
+				break;
+			}
+		}
+		EXPECT_TRUE(output);			
+	}
+}
+
+
+
+TEST(testDOC, testFindKClusters3){
+	std::vector<std::vector<float>*>* data = data_4dim2cluster();
+
+
+	DOC d = DOC(data, 0.1, 0.25, 6);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(2);
+	
+	SUCCEED();
+	EXPECT_EQ(res.size(), 1);
+	EXPECT_TRUE(res.at(0).second->at(0));
+	EXPECT_FALSE(res.at(0).second->at(1));
+	EXPECT_FALSE(res.at(0).second->at(2));
+	EXPECT_FALSE(res.at(0).second->at(3));
+
+
+	EXPECT_LT(abs((int)res.at(0).first->size()-397), 10);
+
+	
+	for(int i = 0; i< data->size(); i++){
+		delete data->at(i);
+	}
+	delete data;
+	delete res.at(0).first;
+	delete res.at(0).second;
+}
+
+
+TEST(testDOC, testFindKClusters5){
+	auto data = data_4dim2cluster();
+
+
+	std::vector<std::vector<float>*>* data1 = new std::vector<std::vector<float>*>;
+	std::vector<std::vector<float>*>* data2 = new std::vector<std::vector<float>*>;	
+	std::vector<std::vector<float>*>* data3 = new std::vector<std::vector<float>*>;
+
+	
+	for(int i = 0; i < data->size(); i++){
+		data1->push_back(data->at(i));
+		data2->push_back(data->at(i));
+		data3->push_back(data->at(i));
+	}
+	
+	DOC d = DOC(data, 0.4, 0.25, 3);
+	DOC d1 = DOC(data1, 0.4, 0.25, 3);
+	DOC d2 = DOC(data2, 0.4, 0.25, 3);
+	DOC d3 = DOC(data3, 0.4, 0.25, 3);
+
+	d.setSeed(1);
+	d1.setSeed(1);
+	d2.setSeed(1);
+	d3.setSeed(1);
+	
+	
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res1 = d1.findKClusters(2);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res2 = d2.findKClusters(2);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res3 = d3.findKClusters(2);
+	
+	SUCCEED();
+	
+
+	equal(res1.at(0).first, res1.at(0).first);
+	equal(res1.at(0).first, res2.at(0).first);
+	equal(res1.at(0).first, res3.at(0).first);
+}
+
+
+
+
+TEST(testDOC, testFindKClusters4){
+
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	auto a = new std::vector<float>{0,1};
+	data->push_back(a);
+
+
+	DOC d = DOC(data, 0.1, 0.25, 6);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(2);
+	
+	SUCCEED();
+	EXPECT_EQ(res.size(), 1);
+	EXPECT_TRUE(res.at(0).second->at(0));
+	EXPECT_TRUE(res.at(0).second->at(1));
+
+
+
+	
+	for(int i = 0; i< data->size(); i++){
+		delete data->at(i);
+	}
+	delete data;
+	delete res.at(0).first;
+	delete res.at(0).second;
+}
+
+
+/*TEST(testDOC2, test1){
+	auto cluster = new std::vector<float>{1, 4, 9};
+	auto data = new std::vector<float>{1,2,3,4,5,6,7,8,9};
+	int head = cluster->size()-1;		
+	for(int j = data->size()-1; j >=0  ;j-- ){
+		if (data->at(j) == cluster->at(head)){
+			auto temp = data->at(j);
+			data->at(j) = data->at(data->size()-1);
+			data->at(data->size()-1) = temp;
+			data->pop_back();
+			head--;
+		}
+		//std::cout << "got here3" << std::endl;
+	}
+	//7 2 3 8 5 6
+		
+	EXPECT_EQ(data->at(0), 7);
+	EXPECT_EQ(data->at(1), 2);
+	EXPECT_EQ(data->at(2), 3);
+	EXPECT_EQ(data->at(3), 8);
+	EXPECT_EQ(data->at(4), 5);
+	EXPECT_EQ(data->at(5), 6);
+	
+	}*/
