@@ -260,20 +260,22 @@ TEST(tesDOC, testFindKClusters2){
 
 bool pointEQ(std::vector<float>* a1, std::vector<float>* a2){
 	bool output = true;
-	EXPECT_EQ(a1->size(), a2->size());
-	
-	for(int i = 0; i < a1->size(); i++){
-		output = false;
-		for(int j = 0; j < a2->size(); j++){
-			auto b1 = a1->at(i);
-			auto b2 = a2->at(j);
-			output = b1 == b2;
-			if(output){
-				break;
-			}
-		}
-		EXPECT_TRUE(output);			
+	//EXPECT_EQ(a1->size(), a2->size());
+	if(a1->size() != a2->size()){
+		return false;
 	}
+
+	for(int j = 0; j < a2->size(); j++){
+		auto b1 = a1->at(j);
+		auto b2 = a2->at(j);
+		output &= abs(b1 - b2) <= 0.0001;
+		if(!output){
+			break;
+		}
+	}
+	//EXPECT_TRUE(output);
+	
+	return output;
 }
 
 bool disjoint(std::vector<std::vector<float>*>* a1, std::vector<std::vector<float>*>* a2){
@@ -281,10 +283,10 @@ bool disjoint(std::vector<std::vector<float>*>* a1, std::vector<std::vector<floa
 
 	for(int i = 0; i < a1->size(); i++){
 		for(int j = 0; j < a2->size(); j++){
-			auto b1 = a1->at(i);
-			auto b2 = a2->at(j);
-			output = b1 == b2;
-			EXPECT_FALSE(b1 == b2);			
+			std::vector<float>* b1 = a1->at(i);
+			std::vector<float>* b2 = a2->at(j);
+			bool eq = pointEQ(b1, b2);
+			output &= !eq;		
 		}
 	}
 	return output;
@@ -300,15 +302,43 @@ bool equal(std::vector<std::vector<float>*>* a1, std::vector<std::vector<float>*
 		for(int j = 0; j < a2->size(); j++){
 			auto b1 = a1->at(i);
 			auto b2 = a2->at(j);
-			output = b1 == b2;
-			if(output){
-				break;
-			}
-		}
-		EXPECT_TRUE(output);			
+			auto eq = pointEQ(b1, b2);
+			if(eq){output = eq; break;}
+		}			
 	}
+	return output;
 }
 
+TEST(testDOC, testHelperFunctions){
+
+	
+	auto vec1 = new std::vector<std::vector<float>*>;
+	auto a = new std::vector<float>{0,1,2,3,4};
+	vec1->push_back(a);
+	auto b = new std::vector<float>{0,1,2,3,5};
+	vec1->push_back(b);
+
+	EXPECT_FALSE(pointEQ(a,b));
+	
+	auto vec2 = new std::vector<std::vector<float>*>;
+	auto a1 = new std::vector<float>{0,1,2,3,4};
+	vec2->push_back(a1);
+	auto b1 = new std::vector<float>{0,1,2,3,5};
+	vec2->push_back(b1);
+	
+	EXPECT_TRUE(pointEQ(a,a1));
+
+	auto vec3 = new std::vector<std::vector<float>*>;
+	auto a3 = new std::vector<float>{1,1,2,3,4};
+	vec3->push_back(a3);
+	auto b3 = new std::vector<float>{2,1,2,3,5};
+	vec3->push_back(b3);
+
+	EXPECT_TRUE(equal(vec1, vec2));
+	EXPECT_FALSE(equal(vec1, vec3));
+	EXPECT_TRUE(disjoint(vec1, vec3));
+	EXPECT_FALSE(disjoint(vec1, vec2));
+}
 
 
 TEST(testDOC, testFindKClusters3){
@@ -406,27 +436,38 @@ TEST(testDOC, testFindKClusters4){
 }
 
 
-/*TEST(testDOC2, test1){
-	auto cluster = new std::vector<float>{1, 4, 9};
-	auto data = new std::vector<float>{1,2,3,4,5,6,7,8,9};
-	int head = cluster->size()-1;		
-	for(int j = data->size()-1; j >=0  ;j-- ){
-		if (data->at(j) == cluster->at(head)){
-			auto temp = data->at(j);
-			data->at(j) = data->at(data->size()-1);
-			data->at(data->size()-1) = temp;
-			data->pop_back();
-			head--;
-		}
-		//std::cout << "got here3" << std::endl;
-	}
-	//7 2 3 8 5 6
-		
-	EXPECT_EQ(data->at(0), 7);
-	EXPECT_EQ(data->at(1), 2);
-	EXPECT_EQ(data->at(2), 3);
-	EXPECT_EQ(data->at(3), 8);
-	EXPECT_EQ(data->at(4), 5);
-	EXPECT_EQ(data->at(5), 6);
+
+
+TEST(testDOC, testFindKClusters6){
+	std::vector<std::vector<float>*>* data = data_2dim2cluster();
+
+
+	DOC d = DOC(data, 0.1, 0.25, 5);
+	d.setSeed(1);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(2);
 	
-	}*/
+	SUCCEED();
+	EXPECT_EQ(res.size(), 2);
+
+
+
+	EXPECT_LT(abs((int)res.at(0).first->size()-numPoints_2dim2cluster2()[0]), 10);
+	EXPECT_LT(abs((int)res.at(1).first->size()-numPoints_2dim2cluster2()[1]), 10);
+	EXPECT_TRUE(disjoint(res.at(0).first, res.at(1).first));
+
+	EXPECT_TRUE(res.at(0).second->at(0));
+	EXPECT_TRUE(res.at(0).second->at(1));
+	EXPECT_TRUE(res.at(1).second->at(0));
+	EXPECT_TRUE(res.at(1).second->at(1));
+
+	
+
+	
+	for(int i = 0; i< data->size(); i++){
+		delete data->at(i);
+	}
+	delete data;
+	delete res.at(0).first;
+	delete res.at(0).second;
+}
+
