@@ -29,18 +29,41 @@ DataGenerator::DataGenerator(std::string fileName ,
 		std::vector<std::vector<MeanAndVarianceForNormalDistribution>> meanAndVarianceForNormalDistributionForEachClusterForEachDimension,
 		std::vector<std::vector<float>> constantForEachClusterForEachDimension,
 		std::vector<unsigned int> numberOfPointForEachCluster,
-		unsigned int metaDataStartClusterIndex){
+		unsigned int metaDataStartClusterIndex,
+		PreviusClustersInformation* previusClustersInformation_){
 
-
+	previusClustersInformation = previusClustersInformation_;
 	std::vector<std::vector<DataUnitStruct>> data;
+
+	//this is to store things for the next iteration
+	std::vector<float> vectorOfPreviusCentroids;
+	std::vector<float> vectorOfPreviusVariance;
+	std::vector<bool> vectorUsedNormalDistribuitionBefore;
+
+	for(int dimensionIndex = 0 ; dimensionIndex < numberOfDimensions ; dimensionIndex++){
+		vectorOfPreviusCentroids.push_back(meanAndVarianceForNormalDistributionForEachClusterForEachDimension.at(0).at(dimensionIndex).mean);
+		vectorOfPreviusVariance.push_back(meanAndVarianceForNormalDistributionForEachClusterForEachDimension.at(0).at(dimensionIndex).variance);
+		vectorUsedNormalDistribuitionBefore.push_back(true);
+	}
+
 
 	for(int clusterIndex = 0 ; clusterIndex < numberOfClusters ; clusterIndex++){
 		//how many points we are going to generate for this cluster
 		int numberOfPointInCluster = numberOfPointForEachCluster.at(clusterIndex);
 
+		//if we have prior information.
+		if(previusClustersInformation_ != nullptr){
+			vectorOfPreviusCentroids = previusClustersInformation->vectorOfPreviusCentroids;
+			vectorOfPreviusVariance = previusClustersInformation->vectorOfPreviusVariance;
+			vectorUsedNormalDistribuitionBefore = previusClustersInformation->vectorUsedNormalDistribuitionBefore;
+
+		}
+
 		for(int numberOfPointInClusterIndex = 0 ; numberOfPointInClusterIndex < numberOfPointInCluster ; numberOfPointInClusterIndex++){
 			//this is a point going to have numberOfDimensions dataUnits
 			std::vector<DataUnitStruct> dataPoint;
+
+
 			//for each dimension we need to make a dataUnit
 			for(int dimensionIndex = 0 ; dimensionIndex < numberOfDimensions ; dimensionIndex++){
 				//this is what we are trying to generate
@@ -52,10 +75,28 @@ DataGenerator::DataGenerator(std::string fileName ,
 					BoundsForUniformDistribution boundsForUniformDistributionForDataUnit = uniBoundsForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
 					dataUnitStruct.dataUnit = uniformRandomFloat(boundsForUniformDistributionForDataUnit.lower,boundsForUniformDistributionForDataUnit.upper);
 					dataUnitStruct.clusterIndex = clusterIndex;
+
 				}else if(distributionTypeForDataUnit == normalDistribution){
 					MeanAndVarianceForNormalDistribution meanAndVarianceForNormalDistribution = meanAndVarianceForNormalDistributionForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
-					dataUnitStruct.dataUnit =  normalDistributionRandomFloat(meanAndVarianceForNormalDistribution.mean,meanAndVarianceForNormalDistribution.variance);
-					dataUnitStruct.clusterIndex = clusterIndex;
+					if(!(vectorUsedNormalDistribuitionBefore.at(dimensionIndex))){
+						vectorOfPreviusCentroids.at(dimensionIndex) = meanAndVarianceForNormalDistribution.mean;
+						vectorOfPreviusVariance.at(dimensionIndex) = meanAndVarianceForNormalDistribution.variance;
+					}
+					if(meanAndVarianceForNormalDistribution.q == 1){
+						dataUnitStruct.dataUnit =  normalDistributionRandomFloat(vectorOfPreviusCentroids.at(dimensionIndex),vectorOfPreviusVariance.at(dimensionIndex));
+						dataUnitStruct.clusterIndex = clusterIndex;
+
+					}else{
+						/*
+						BoundsForUniformDistribution boundsForUniformDistributionForDataUnit = uniBoundsForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
+						unsigned int whatInterval = rand()%meanAndVarianceForNormalDistribution.q;
+						for(int qIndex = 0 ; qIndex < meanAndVarianceForNormalDistribution.q ; ++qIndex){
+							float with = boundsForUniformDistributionForDataUnit.upper-boundsForUniformDistributionForDataUnit.lower;
+							float intervalStart = ((1+whatInterval)*(with/(meanAndVarianceForNormalDistribution.q+2)))/(centroid - mean);
+						}
+						*/
+					}
+
 				}else if(distributionTypeForDataUnit == constant)
 				{
 					dataUnitStruct.dataUnit = constantForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
@@ -67,10 +108,64 @@ DataGenerator::DataGenerator(std::string fileName ,
 				dataPoint.push_back(dataUnitStruct);
 
 			}
+
+
 			//now that we have a point we add that point to the data
 			data.push_back(dataPoint);
 		}
+		//need to set if the next cluster needs to use the mean and variance.
+		for(int dimensionIndex = 0 ; dimensionIndex < numberOfDimensions ; dimensionIndex++){
+			DistributionType distributionTypeForDataUnit = distribuitionTypeForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
+
+			if(distributionTypeForDataUnit == uniformDistribution){
+				vectorUsedNormalDistribuitionBefore.at(dimensionIndex) = false;
+
+			}else if(distributionTypeForDataUnit == normalDistribution){
+				vectorUsedNormalDistribuitionBefore.at(dimensionIndex) = true;
+
+			}else if(distributionTypeForDataUnit == constant){
+				vectorUsedNormalDistribuitionBefore.at(dimensionIndex) = false;
+
+			}
+		}
+
+
+		//need to calculate mean and variance
+		for(int dimensionIndex = 0 ; dimensionIndex < numberOfDimensions ; dimensionIndex++){
+			vectorOfPreviusCentroids.at(dimensionIndex) = 0;
+			vectorOfPreviusVariance.at(dimensionIndex) = 0;
+		}
+		for(int numberOfPointInClusterIndex = 0 ; numberOfPointInClusterIndex < numberOfPointForEachCluster.at(clusterIndex) ; numberOfPointInClusterIndex++){
+			for(int dimensionIndex = 0 ; dimensionIndex < numberOfDimensions ; dimensionIndex++){
+
+				vectorOfPreviusCentroids.at(dimensionIndex) += data.at(numberOfPointInClusterIndex).at(dimensionIndex).dataUnit;
+			}
+		}
+		for(int dimensionIndex = 0 ; dimensionIndex < numberOfDimensions ; dimensionIndex++){
+			vectorOfPreviusCentroids.at(dimensionIndex) = vectorOfPreviusCentroids.at(dimensionIndex)/numberOfPointForEachCluster.at(clusterIndex);
+		}
+		for(int numberOfPointInClusterIndex = 0 ; numberOfPointInClusterIndex < numberOfPointForEachCluster.at(clusterIndex) ; numberOfPointInClusterIndex++){
+			for(int dimensionIndex = 0 ; dimensionIndex < numberOfDimensions ; dimensionIndex++){
+				float mean = vectorOfPreviusCentroids.at(dimensionIndex);
+				float point = data.at(numberOfPointInClusterIndex).at(dimensionIndex).dataUnit;
+				vectorOfPreviusVariance.at(dimensionIndex) += (point-mean)*(point-mean);
+
+			}
+		}
+		for(int dimensionIndex = 0 ; dimensionIndex < numberOfDimensions ; dimensionIndex++){
+			vectorOfPreviusVariance.at(dimensionIndex) = vectorOfPreviusVariance.at(dimensionIndex)/(numberOfPointForEachCluster.at(clusterIndex)-1);
+			float var = vectorOfPreviusVariance.at(dimensionIndex);
+		}
 	}
+
+	if(previusClustersInformation != nullptr){
+		delete previusClustersInformation;
+	}
+	previusClustersInformation = new PreviusClustersInformation;
+	previusClustersInformation->vectorOfPreviusCentroids = vectorOfPreviusCentroids;
+	previusClustersInformation->vectorOfPreviusVariance = vectorOfPreviusVariance;
+	previusClustersInformation->vectorUsedNormalDistribuitionBefore = vectorUsedNormalDistribuitionBefore;
+
 
 	//now we have to shuffle the data.
 	std::srand ( unsigned ( std::time(0) ) );
@@ -155,3 +250,6 @@ DataGenerator::~DataGenerator() {
 	// TODO Auto-generated destructor stub
 }
 
+PreviusClustersInformation* DataGenerator::getPreviusClustersInformation() {
+	return previusClustersInformation;
+}

@@ -25,10 +25,16 @@ static float uniformRandomFloat(float lowest , float max){
 static float normalDistributionRandomFloat(float mean , float variance){
 	std::default_random_engine generator;
 	generator.seed(rand());
-	std::normal_distribution<float> distribution(mean,variance);
+	std::normal_distribution<float> distribution(mean,sqrt(variance));
 	float res = distribution(generator);
 	return res;
 }
+
+struct PreviusClustersInformation{
+	std::vector<float> vectorOfPreviusCentroids;
+	std::vector<float> vectorOfPreviusVariance;
+	std::vector<bool> vectorUsedNormalDistribuitionBefore;
+};
 
 
 class DataGenerator {
@@ -41,9 +47,13 @@ public:
 			std::vector<std::vector<MeanAndVarianceForNormalDistribution>> meanAndVarianceForNormalDistributionForEachClusterForEachDimension,
 			std::vector<std::vector<float>> constantForEachClusterForEachDimension,
 			std::vector<unsigned int> numberOfPointForEachCluster,
-			unsigned int metaDataStartClusterIndex = 0);
+			unsigned int metaDataStartClusterIndex = 0,
+			PreviusClustersInformation* previusClustersInformation_ = nullptr);
 	virtual ~DataGenerator();
 	std::string getErrors();
+	PreviusClustersInformation* getPreviusClustersInformation();
+private:
+	PreviusClustersInformation* previusClustersInformation;
 };
 
 #endif /* DATAGENERATOR_H_ */

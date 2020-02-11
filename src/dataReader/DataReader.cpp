@@ -48,9 +48,9 @@ void DataReader::printQueue() {
 			for(std::vector<float>::iterator innerIter = (*iter)->begin() ; innerIter != (*iter)->end() ; ++innerIter)
 			{
 				sum += *innerIter;
-				//std::cout << std::to_string(*innerIter) << " ";
+
 			}
-			//std::cout << std::endl;
+
 		}
 	}
 	std::cout << "sum " << std::to_string(sum) << std::endl;
@@ -108,7 +108,6 @@ DataReader::~DataReader() {
  * this shoud not be used , it probably memory leaks and stuff
  */
 void DataReader::badRead(){
-	std::cout << "starting reading " << std::endl;
 	std::string binaryFileName = fileName + ".dat";
 	char cstrFileName[binaryFileName.size() + 1];
 	std::strcpy(cstrFileName, binaryFileName.c_str());
@@ -134,8 +133,7 @@ void DataReader::badRead(){
 			float f;
 			fread(&f, sizeof(float), 1, file);
 			dataPoint.push_back(f);
-			//std::cout << "dataIndex "<< dataIndex << std::endl;
-			//std::cout << "dimensionIndex "<< dimensionIndex << std::endl;
+
 		}
 		data.push_back(dataPoint);
 	}

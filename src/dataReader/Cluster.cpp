@@ -6,6 +6,7 @@
  */
 
 #include <src/dataReader/Cluster.h>
+#include <iostream>
 
 Cluster::Cluster() {
 	ammount = 128;
@@ -35,6 +36,9 @@ bool Cluster::addDimension(DistributionType distributionType,
 		MeanAndVarianceForNormalDistribution meanAndVarianceForNormalDistribution,
 		float constant,
 		signed int whatDimension){
+	if(whatDimension < -100){
+		throw 20;
+	}
 	if((whatDimension == -1) or (whatDimension == distributionTypeForEachDimension.size()))
 	{
 		distributionTypeForEachDimension.push_back(distributionType);

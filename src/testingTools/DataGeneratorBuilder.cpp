@@ -97,11 +97,11 @@ bool DataGeneratorBuilder::build()
 		unsigned int outLiersInThisCluster = 0;
 		float outLierPercentage = it->getOutLierPercentage();
 		//error checking.
-		if(outLierPercentage > 100.0001){
+		if(outLierPercentage > 99.999){
 			std::cout << "outlier percentage to big" << outLierPercentage << std::endl;
 			outLierPercentage = 100;
 		}
-		if(outLierPercentage < 0.0000001){
+		if(outLierPercentage < -0.0000001){
 			std::cout << "negative outlier percentage" << outLierPercentage << std::endl;
 			outLierPercentage = 0;
 		}
@@ -184,7 +184,6 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 				numberOfPointForEachCluster);
 		return true;
 	}
-	//std::cout << "divide and conquer case" << std::endl;
 	//ok now the data is going to be too big, its not good because DataGenerator is not having a good time with that.
 	//to solve that problem we spit the data in many files
 	//and the combine them.
@@ -200,7 +199,9 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 	//now we make a file for each cluster
 	//we need to store the names of the files
 	std::vector<std::string> fileNamesOfMomentaryFiles;
+	PreviusClustersInformation* pci = nullptr;
 	for(int clusterIndex = 0 ; clusterIndex < numberOfClusters ; clusterIndex++){
+
 		//making new names
 		std::string momentartyFileName = "_"+ std::to_string(clusterIndex)+ "_" + fileName;
 		//storing new names
@@ -225,9 +226,11 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 						momentaryMeanAndVarianceForNormalDistributionForEachClusterForEachDimension,
 						momentaryConstantForEachClusterForEachDimension,
 						momentaryNumberOfPointForEachCluster,
-						clusterIndex);
-	}
+						clusterIndex,
+						pci);
+		pci = DG.getPreviusClustersInformation();
 
+	}
 	//now we have the files spit , now we need to merge them
 	//we need to read from the files , we need dataReaders
 	std::vector<DataReader*> vectorOfDataReader;
@@ -240,7 +243,6 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 		unsigned int heuristicMexMemoryUsageByAllReaders = 1600000000;
 		//500 is just magic number
 		unsigned int chunckSize = heuristicMexMemoryUsageByAllReaders / (numberOfClusters*queueSize*500);
-
 		DataReader* dr = new DataReader(*iter,queueSize,chunckSize);
 		vectorOfDataReader.push_back(dr);
 		vectorOfSizesOfFiles.push_back(dr->getSize());
@@ -301,9 +303,6 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 		for(int clusterIndex = 0 ; clusterIndex < numberOfClusters ; ++clusterIndex){
 			if(randomNumber < vectorOfSizesOfFiles.at(clusterIndex)){
 				chosenClusterIndex = clusterIndex;
-				//std::cout << "vectorOfSizesOfFiles" << std::endl;
-				//std::cout << vectorOfSizesOfFiles.size() << std::endl;
-				//std::cout << chosenClusterIndex << std::endl;
 				vectorOfSizesOfFiles.at(chosenClusterIndex) -= 1;
 				//we need to delete those temporary files
 
@@ -431,7 +430,6 @@ bool DataGeneratorBuilder::buildUClusters(unsigned int ammountOfPoint,
 
 	float variace = ((float)with)/12;
 
-	std::cout << "here1" << std::endl;
 	for(std::vector<Cluster>::iterator cluster = vecOfClusters.begin() ; cluster != vecOfClusters.end() ; ++cluster){
 		unsigned int dimensionIndex = 0;
 		BoundsForUniformDistribution basicBoundsForUniformDistribution;
@@ -475,4 +473,14 @@ bool DataGeneratorBuilder::buildUClusters(unsigned int ammountOfPoint,
 	}
 	dgb.build();
 	return true;
+}
+
+bool DataGeneratorBuilder::buildMGqClusters(unsigned int q,
+		unsigned int ammountOfPoint, unsigned int ammountOfClusters,
+		unsigned int with, unsigned int dimensions, unsigned int dimensionUsed,
+		float outLiersPersentage) {
+
+
+
+	return false;
 }
