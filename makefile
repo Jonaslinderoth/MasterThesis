@@ -80,4 +80,6 @@ $(EXE_DIR)/$(TEST): $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)
 clean:
 	-rm -rf bin/
 	-rm -rf build/
+	-rm *.dat
+	-rm *.txt
 

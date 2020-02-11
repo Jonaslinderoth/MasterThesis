@@ -9,6 +9,20 @@ DOC::DOC(): DOC(new std::vector<std::vector<float>*>){}
 
 DOC::DOC(std::vector<std::vector<float>*>* input): DOC(input, 0.1, 0.25, 15) {}
 
+DOC::DOC(DataReader* dr): DOC(initDataReader(dr)){};
+
+std::vector<std::vector<float>*>* DOC::initDataReader(DataReader* dr){
+		auto size = dr->getSize();
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>(0);
+	data->reserve(size);
+	while(dr->isThereANextBlock()){
+		std::vector<std::vector<float>*>* block = dr->next();
+		data->insert(data->end(), block->begin(), block->end());
+		delete block;
+	}
+	return data;
+};
+
 DOC::DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float width){
 	this->data = input;
 	this->alpha = alpha;
@@ -26,7 +40,6 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 	auto resD = new std::vector<bool>;
 	std::vector<std::vector<float>*>* resC = new std::vector<std::vector<float>*>;
 	float maxValue = 0;
-
 	for(int i = 1; i < (float)2/this->alpha; i++){
 		auto p_vec = this->pickRandom(1);
 		auto p = p_vec->at(0);
@@ -44,10 +57,23 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 				}
 
 			}
+
+			// to not find too small clusters, then we prefer it to pick
+			// larger clusters with larger dimensions
+			if(C->size() < this->alpha*this->data->size()){ 
+				delete C;
+				delete D;
+				D = new std::vector<bool>(d,false);
+				C = new std::vector<std::vector<float>*>;
+			}
+
 			int Dsum = 0;
+
 			std::for_each(D->begin(), D->end(), [&] (int n) {
-			    Dsum += D->at(n);
+					Dsum += n;
 			});
+
+			
 			float current = mu(C->size(), Dsum);
 			if(current > maxValue){
 				resD = D;
@@ -60,9 +86,8 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 
 			delete X;
 		}
-
+	  
 	}
-
 	auto result = std::make_pair(resC, resD);
 	return result;
 }
@@ -70,7 +95,6 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > DOC::findKClusters(int k){
 	auto res = std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> >();
 	for(int i = 0; i < k; i++){
-
 		if(this->data->size() <= 0) {break;}
 		auto cluster = this->findCluster();
 		int head = cluster.first->size()-1;

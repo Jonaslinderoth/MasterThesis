@@ -4,10 +4,13 @@
 #include <math.h>
 #include <random>
 #include <iostream>
+#include "../dataReader/DataReader.h"
 
 class DOC{
  public:
 	DOC();
+	DOC(DataReader* dr);
+ DOC(float alpha, float beta, float width) : DOC(new std::vector<std::vector<float>*>, alpha, beta, width){};
 	DOC(std::vector<std::vector<float>*>* input);
 	DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float width);
 
@@ -27,6 +30,9 @@ class DOC{
 		this->gen.seed(s);
 	}
 
+	void setAlpha(float value){this->alpha = value;};
+	void setBeta(float value){this->beta = value;};
+	void setWidth(float value){this->width = value;};
 
 private:
 	float alpha;
@@ -53,6 +59,8 @@ private:
 		}
 		return res;
 	};
+	
+	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 
 };
 

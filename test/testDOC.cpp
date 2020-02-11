@@ -4,8 +4,15 @@
 #include <vector>
 #include "testData.h"
 #include <cmath>
-
-
+#include <fstream>
+#include <cstdio>
+#include "../src/testingTools/DataGeneratorBuilder.h"
+#include "../src/dataReader/Cluster.h"
+#include "../src/dataReader/DataReader.h"
+#include "../src/testingTools/MetaDataFileReader.h"
+    #include <unistd.h>
+    #define GetCurrentDir getcwd
+ 
 
 TEST(testDOC, testConstructor){
 	DOC d = DOC();
@@ -220,7 +227,7 @@ TEST(testDOC, testFindCluster3){
 }
 
 
-TEST(tesDOC, testFindKClusters){
+TEST(testDOC, testFindKClusters){
 	std::vector<std::vector<float>*>* data = data_4dim2cluster();
 
 
@@ -233,7 +240,7 @@ TEST(tesDOC, testFindKClusters){
 
 }
 
-TEST(tesDOC, testFindKClusters2){
+TEST(testDOC, testFindKClusters2){
 	std::vector<std::vector<float>*>* data = data_4dim2cluster();
 
 
@@ -471,3 +478,192 @@ TEST(testDOC, testFindKClusters6){
 	delete res.at(0).second;
 }
 
+TEST(testDOC, testWithDataReader){
+	DataGeneratorBuilder dgb;
+	Cluster small;
+	small.setAmmount(10);
+	small.addDimension(uniformDistribution, {-10000,10000});
+	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
+	dgb.addCluster(small);
+	dgb.setFileName("test1");
+	dgb.build();
+	DataReader* dr = new DataReader("test1");
+
+	DOC d(dr);
+	d.setSeed(1);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(2);
+	EXPECT_FALSE(res.at(0).second->at(0));
+	EXPECT_TRUE(res.at(0).second->at(1));
+	EXPECT_EQ(res.at(0).first->size(), 10);
+}
+
+
+TEST(testDOC, testWithDataReader2){
+	DataGeneratorBuilder dgb;
+	Cluster small;
+	small.setAmmount(1000);
+	small.addDimension(uniformDistribution, {-10000,10000});
+	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
+	dgb.addCluster(small);
+	dgb.setFileName("test1");
+	dgb.build();
+	DataReader* dr = new DataReader("test1");
+
+	DOC d(dr);
+	d.setSeed(1);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(2);
+	EXPECT_EQ(res.size(), 1);
+	EXPECT_FALSE(res.at(0).second->at(0));
+	EXPECT_TRUE(res.at(0).second->at(1));
+	EXPECT_EQ(res.at(0).first->size(), 1000);
+}
+	
+
+TEST(testDOC, testWithDataReader3){
+	DataGeneratorBuilder dgb;
+	Cluster small;
+	small.setAmmount(20);
+	small.addDimension(uniformDistribution, {-10000,10000});
+	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
+
+	
+	dgb.addCluster(small);
+	Cluster small2;
+	small2.setAmmount(1000);
+	small2.addDimension(uniformDistribution, {-10000,10000});
+	small2.addDimension(normalDistribution, {-10000,10000}, {5,2});
+	small2.addDimension(uniformDistribution, {-10000,10000});
+	dgb.addCluster(small2);
+
+	
+	dgb.setFileName("test1");
+	dgb.build();
+	DataReader* dr = new DataReader("test1");
+
+	DOC d(dr);
+	d.setSeed(1);
+	d.setBeta(0.3);
+	d.setWidth(8);
+	EXPECT_EQ(d.size(), 1020);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(2);
+	EXPECT_EQ(res.size(), 2);
+	EXPECT_EQ(res.at(0).first->at(0)->size(), 3);
+	
+	EXPECT_FALSE(res.at(0).second->at(0));
+	EXPECT_TRUE(res.at(0).second->at(1));
+	EXPECT_FALSE(res.at(0).second->at(2));
+	EXPECT_EQ(res.at(0).first->size(), 1000);
+
+	
+	EXPECT_FALSE(res.at(1).second->at(0));
+	EXPECT_TRUE(res.at(1).second->at(1));
+	EXPECT_FALSE(res.at(1).second->at(2));
+	EXPECT_EQ(res.at(1).first->size(), 20);
+	EXPECT_EQ(d.size(), 0);
+}
+	
+
+TEST(testDOC, testWithDataReader4){
+	DataGeneratorBuilder dgb;
+	Cluster small;
+	small.setAmmount(1000);
+	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
+	small.addDimension(uniformDistribution, {-10000,10000});
+	
+	dgb.addCluster(small);
+	Cluster small2;
+	small2.setAmmount(20);
+
+	small2.addDimension(uniformDistribution, {-10000,10000});
+	small2.addDimension(normalDistribution, {-10000,10000}, {5,2});
+	small2.addDimension(uniformDistribution, {-10000,10000});
+	dgb.addCluster(small2);
+
+	
+	dgb.setFileName("test1");
+	dgb.build();
+	DataReader* dr = new DataReader("test1");
+
+	DOC d(dr);
+	d.setSeed(1);
+	d.setBeta(0.3);
+	d.setWidth(8);
+	EXPECT_EQ(d.size(), 1020);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(2);
+	EXPECT_EQ(res.size(), 2);
+	EXPECT_EQ(res.at(0).first->at(0)->size(), 3);
+	
+	//EXPECT_FALSE(res.at(0).second->at(0));
+	EXPECT_TRUE(res.at(0).second->at(1-1));
+	EXPECT_FALSE(res.at(0).second->at(2-1));
+	EXPECT_EQ(res.at(0).first->size(), 1000);
+
+	
+	//EXPECT_FALSE(res.at(1).second->at(0));
+	EXPECT_FALSE(res.at(1).second->at(1-1));
+	EXPECT_TRUE(res.at(1).second->at(2-1));
+	EXPECT_EQ(res.at(1).first->size(), 20);
+	
+	EXPECT_EQ(d.size(), 0);
+}
+
+
+TEST(testDOC, testWithDataReader5){
+	
+	DataGeneratorBuilder dgb;
+	Cluster small;
+	small.setAmmount(100);
+	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
+	small.addDimension(uniformDistribution, {-10000,10000});
+	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
+	small.addDimension(uniformDistribution, {-10000,10000});
+	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
+	small.addDimension(uniformDistribution, {-10000,10000});
+	
+	dgb.addCluster(small);
+	Cluster small2;
+	small2.setAmmount(20);
+
+	small2.addDimension(uniformDistribution, {-10000,10000});
+	small2.addDimension(uniformDistribution, {-10000,10000});
+	small2.addDimension(uniformDistribution, {-10000,10000});
+	small2.addDimension(uniformDistribution, {-10000,10000});
+	small2.addDimension(uniformDistribution, {-10000,10000});
+	dgb.addCluster(small2);
+
+	
+	dgb.setFileName("test1");
+	dgb.build();
+
+	DataReader* dr = new DataReader("test1");
+
+	DOC d(dr);
+	d.setSeed(1);
+	d.setWidth(8);
+
+
+	EXPECT_EQ(d.size(), 120);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(2);
+	EXPECT_EQ(res.size(), 2);
+	EXPECT_EQ(res.at(0).first->at(0)->size(), 6);
+	
+	//EXPECT_FALSE(res.at(0).second->at(0));
+	EXPECT_TRUE(res.at(0).second->at(0));
+	EXPECT_FALSE(res.at(0).second->at(1));
+	EXPECT_TRUE(res.at(0).second->at(2));
+	EXPECT_FALSE(res.at(0).second->at(3));
+	EXPECT_TRUE(res.at(0).second->at(4));
+	EXPECT_FALSE(res.at(0).second->at(5));
+	EXPECT_EQ(res.at(0).first->size(), 100);
+
+	
+	EXPECT_FALSE(res.at(1).second->at(0));
+	EXPECT_FALSE(res.at(1).second->at(1));
+	EXPECT_FALSE(res.at(1).second->at(2));
+	EXPECT_FALSE(res.at(1).second->at(3));
+	EXPECT_FALSE(res.at(1).second->at(4));
+	EXPECT_FALSE(res.at(1).second->at(5));
+	EXPECT_EQ(res.at(1).first->size(), 20);
+	
+	EXPECT_EQ(d.size(), 0);
+}

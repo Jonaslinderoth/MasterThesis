@@ -55,6 +55,7 @@ TEST(dataGenerationTests, testOutLiers){
 	dgb.addCluster(big);
 	dgb.addCluster(small);
 	dgb.build();
+	
 	DataReader dr;
 	SUCCEED();
 	EXPECT_EQ(dr.getDimensions(), 1);
