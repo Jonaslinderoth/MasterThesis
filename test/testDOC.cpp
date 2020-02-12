@@ -14,7 +14,33 @@
     #define GetCurrentDir getcwd
  
 
-TEST(testDOC, testConstructor){
+class testDOC : public ::testing::Test {
+public:
+  // Per-test-suite set-up.
+  // Called before the first test in this test suite.
+  // Can be omitted if not needed.
+  static void SetUpTestCase() {
+	  if(system("mkdir -p test/testData")){
+		  
+	  };
+  }
+
+  // Per-test-suite tear-down.
+  // Called after the last test in this test suite.
+  // Can be omitted if not needed.
+  static void TearDownTestCase() {
+
+  }
+
+
+	virtual void SetUp() {
+	}
+
+
+
+};
+
+TEST_F(testDOC, testConstructor){
 	DOC d = DOC();
 	d.setSeed(1);
 	SUCCEED();
@@ -22,7 +48,7 @@ TEST(testDOC, testConstructor){
 }
 
 
-TEST(testDOC, testConstructor2){
+TEST_F(testDOC, testConstructor2){
 	DOC d = DOC(new std::vector<std::vector<float>*>);
 	d.setSeed(1);
 	SUCCEED();
@@ -30,7 +56,7 @@ TEST(testDOC, testConstructor2){
 }
 
 
-TEST(testDOC, testConstructor3){
+TEST_F(testDOC, testConstructor3){
 	auto v = new std::vector<std::vector<float>*>;
 	auto v1 = new std::vector<float>;
 	v1->push_back(1.1);
@@ -43,7 +69,7 @@ TEST(testDOC, testConstructor3){
 	EXPECT_EQ(d.size(), 1);
 }
 
-TEST(testDOC, testAddPoint){
+TEST_F(testDOC, testAddPoint){
 	DOC d = DOC(new std::vector<std::vector<float>*>);
 	d.setSeed(1);
 	SUCCEED();
@@ -62,7 +88,7 @@ TEST(testDOC, testAddPoint){
 	EXPECT_EQ(d.size(), 2);
 }
 
-TEST(testDOC, testFindDimensions){
+TEST_F(testDOC, testFindDimensions){
 	DOC d = DOC(new std::vector<std::vector<float>*>);
 	d.setSeed(1);
 	
@@ -85,7 +111,7 @@ TEST(testDOC, testFindDimensions){
 }
 
 
-TEST(testDOC, testFindDimensions2){
+TEST_F(testDOC, testFindDimensions2){
 	DOC d = DOC();
 	d.setSeed(1);
 	std::vector<float> centroid{20, 20, 20};
@@ -110,7 +136,7 @@ TEST(testDOC, testFindDimensions2){
 }
 
 
-TEST(testDOC, testFindCluster){
+TEST_F(testDOC, testFindCluster){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	for(float i = 0; i < 200; i++){
 		for(float j = 9; j < 15; j++){
@@ -150,7 +176,7 @@ TEST(testDOC, testFindCluster){
 
 
 
-TEST(testDOC, testFindCluster2){
+TEST_F(testDOC, testFindCluster2){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	int a = 0;
 	for(float i = 9; i <= 12; i++){
@@ -190,7 +216,7 @@ TEST(testDOC, testFindCluster2){
 	delete res.second;
 }
 
-TEST(testDOC, testMu){
+TEST_F(testDOC, testMu){
 	auto d = DOC();
 	EXPECT_EQ(d.mu(1,1), 4);
 	EXPECT_EQ(d.mu(2,2), 32);
@@ -200,7 +226,7 @@ TEST(testDOC, testMu){
 }
 
 
-TEST(testDOC, testFindCluster3){
+TEST_F(testDOC, testFindCluster3){
 	std::vector<std::vector<float>*>* data = data_4dim2cluster();
 
 	//std::cout << a << ", " << b << std::endl;
@@ -227,7 +253,7 @@ TEST(testDOC, testFindCluster3){
 }
 
 
-TEST(testDOC, testFindKClusters){
+TEST_F(testDOC, testFindKClusters){
 	std::vector<std::vector<float>*>* data = data_4dim2cluster();
 
 
@@ -240,7 +266,7 @@ TEST(testDOC, testFindKClusters){
 
 }
 
-TEST(testDOC, testFindKClusters2){
+TEST_F(testDOC, testFindKClusters2){
 	std::vector<std::vector<float>*>* data = data_4dim2cluster();
 
 
@@ -316,7 +342,7 @@ bool equal(std::vector<std::vector<float>*>* a1, std::vector<std::vector<float>*
 	return output;
 }
 
-TEST(testDOC, testHelperFunctions){
+TEST_F(testDOC, testHelperFunctions){
 
 	
 	auto vec1 = new std::vector<std::vector<float>*>;
@@ -348,7 +374,7 @@ TEST(testDOC, testHelperFunctions){
 }
 
 
-TEST(testDOC, testFindKClusters3){
+TEST_F(testDOC, testFindKClusters3){
 	std::vector<std::vector<float>*>* data = data_4dim2cluster();
 
 
@@ -376,7 +402,7 @@ TEST(testDOC, testFindKClusters3){
 }
 
 
-TEST(testDOC, testFindKClusters5){
+TEST_F(testDOC, testFindKClusters5){
 	auto data = data_4dim2cluster();
 
 
@@ -416,7 +442,7 @@ TEST(testDOC, testFindKClusters5){
 
 
 
-TEST(testDOC, testFindKClusters4){
+TEST_F(testDOC, testFindKClusters4){
 
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	auto a = new std::vector<float>{0,1};
@@ -445,7 +471,7 @@ TEST(testDOC, testFindKClusters4){
 
 
 
-TEST(testDOC, testFindKClusters6){
+TEST_F(testDOC, testFindKClusters6){
 	std::vector<std::vector<float>*>* data = data_2dim2cluster();
 
 
@@ -478,16 +504,16 @@ TEST(testDOC, testFindKClusters6){
 	delete res.at(0).second;
 }
 
-TEST(testDOC, testWithDataReader){
+TEST_F(testDOC, testWithDataReader){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(10);
 	small.addDimension(uniformDistribution, {-10000,10000});
 	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
 	dgb.addCluster(small);
-	dgb.setFileName("test1");
-	dgb.build();
-	DataReader* dr = new DataReader("test1");
+	dgb.setFileName("test/testData/test1");
+	dgb.build(false);
+	DataReader* dr = new DataReader("test/testData/test1");
 
 	DOC d(dr);
 	d.setSeed(1);
@@ -498,16 +524,16 @@ TEST(testDOC, testWithDataReader){
 }
 
 
-TEST(testDOC, testWithDataReader2){
+TEST_F(testDOC, testWithDataReader2){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(1000);
 	small.addDimension(uniformDistribution, {-10000,10000});
 	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
 	dgb.addCluster(small);
-	dgb.setFileName("test1");
-	dgb.build();
-	DataReader* dr = new DataReader("test1");
+	dgb.setFileName("test/testData/test2");
+	dgb.build(false);
+	DataReader* dr = new DataReader("test/testData/test2");
 
 	DOC d(dr);
 	d.setSeed(1);
@@ -516,29 +542,29 @@ TEST(testDOC, testWithDataReader2){
 	EXPECT_FALSE(res.at(0).second->at(0));
 	EXPECT_TRUE(res.at(0).second->at(1));
 	EXPECT_EQ(res.at(0).first->size(), 1000);
+	
 }
 	
 
-TEST(testDOC, testWithDataReader3){
+TEST_F(testDOC, DISABLED_testWithDataReader3){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(20);
 	small.addDimension(uniformDistribution, {-10000,10000});
-	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
-
-	
+	small.addDimension(normalDistribution, {-10000,10000}, {50,2,1});	
 	dgb.addCluster(small);
+	
 	Cluster small2;
 	small2.setAmmount(1000);
 	small2.addDimension(uniformDistribution, {-10000,10000});
-	small2.addDimension(normalDistribution, {-10000,10000}, {5,2});
+	small2.addDimension(normalDistribution, {-10000,10000}, {5,2,1});
 	small2.addDimension(uniformDistribution, {-10000,10000});
 	dgb.addCluster(small2);
 
 	
-	dgb.setFileName("test1");
-	dgb.build();
-	DataReader* dr = new DataReader("test1");
+	dgb.setFileName("test/testData/test3");
+	dgb.build(false);
+	DataReader* dr = new DataReader("test/testData/test3");
 
 	DOC d(dr);
 	d.setSeed(1);
@@ -563,7 +589,7 @@ TEST(testDOC, testWithDataReader3){
 }
 	
 
-TEST(testDOC, testWithDataReader4){
+TEST_F(testDOC, testWithDataReader4){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(1000);
@@ -580,9 +606,9 @@ TEST(testDOC, testWithDataReader4){
 	dgb.addCluster(small2);
 
 	
-	dgb.setFileName("test1");
-	dgb.build();
-	DataReader* dr = new DataReader("test1");
+	dgb.setFileName("test/testData/test4");
+	dgb.build(false);
+	DataReader* dr = new DataReader("test/testData/test4");
 
 	DOC d(dr);
 	d.setSeed(1);
@@ -608,7 +634,7 @@ TEST(testDOC, testWithDataReader4){
 }
 
 
-TEST(testDOC, testWithDataReader5){
+TEST_F(testDOC, DISABLED_testWithDataReader5){
 	
 	DataGeneratorBuilder dgb;
 	Cluster small;
@@ -632,10 +658,10 @@ TEST(testDOC, testWithDataReader5){
 	dgb.addCluster(small2);
 
 	
-	dgb.setFileName("test1");
-	dgb.build();
+	dgb.setFileName("test/testData/test5");
+	dgb.build(false);
 
-	DataReader* dr = new DataReader("test1");
+	DataReader* dr = new DataReader("test/testData/test5");
 
 	DOC d(dr);
 	d.setSeed(1);
