@@ -12,6 +12,9 @@
 #include <cstring>
 #include <chrono>
 #include <fstream>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <string>
 
 DataGeneratorBuilder::DataGeneratorBuilder() {
 	dimension = 0;
@@ -59,8 +62,17 @@ bool DataGeneratorBuilder::setFileName(std::string fileName_)
 	return true;
 }
 
-bool DataGeneratorBuilder::build()
+inline bool DataGeneratorBuilder::existsFile (const std::string& name) {
+    return ( access( name.c_str(), F_OK ) != -1 );
+}
+
+
+bool DataGeneratorBuilder::build(bool overWrite)
 {
+	if(!overWrite and existsFile(fileName+".dat")){
+		return true;
+	}
+
 	unsigned int numberOfDimensions = 0;
 	unsigned int numberOfClusters = 0;
 	if(dimensionSet)
@@ -97,11 +109,12 @@ bool DataGeneratorBuilder::build()
 		unsigned int outLiersInThisCluster = 0;
 		float outLierPercentage = it->getOutLierPercentage();
 		//error checking.
-		if(outLierPercentage > 100.0001){
+		if(outLierPercentage > 99.999){
 			std::cout << "outlier percentage to big" << outLierPercentage << std::endl;
 			outLierPercentage = 100;
 		}
-		if(outLierPercentage < -.0000001){
+
+		if(outLierPercentage < -0.0000001){
 			std::cout << "negative outlier percentage" << outLierPercentage << std::endl;
 			outLierPercentage = 0;
 		}
@@ -135,9 +148,6 @@ bool DataGeneratorBuilder::build()
 		constantForEachClusterForEachDimension.push_back(it->getConstantForEachDimension());
 		ammount.push_back(it->getAmmount());
 	}
-
-
-
 
 
 	numberOfClusters = allClusters.size();
@@ -184,7 +194,6 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 				numberOfPointForEachCluster);
 		return true;
 	}
-	//std::cout << "divide and conquer case" << std::endl;
 	//ok now the data is going to be too big, its not good because DataGenerator is not having a good time with that.
 	//to solve that problem we spit the data in many files
 	//and the combine them.
@@ -200,9 +209,11 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 	//now we make a file for each cluster
 	//we need to store the names of the files
 	std::vector<std::string> fileNamesOfMomentaryFiles;
+	PreviusClustersInformation* pci = nullptr;
 	for(int clusterIndex = 0 ; clusterIndex < numberOfClusters ; clusterIndex++){
+
 		//making new names
-		std::string momentartyFileName = "_"+ std::to_string(clusterIndex)+ "_" + fileName;
+		std::string momentartyFileName = fileName + "_"+ std::to_string(clusterIndex)+ "_";
 		//storing new names
 		fileNamesOfMomentaryFiles.push_back(momentartyFileName);
 		std::vector<std::vector<DistributionType>> momentaryDistribuitionTypeForEachClusterForEachDimension;
@@ -225,9 +236,11 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 						momentaryMeanAndVarianceForNormalDistributionForEachClusterForEachDimension,
 						momentaryConstantForEachClusterForEachDimension,
 						momentaryNumberOfPointForEachCluster,
-						clusterIndex);
-	}
+						clusterIndex,
+						pci);
+		pci = DG.getPreviusClustersInformation();
 
+	}
 	//now we have the files spit , now we need to merge them
 	//we need to read from the files , we need dataReaders
 	std::vector<DataReader*> vectorOfDataReader;
@@ -240,7 +253,6 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 		unsigned int heuristicMexMemoryUsageByAllReaders = 1600000000;
 		//500 is just magic number
 		unsigned int chunckSize = heuristicMexMemoryUsageByAllReaders / (numberOfClusters*queueSize*500);
-
 		DataReader* dr = new DataReader(*iter,queueSize,chunckSize);
 		vectorOfDataReader.push_back(dr);
 		vectorOfSizesOfFiles.push_back(dr->getSize());
@@ -254,6 +266,8 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 	}else{
 		//std::cout << "datGeneratorBuilder is merging the files" << std::endl;
 	}
+
+
 
 	std::string binaryFileName = fileName + ".dat";
 	//now we have the data , we need to write it to file.
@@ -271,7 +285,7 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 	fwrite(&fsize, sizeof(float), 1, file);
 
 	//making the meta data file also
-	std::string metaDataFileName = "meta_data_" + fileName + ".txt";
+	std::string metaDataFileName = fileName + "_meta_data" + ".txt";
 	char cstrMetaDataFileName[metaDataFileName.size() + 1];
 	std::strcpy(cstrMetaDataFileName, metaDataFileName.c_str());
 	std::remove(cstrMetaDataFileName);
@@ -292,18 +306,13 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 
 	for(int pointIndex = 0 ; pointIndex < totalSize ; ++pointIndex){
 		unsigned goo = pointIndex;
-		//if(goo%400000 == 0){
-		//	std::cout << pointIndex << std::endl;
-		//}
+
 
 		unsigned int chosenClusterIndex = 0;
 		unsigned int randomNumber = rand() % (totalSize-pointIndex);
 		for(int clusterIndex = 0 ; clusterIndex < numberOfClusters ; ++clusterIndex){
 			if(randomNumber < vectorOfSizesOfFiles.at(clusterIndex)){
 				chosenClusterIndex = clusterIndex;
-				//std::cout << "vectorOfSizesOfFiles" << std::endl;
-				//std::cout << vectorOfSizesOfFiles.size() << std::endl;
-				//std::cout << chosenClusterIndex << std::endl;
 				vectorOfSizesOfFiles.at(chosenClusterIndex) -= 1;
 				//we need to delete those temporary files
 
@@ -355,7 +364,7 @@ bool DataGeneratorBuilder::deleteFiles(std::vector<std::string> vecOfFilesNames)
 
 
 	for(std::vector<std::string>::iterator iter = vecOfFilesNames.begin() ; iter != vecOfFilesNames.end() ; ++iter){
-		std::string binaryFileName = "meta_data_" + *iter + ".txt";
+		std::string binaryFileName = *iter + "_meta_data" + ".txt";
 		//now we have the data , we need to write it to file.
 		char cstrFileName[binaryFileName.size() + 1];
 		std::strcpy(cstrFileName, binaryFileName.c_str());
@@ -368,7 +377,8 @@ bool DataGeneratorBuilder::deleteFiles(std::vector<std::string> vecOfFilesNames)
 return true;
 }
 
-bool DataGeneratorBuilder::buildUClusters(unsigned int ammountOfPoint,
+bool DataGeneratorBuilder::buildUClusters(std::string fileName_,
+		unsigned int ammountOfPoint,
 		unsigned int ammountOfClusters,
 		unsigned int with,
 		unsigned int dimensions,
@@ -403,11 +413,11 @@ bool DataGeneratorBuilder::buildUClusters(unsigned int ammountOfPoint,
 	}
 
 	//check that we have enoth dimensions to work with
-	if(dimensionUsed >= dimensions){
+	if(dimensionUsed > dimensions){
 		return false;
 	}
 	DataGeneratorBuilder dgb;
-
+	dgb.setFileName(fileName_);
 
 	//pick the dimensions
 	std::vector<int> dimensionChosen;
@@ -429,37 +439,50 @@ bool DataGeneratorBuilder::buildUClusters(unsigned int ammountOfPoint,
 		previusClusterBounds.push_back(boundsForUniformDistribution);
 	}
 
+
+
+	std::vector<int> nextDimensionChosen = dimensionChosen;
+	std::vector<BoundsForUniformDistribution> nextClusterBounds = previusClusterBounds;
 	float variace = ((float)with)/12;
 
 	for(std::vector<Cluster>::iterator cluster = vecOfClusters.begin() ; cluster != vecOfClusters.end() ; ++cluster){
-		unsigned int dimensionIndex = 0;
 		BoundsForUniformDistribution basicBoundsForUniformDistribution;
 		MeanAndVarianceForNormalDistribution basicMeanAndVarianceForNormalDistribution;
 		cluster->addDimension(uniformDistribution,basicBoundsForUniformDistribution,basicMeanAndVarianceForNormalDistribution,21,dimensions-1);
+
+		unsigned int dimensionIndex = 0;
 		for(std::vector<int>::iterator dim = dimensionChosen.begin() ; dim != dimensionChosen.end() ; ++dim){
 			int lowerRange = 0;
 			int upperRange = 0;
+			lowerRange = previusClusterBounds.at(dimensionIndex).lower;
+			upperRange = previusClusterBounds.at(dimensionIndex).upper;
+
+			//need to decide if to add or subtract the variance
 			if((int)rand()%2 == 0){
-				lowerRange = previusClusterBounds.at(dimensionIndex).lower;
-				upperRange = previusClusterBounds.at(dimensionIndex).upper;
-				if((int)rand()%2 == 0){
-					variace = -variace;
-				}
-				lowerRange += variace;
-				upperRange += variace;
-				if(lowerRange < basicBoundsForUniformDistribution.lower or upperRange > basicBoundsForUniformDistribution.upper){
-					lowerRange -= (2*variace);
-					upperRange -= (2*variace);
-				}
-			}else{
+				variace = -variace;
+			}
+			lowerRange += variace;
+			upperRange += variace;
+
+			//we need to flip a coin if next cluster is going to use the same dimension chosen as this one for each dimension
+			if((int)rand()%2 == 0){
+				//we readd the dimension that we are taking away
 				vecOfDimensions.push_back(*dim);
+				//we chose a new one at random
 				unsigned int chosen = (unsigned int)rand()%vecOfDimensions.size();
-				*dim = (vecOfDimensions.at(chosen));
+				//overwirite the ond with the new chosen
+				nextDimensionChosen.at(dimensionIndex) = (vecOfDimensions.at(chosen));
+				//delete the new from the possible future picks
 				vecOfDimensions.erase(vecOfDimensions.begin()+chosen);
+				//now we need to calculate the next bounds
+
 				BoundsForUniformDistribution boundsForUniformDistribution;
 				int maxRange = ((int)boundsForUniformDistribution.upper-(int)boundsForUniformDistribution.lower-with);
-				lowerRange = ((int)rand()%maxRange)+(int)boundsForUniformDistribution.lower;
-				upperRange = lowerRange + with;
+				float NextlowerRange = ((int)rand()%maxRange)+(int)boundsForUniformDistribution.lower;
+				float NextupperRange = lowerRange + with;
+				boundsForUniformDistribution.lower = NextlowerRange;
+				boundsForUniformDistribution.upper = NextupperRange;
+				nextClusterBounds.at(dimensionIndex)=boundsForUniformDistribution;
 			}
 
 			//now set the range in the struct
@@ -471,6 +494,89 @@ bool DataGeneratorBuilder::buildUClusters(unsigned int ammountOfPoint,
 			dimensionIndex++;
 		}
 		dgb.addCluster(*cluster);
+		dimensionChosen = nextDimensionChosen;
+
+
+	}
+	dgb.build();
+	return true;
+}
+
+bool DataGeneratorBuilder::buildMGqClusters(std::string fileName_,
+		unsigned int q,
+		unsigned int ammountOfPoint, unsigned int ammountOfClusters, unsigned int dimensions, unsigned int dimensionUsed,
+		float outLiersPersentage,
+		float variance) {
+
+	if(ammountOfClusters == 0){
+		return false;
+	}
+
+	//check that we have enoth dimensions to work with
+	if(dimensionUsed > dimensions){
+		return false;
+	}
+
+	std::vector<unsigned int> ammountOfPointPerCluster;
+	unsigned int pointsPerCluster = ammountOfPoint/ammountOfClusters;
+	for(int clusterIndex = 0 ; clusterIndex < ammountOfClusters ; ++clusterIndex){
+		ammountOfPointPerCluster.push_back(ammountOfPoint);
+	}
+	ammountOfPointPerCluster.at(0) += ammountOfPoint % ammountOfClusters;
+
+
+	std::vector<Cluster> vecOfClusters;
+	for(int clusterIndex = 0 ; clusterIndex < ammountOfClusters ; ++clusterIndex){
+		Cluster c;
+		c.setOutLierPercentage(outLiersPersentage);
+		c.setAmmount(ammountOfPointPerCluster.at(clusterIndex));
+		vecOfClusters.push_back(c);
+	}
+
+
+	//i need to pick with dimension to "work with".
+	std::vector<int> vecOfDimensions;
+	for(int i = 0 ; i < dimensions ; ++i){
+		vecOfDimensions.push_back(i);
+	}
+
+	DataGeneratorBuilder dgb;
+	dgb.setFileName(fileName_);
+
+	//pick the dimensions
+	std::vector<int> dimensionChosen;
+	for(int i = 0 ; i < dimensionUsed ; ++i){
+		unsigned int chosen = (unsigned int)rand()%vecOfDimensions.size();
+		dimensionChosen.push_back(vecOfDimensions.at(chosen));
+		vecOfDimensions.erase(vecOfDimensions.begin()+chosen);
+	}
+
+
+	std::vector<int> nextChosenDimensions;
+	nextChosenDimensions = dimensionChosen;
+
+	for(std::vector<Cluster>::iterator cluster = vecOfClusters.begin() ; cluster != vecOfClusters.end() ; ++cluster){
+
+		BoundsForUniformDistribution basicBoundsForUniformDistribution;
+		MeanAndVarianceForNormalDistribution basicMeanAndVarianceForNormalDistribution;
+		cluster->addDimension(uniformDistribution,basicBoundsForUniformDistribution,basicMeanAndVarianceForNormalDistribution,21,dimensions-1);
+
+
+		unsigned int dimensionIndex = 0;
+		for(std::vector<int>::iterator dim = dimensionChosen.begin() ; dim != dimensionChosen.end() ; ++dim){
+			if((int)rand()%2 == 0){
+				vecOfDimensions.push_back(*dim);
+				unsigned int chosen = (unsigned int)rand()%vecOfDimensions.size();
+				nextChosenDimensions.at(dimensionIndex) = (vecOfDimensions.at(chosen));
+				vecOfDimensions.erase(vecOfDimensions.begin()+chosen);
+			}
+			float mean = basicMeanAndVarianceForNormalDistribution.mean;
+			float variance = basicMeanAndVarianceForNormalDistribution.variance;
+			cluster->addDimension(normalDistribution,basicBoundsForUniformDistribution,{mean,variance,q},21,*dim);
+			dimensionIndex++;
+		}
+		dgb.addCluster(*cluster);
+		dimensionChosen = nextChosenDimensions;
 	}
 	dgb.build();
 	return true;

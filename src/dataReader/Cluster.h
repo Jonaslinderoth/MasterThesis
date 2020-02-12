@@ -18,16 +18,17 @@ enum DistributionType{
 	normalDistribution,
 	constant
 };
-static const float lowerFloat= -10000; //std::numeric_limits<float>::lowest();
-static const float upperFloat = 10000;   //std::numeric_limits<float>::max();
+static const float lowerFloat = 0.0; //std::numeric_limits<float>::lowest();
+static const float upperFloat = 100.0;   //std::numeric_limits<float>::max();
 
 struct BoundsForUniformDistribution{
 	float lower = lowerFloat;
 	float upper = upperFloat;
 };
 struct MeanAndVarianceForNormalDistribution{
-	float mean = 0;
-	float variance = 128;
+	float mean = 50;
+	float variance = 15;
+	unsigned int q = 1;
 };
 
 
@@ -39,7 +40,7 @@ public:
 	 */
 	bool addDimension(DistributionType distributionType = uniformDistribution,
 			BoundsForUniformDistribution boundsForUniformDistribution = {lowerFloat, upperFloat},
-			MeanAndVarianceForNormalDistribution meanAndVarianceForNormalDistribution = {0,128},
+			MeanAndVarianceForNormalDistribution meanAndVarianceForNormalDistribution = {50,15,1},
 			float constant = 21,
 			signed int whatDimension = -1);
 	std::vector<float> getConstantForEachDimension();
