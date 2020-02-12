@@ -4,6 +4,9 @@
 
 
 std::vector<std::vector<bool>*>* findDimmensions(std::vector<std::vector<float>*>* ps,
-												 std::vector<std::vector<std::vector<float>*>*> Xs);
+												 std::vector<std::vector<std::vector<float>*>*> Xs, float width = 10.0);
 
+
+std::vector<std::vector<bool>*>* pointsContained(std::vector<std::vector<bool>*>* dims,
+												 std::vector<std::vector<float>*>* data, std::vector<float>* centroid, float width = 10.0);
 #endif

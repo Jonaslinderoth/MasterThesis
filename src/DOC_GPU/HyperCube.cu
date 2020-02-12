@@ -20,8 +20,15 @@ __global__ void findDimmensionsDevice(float* Xs_d, float* ps_d, bool* res_d,
 	}
 }
 
+std::vector<std::vector<bool>*>* pointsContained(std::vector<std::vector<bool>*>* dims,
+												 std::vector<std::vector<float>*>* data, std::vector<float>* centroid, float width){
+
+	return new std::vector<std::vector<bool>*>;
+};
+
+
 std::vector<std::vector<bool>*>* findDimmensions(std::vector<std::vector<float>*>* ps,
-												 std::vector<std::vector<std::vector<float>*>*> Xs){
+												 std::vector<std::vector<std::vector<float>*>*> Xs, float width){
 	
 	int point_dim = Xs.at(0)->at(0)->size();
 	int no_in_sample = Xs.at(0)->size();
@@ -80,7 +87,7 @@ std::vector<std::vector<bool>*>* findDimmensions(std::vector<std::vector<float>*
 	cudaMemcpy( Xs_d, xs_h, sizeOfXs, cudaMemcpyHostToDevice);
     cudaMemcpy( ps_d, ps_h, sizeOfps, cudaMemcpyHostToDevice);
 
-	findDimmensionsDevice<<<ceil((no_of_ps*no_of_samples)/256.0), 256>>>(Xs_d, ps_d, result_d, point_dim, no_of_samples, no_in_sample, no_of_ps, 10);
+	findDimmensionsDevice<<<ceil((no_of_ps*no_of_samples)/256.0), 256>>>(Xs_d, ps_d, result_d, point_dim, no_of_samples, no_in_sample, no_of_ps, width);
 
    
 	cudaMemcpy(result_h, result_d, outputSize, cudaMemcpyDeviceToHost);
