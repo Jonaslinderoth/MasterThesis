@@ -15,11 +15,9 @@ __global__ void findDimmensionsDevice(float* Xs_d, float* ps_d, bool* res_d,
 			for(int j = 0; j < no_in_sample; j++){
 				d &= abs(p_tmp-Xs_d[sampleNo*no_in_sample*point_dim+j*point_dim+i]) < width;
 			}
-			res_d[entry*point_dim+i] = d;	
+			res_d[entry*point_dim+i] = d;
 		}
-			
 	}
-
 }
 
 std::vector<std::vector<bool>*>* findDimmensions(std::vector<std::vector<float>*>* ps,
