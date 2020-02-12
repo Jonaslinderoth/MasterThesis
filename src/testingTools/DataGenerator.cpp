@@ -84,18 +84,19 @@ DataGenerator::DataGenerator(std::string fileName ,
 					}
 					if(meanAndVarianceForNormalDistribution.q == 1){
 						dataUnitStruct.dataUnit =  normalDistributionRandomFloat(vectorOfPreviusCentroids.at(dimensionIndex),vectorOfPreviusVariance.at(dimensionIndex));
-						dataUnitStruct.clusterIndex = clusterIndex;
 
 					}else{
-						/*
+
 						BoundsForUniformDistribution boundsForUniformDistributionForDataUnit = uniBoundsForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
-						unsigned int whatInterval = rand()%meanAndVarianceForNormalDistribution.q;
-						for(int qIndex = 0 ; qIndex < meanAndVarianceForNormalDistribution.q ; ++qIndex){
-							float with = boundsForUniformDistributionForDataUnit.upper-boundsForUniformDistributionForDataUnit.lower;
-							float intervalStart = ((1+whatInterval)*(with/(meanAndVarianceForNormalDistribution.q+2)))/(centroid - mean);
-						}
-						*/
+						float lower = boundsForUniformDistributionForDataUnit.lower;
+						float upper = boundsForUniformDistributionForDataUnit.upper;
+						unsigned int q = meanAndVarianceForNormalDistribution.q;
+						unsigned int whatCenteToGenerateTo = rand()%q;
+						float with = upper-lower;
+						float center = (whatCenteToGenerateTo+1)*(with/(q+1))+lower;
+						dataUnitStruct.dataUnit = normalDistributionRandomFloat(center,vectorOfPreviusVariance.at(dimensionIndex));
 					}
+					dataUnitStruct.clusterIndex = clusterIndex;
 
 				}else if(distributionTypeForDataUnit == constant)
 				{
@@ -155,6 +156,8 @@ DataGenerator::DataGenerator(std::string fileName ,
 		for(int dimensionIndex = 0 ; dimensionIndex < numberOfDimensions ; dimensionIndex++){
 			vectorOfPreviusVariance.at(dimensionIndex) = vectorOfPreviusVariance.at(dimensionIndex)/(numberOfPointForEachCluster.at(clusterIndex)-1);
 			float var = vectorOfPreviusVariance.at(dimensionIndex);
+			//std::cout << "var " << var << std::endl;
+
 		}
 	}
 
@@ -165,7 +168,6 @@ DataGenerator::DataGenerator(std::string fileName ,
 	previusClustersInformation->vectorOfPreviusCentroids = vectorOfPreviusCentroids;
 	previusClustersInformation->vectorOfPreviusVariance = vectorOfPreviusVariance;
 	previusClustersInformation->vectorUsedNormalDistribuitionBefore = vectorUsedNormalDistribuitionBefore;
-
 
 	//now we have to shuffle the data.
 	std::srand ( unsigned ( std::time(0) ) );
@@ -180,7 +182,10 @@ DataGenerator::DataGenerator(std::string fileName ,
 	//start by deleting the previus file
 	std::remove(cstrFileName);
 	FILE* file = fopen (cstrFileName, "wb");
-
+	if(file == nullptr){
+		std::cout << "was not able to make: " << binaryFileName << std::endl;
+		throw 1;
+	}
 	//metadata on the binary file
 	float fnumberOfDimensions = (float)numberOfDimensions;
 	fwrite(&fnumberOfDimensions, sizeof(float), 1, file);
@@ -201,7 +206,7 @@ DataGenerator::DataGenerator(std::string fileName ,
 
 
 	//the meta in the text file
-	std::string metaDataFileName = "meta_data_" + fileName + ".txt";
+	std::string metaDataFileName = fileName+ "_meta_data" + ".txt";
 
 	char cstrMetaDataFileName[metaDataFileName.size() + 1];
 	std::strcpy(cstrMetaDataFileName, metaDataFileName.c_str());

@@ -22,12 +22,13 @@ public:
 	bool setDimension(unsigned int dimension_);
 	bool addCluster(Cluster cluster = Cluster());
 	bool setFileName(std::string fileName_);
-	bool build();
+	bool build(bool overWrite = true);
 	bool deleteFiles(std::vector<std::string> vecOfFilesNames);
 	virtual ~DataGeneratorBuilder();
-	bool buildUClusters(unsigned int ammountOfPoint = 100000 , unsigned int ammountOfClusters = 5 , unsigned int with = 15 , unsigned int dimensions = 200 , unsigned int dimensionUsed = 20 , float outLiersPersentage = 5);
-	bool buildMGqClusters(unsigned int q = 1 , unsigned int ammountOfPoint = 100000 , unsigned int ammountOfClusters = 5 , unsigned int with = 15 , unsigned int dimensions = 200 , unsigned int dimensionUsed = 20 , float outLiersPersentage = 5);
+	bool buildUClusters(std::string fileName_ = "test1", unsigned int ammountOfPoint = 100000 , unsigned int ammountOfClusters = 5 , unsigned int with = 15 , unsigned int dimensions = 200 , unsigned int dimensionUsed = 20 , float outLiersPersentage = 5);
+	bool buildMGqClusters(std::string fileName_ = "test1", unsigned int q = 1 , unsigned int ammountOfPoint = 100000 , unsigned int ammountOfClusters = 5 , unsigned int dimensions = 200 , unsigned int dimensionUsed = 20 , float outLiersPersentage = 5, float variance = 15);
 private:
+	inline bool existsFile (const std::string& name);
 	bool spitFiles(std::string fileName ,
 			const unsigned int numberOfDimensions ,
 			const unsigned int numberOfClusters ,

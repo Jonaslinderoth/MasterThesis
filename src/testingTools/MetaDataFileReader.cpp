@@ -17,7 +17,7 @@ MetaDataFileReader::MetaDataFileReader(std::string fileName_) {
 	numberOfClusters = 0;
 	dimensions = 0;
 	std::ifstream infile;
-	std::string metaDataFileName = "meta_data_" + fileName + ".txt";
+	std::string metaDataFileName =  fileName + "_meta_data" + ".txt";
 	infile.open(metaDataFileName);
 	if (infile.is_open()) {
 		std::string line;

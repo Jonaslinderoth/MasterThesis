@@ -66,11 +66,8 @@ TEST(dataGenerationTests, testOutLiers){
 
 TEST(dataGenerationTests, testUBuilder){
 	DataGeneratorBuilder dgb;
-
-	if(!dgb.buildUClusters(1000,5,15,5,3)){
-		std::cout << "not good" << std::endl;
-	}
-
+	bool res = dgb.buildUClusters("test1",1000,5,15,5,5,0);
+	EXPECT_TRUE(res);
 	SUCCEED();
 
 }
@@ -114,13 +111,169 @@ TEST(dataGenerationTests, testUBuilderVarianceMultipleDimensions){
 	big.setOutLierPercentage(0);
 	dgb.addCluster(big);
 
-	Cluster medium;
-	medium.setAmmount(30);
-	medium.addDimension(normalDistribution,{0,0},{50,15},21);
-	medium.addDimension(normalDistribution,{0,0},{50,15},21);
-	medium.addDimension(normalDistribution,{0,0},{50,15},21);
-	medium.addDimension(normalDistribution,{0,0},{50,15},21);
 	dgb.build();
 	SUCCEED();
 
+}
+
+TEST(dataGenerationTests, testDimensionWithMutipleClusters){
+	DataGeneratorBuilder dgb;
+	Cluster small;
+	small.setAmmount(5);
+	small.addDimension(normalDistribution,{0,0},{50,15},21);
+	small.setOutLierPercentage(0);
+	dgb.addCluster(small);
+
+
+	Cluster big;
+	big.setAmmount(5);
+	big.addDimension(normalDistribution,{0,0},{50,15},21);
+	big.addDimension(normalDistribution,{0,0},{50,15},21);
+	big.addDimension(normalDistribution,{0,0},{50,15},21);
+	big.setOutLierPercentage(0);
+	dgb.addCluster(big);
+	dgb.build();
+
+	DataReader* dr = new DataReader();
+	unsigned int count = 0;
+	while(dr->isThereANextPoint()){
+		dr->nextPoint();
+		count++;
+	}
+
+	SUCCEED();
+	EXPECT_TRUE(count == 10);
+}
+
+
+TEST(dataGenerationTests, testFixFileName){
+	DataGeneratorBuilder dgb;
+	dgb.setFileName("testDataFilesFolder/test2");
+	Cluster small;
+	small.setAmmount(5);
+	small.addDimension(normalDistribution,{0,0},{50,15},21);
+	small.setOutLierPercentage(0);
+	dgb.addCluster(small);
+
+
+	Cluster big;
+	big.setAmmount(5);
+	big.addDimension(normalDistribution,{0,0},{50,15},21);
+	big.addDimension(normalDistribution,{0,0},{50,15},21);
+	big.addDimension(normalDistribution,{0,0},{50,15},21);
+	big.setOutLierPercentage(0);
+	dgb.addCluster(big);
+	dgb.build();
+
+	DataReader* dr = new DataReader("testDataFilesFolder/test2");
+	unsigned int count = 0;
+	while(dr->isThereANextPoint()){
+		dr->nextPoint();
+		count++;
+	}
+
+	SUCCEED();
+	EXPECT_TRUE(count == 10);
+}
+
+
+TEST(dataGenerationTests, testMultipleNormalDistibuitionsInOneDimension){
+	DataGeneratorBuilder dgb;
+	Cluster small;
+	small.setAmmount(1000);
+	small.addDimension(normalDistribution,{0,100},{50,1,3},21);
+	small.addDimension();
+	dgb.addCluster(small);
+
+	Cluster big;
+	big.setAmmount(100000);
+	big.addDimension(normalDistribution,{0,100},{50,1,3},21);
+	big.addDimension(normalDistribution,{0,100},{50,1,3},21);
+	dgb.addCluster(big);
+
+	dgb.build();
+	DataReader* dr = new DataReader();
+	unsigned int count = 0;
+	while(dr->isThereANextPoint()){
+		std::vector<float>* point = dr->nextPoint();
+
+		//std::cout << point->at(1) << std::endl;
+	}
+	SUCCEED();
+}
+
+
+TEST(dataGenerationTests, testMGqBuilder){
+	DataGeneratorBuilder dgb;
+	bool res = dgb.buildMGqClusters("test1",2,500,1,1,1,0);
+
+	DataReader* dr = new DataReader("test1");
+	unsigned int count = 0;
+	while(dr->isThereANextPoint()){
+		std::vector<float>* point = dr->nextPoint();
+
+		//std::cout << point->at(0) << std::endl;
+	}
+
+	SUCCEED();
+}
+
+TEST(dataGenerationTests, testMGqBuilder2){
+	DataGeneratorBuilder dgb;
+	dgb.buildMGqClusters("test1",2,500,2,1,1,0,0);
+
+	DataReader* dr = new DataReader("test1");
+	unsigned int count = 0;
+	while(dr->isThereANextPoint()){
+		std::vector<float>* point = dr->nextPoint();
+
+		//std::cout << point->at(0) << std::endl;
+	}
+
+	SUCCEED();
+}
+
+
+TEST(dataGenerationTests, testBuilder3){
+	DataGeneratorBuilder dgb;
+	dgb.buildMGqClusters("test1",2,5,5,10,5,0,1);
+
+	DataReader* dr = new DataReader("test1");
+	unsigned int count = 0;
+	while(dr->isThereANextPoint()){
+		std::vector<float>* point = dr->nextPoint();
+		/*
+		for(std::vector<float>::iterator iter = point->begin() ; iter != point->end() ; ++iter){
+			std::cout << std::to_string(*iter) ;
+
+			std::cout << std::endl;
+		}*/
+		//std::cout << point->at(0) << std::endl;
+	}
+
+	SUCCEED();
+}
+
+TEST(dataGenerationTests, testOverWrite){
+	DataGeneratorBuilder dgb;
+	Cluster small;
+	small.setAmmount(100);
+	small.addDimension();
+	dgb.addCluster(small);
+	dgb.build();
+
+	DataGeneratorBuilder dgb2;
+	small.setAmmount(50);
+	dgb2.addCluster(small);
+	dgb2.build(false);
+
+	DataReader* dr = new DataReader();
+	unsigned int count = 0;
+	while(dr->isThereANextPoint()){
+		dr->nextPoint();
+		count++;
+	}
+	std::cout << count << std::endl;
+	SUCCEED();
+	EXPECT_TRUE(count == 100);
 }

@@ -36,8 +36,9 @@ bool Cluster::addDimension(DistributionType distributionType,
 		MeanAndVarianceForNormalDistribution meanAndVarianceForNormalDistribution,
 		float constant,
 		signed int whatDimension){
-	if(whatDimension < -100){
-		throw 20;
+	if(whatDimension < -1){
+		std::cout << "can not have negative dimension when building cluster" << std::endl;
+		throw 1;
 	}
 	if((whatDimension == -1) or (whatDimension == distributionTypeForEachDimension.size()))
 	{
@@ -51,8 +52,8 @@ bool Cluster::addDimension(DistributionType distributionType,
 	}else{
 		distributionTypeForEachDimension.at(whatDimension) = distributionType;
 		boundsForUniformDistributionForEachDimension.at(whatDimension)=boundsForUniformDistribution;
-		meanAndVarianceForNormalDistributionForEachDimension.push_back(meanAndVarianceForNormalDistribution);
-		constantForEachDimension.push_back(constant);
+		meanAndVarianceForNormalDistributionForEachDimension.at(whatDimension) = meanAndVarianceForNormalDistribution;
+		constantForEachDimension.at(whatDimension) = constant;
 	}
 	return true;
 }
