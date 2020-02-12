@@ -1,30 +1,32 @@
 #include <iostream>
 #include <chrono>
 #include <random>
+#include <iostream>
+#include "src/DOC_GPU/HyperCube.h"
 
 int main ()
 {
-  typedef std::chrono::high_resolution_clock myclock;
-  myclock::time_point beginning = myclock::now();
+	auto ps = new std::vector<std::vector<float>*>;
+	{auto p = new std::vector<float>{1,1,1,1};
+		ps->push_back(p);}
+	{auto p = new std::vector<float>{1000,1000,1000,1000};
+	ps->push_back(p);}
+	auto xss = std::vector<std::vector<std::vector<float>*>*>();
+	auto xs = new std::vector<std::vector<float>*>;
+	auto x1 = new std::vector<float>{1,2,1000,1};
+	auto x2 = new std::vector<float>{2,1, 1000,1};
+	xs->push_back(x1);
+	xs->push_back(x2);
+	xss.push_back(xs);
 
-  // obtain a seed from a user string:
-  std::string str;
-  std::cout << "Please, enter a seed: ";
-  std::getline(std::cin,str);
-  std::seed_seq seed1 (str.begin(),str.end());
+	
+	auto res = findDimmensions(ps, xss);
 
-  // obtain a seed from the timer
-  myclock::duration d = myclock::now() - beginning;
-  unsigned seed2 = d.count();
-
-  std::mt19937 generator (seed1);   // mt19937 is a standard mersenne_twister_engine
-  std::cout << "Your seed produced: " << generator() << std::endl;
-
-  generator.seed (1);
-  std::cout << "1: " << generator() << std::endl;
-
-  generator.seed (1);
-  std::cout << "2: " << generator() << std::endl;
-
-  return 0;
+		std::cout << std::endl;
+	for(int i = 0; i < res->size(); i++){
+		for(int j = 0; j < res->at(i)->size(); j++){
+			std::cout << res->at(i)->at(j) << ", ";
+		}
+		std::cout << std::endl;
+	}
 }

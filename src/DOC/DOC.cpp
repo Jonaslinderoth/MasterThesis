@@ -137,7 +137,7 @@ std::vector<bool>* DOC::findDimensions(std::vector<float>* centroid,
 	std::vector<bool>* result = new std::vector<bool>(centroid->size(), true);
 	for(int i = 0; i < points->size(); i++){
 		for(int j = 0; j < centroid->size(); j++){
-			result->at(j) = result->at(j) && (centroid->at(j)-points->at(i)->at(j) < width);
+			result->at(j) = result->at(j) && (abs(centroid->at(j)-points->at(i)->at(j)) < width);
 		}
 	}
 	return result;

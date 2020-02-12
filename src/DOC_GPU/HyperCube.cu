@@ -5,13 +5,15 @@
 __global__ void findDimmensionsDevice(float* Xs_d, float* ps_d, bool* res_d,
 									  int point_dim, int no_of_samples, int no_in_sample, int no_of_ps, float width){
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
-	int pNo = entry%no_of_ps;
+	int pNo = entry/no_of_samples;
+	int sampleNo = entry%no_of_samples;
+	
 	if(entry < no_of_samples*no_of_ps){
 		for(int i = 0; i < point_dim; i++){
 			bool d = true;
 			float p_tmp = ps_d[pNo*point_dim+i];
 			for(int j = 0; j < no_in_sample; j++){
-				d &= abs(p_tmp-Xs_d[entry*no_in_sample*point_dim+j*point_dim+i]) < width;
+				d &= abs(p_tmp-Xs_d[sampleNo*no_in_sample*point_dim+j*point_dim+i]) < width;
 			}
 			res_d[entry*point_dim+i] = d;	
 		}
@@ -33,7 +35,7 @@ std::vector<std::vector<bool>*>* findDimmensions(std::vector<std::vector<float>*
 	for(int i = 0; i < no_of_samples; i++){
 		for(int j = 0; j < no_in_sample; j++){
 			for(int k = 0; k < point_dim; k++){
-				xs_h[i*no_in_sample+j*point_dim+k] = Xs.at(i)->at(j)->at(k);
+				xs_h[i*no_in_sample*point_dim+j*point_dim+k] = Xs.at(i)->at(j)->at(k);
 			}
 		}
 	}
@@ -46,7 +48,25 @@ std::vector<std::vector<bool>*>* findDimmensions(std::vector<std::vector<float>*
 			ps_h[i*point_dim+j] = ps->at(i)->at(j);
 		}
 	}
-	int outputDim = no_of_ps*no_of_samples*point_dim;
+	/*
+	std::cout << "xs: " << std::endl;
+	for(int i = 0; i < no_of_samples*no_in_sample*point_dim; i++){
+		std::cout << xs_h[i] << ", ";
+		if((i+1)% point_dim == 0){
+			std::cout << std::endl;
+		}
+	}
+	std::cout << std::endl;
+	
+
+	std::cout << "ps: " << std::endl;
+
+	for(int i = 0; i < no_of_ps*point_dim; i++){
+		std::cout << ps_h[i] << ", ";
+	}
+	std::cout << std::endl;
+	*/
+	int outputDim = no_of_ps*no_of_samples*point_dim;		
 	int outputSize = outputDim*sizeof(bool);
 	bool* result_h = (bool*) malloc(outputSize);
 
@@ -62,14 +82,14 @@ std::vector<std::vector<bool>*>* findDimmensions(std::vector<std::vector<float>*
 	cudaMemcpy( Xs_d, xs_h, sizeOfXs, cudaMemcpyHostToDevice);
     cudaMemcpy( ps_d, ps_h, sizeOfps, cudaMemcpyHostToDevice);
 
-	findDimmensionsDevice<<<1, 1>>>(Xs_d, ps_d, result_d, point_dim, no_of_samples, no_in_sample, no_of_ps, 10);
+	findDimmensionsDevice<<<ceil((no_of_ps*no_of_samples)/256.0), 256>>>(Xs_d, ps_d, result_d, point_dim, no_of_samples, no_in_sample, no_of_ps, 10);
 
    
 	cudaMemcpy(result_h, result_d, outputSize, cudaMemcpyDeviceToHost);
 
 	auto output =  new std::vector<std::vector<bool>*>;
 	
-	for(int i = 0; i < no_of_ps; i++){
+	for(int i = 0; i < no_of_ps*no_of_samples; i++){
 		auto a =  new std::vector<bool>;
 		for(int j = 0; j < point_dim; j++){
 			a->push_back(result_h[i*point_dim+j]);
