@@ -6,8 +6,8 @@
 
 int main ()
 {
-		auto a = new std::vector<std::vector<bool>*>;
-		{auto aa = new std::vector<bool>{true, true};
+	auto a = new std::vector<std::vector<bool>*>;
+	{auto aa = new std::vector<bool>{true, true};
 		a->push_back(aa);};
 	auto b = new std::vector<std::vector<float>*>;
     auto bb = new std::vector<float>{9,111};
