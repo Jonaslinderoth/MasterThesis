@@ -6,27 +6,20 @@
 
 int main ()
 {
-	auto ps = new std::vector<std::vector<float>*>;
-	{auto p = new std::vector<float>{1,1,1,1};
-		ps->push_back(p);}
-	{auto p = new std::vector<float>{1000,1000,1000,1000};
-	ps->push_back(p);}
-	auto xss = std::vector<std::vector<std::vector<float>*>*>();
-	auto xs = new std::vector<std::vector<float>*>;
-	auto x1 = new std::vector<float>{1,2,1000,1};
-	auto x2 = new std::vector<float>{2,1, 1000,1};
-	xs->push_back(x1);
-	xs->push_back(x2);
-	xss.push_back(xs);
-
-	
-	auto res = findDimmensions(ps, xss);
-
+		auto a = new std::vector<std::vector<bool>*>;
+		{auto aa = new std::vector<bool>{true, true};
+		a->push_back(aa);};
+	auto b = new std::vector<std::vector<float>*>;
+    auto bb = new std::vector<float>{9,111};
+	b->push_back(bb);
+    auto centroid = new std::vector<float>{10, 10};
+	auto centorids = new std::vector<std::vector<float>*>;
+	centorids->push_back(centroid);
+	auto c = pointsContained(a,b,centorids);
+	for(int i = 0; i < c->size(); i++){
 		std::cout << std::endl;
-	for(int i = 0; i < res->size(); i++){
-		for(int j = 0; j < res->at(i)->size(); j++){
-			std::cout << res->at(i)->at(j) << ", ";
+		for(int j = 0; j < c->at(i)->size(); j++){
+			std:: cout << c->at(i)->at(j) << ", ";
 		}
-		std::cout << std::endl;
 	}
 }
