@@ -16,6 +16,7 @@
 enum DistributionType{
 	uniformDistribution,
 	normalDistribution,
+	normalDistributionSpecial,
 	constant
 };
 static const float lowerFloat = 0.0; //std::numeric_limits<float>::lowest();

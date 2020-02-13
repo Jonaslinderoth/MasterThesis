@@ -304,7 +304,7 @@ TEST_F(dataGenerationTests, testOverWrite){
 
 TEST_F(dataGenerationTests, testRandom){
 	float res = RandomFunction::uniformRandomFloat(10,100);
-	std::cout << "res" << res << std::endl;
+	//std::cout << "res" << res << std::endl;
 	EXPECT_TRUE(res > 5);
 }
 
@@ -355,25 +355,32 @@ TEST_F(dataGenerationTests, testSetSeed2){
 	//std::cout << sum << " " << sum2 << std::endl;
 	EXPECT_TRUE(std::abs(sum -sum2)<0.01);
 }
-/*
-TEST(dataGenerationTests, testBuilder){
+
+TEST_F(dataGenerationTests, testBuilder){
 	DataGeneratorBuilder dgb;
 	dgb.setSeed(0);
 	Cluster small;
-	small.setAmmount(300);
-	small.addDimension(normalDistribution,{0,100},{50,1,6},21);
+	small.setAmmount(5);
+	small.addDimension(normalDistributionSpecial,{0,100},{50,20,2},21);
+	small.addDimension(constant,{0,100},{50,1,1},50);
 	dgb.addCluster(small);
+
+	Cluster big;
+	big.setAmmount(5);
+	big.addDimension(normalDistributionSpecial,{0,100},{50,0,2},21);
+	big.addDimension(uniformDistribution,{0,100},{50,1,6},21);
+	dgb.addCluster(big);
 	dgb.build();
 
 	DataReader* dr = new DataReader();
 	float sum = 0;
 	while(dr->isThereANextPoint()){
-		std::cout << dr->nextPoint()->at(0) << std::endl;
+		//std::cout << dr->nextPoint()->at(1) << std::endl;
 	}
 
 
 	EXPECT_TRUE(true);
 }
-*/
+
 
 

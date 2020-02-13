@@ -114,7 +114,6 @@ bool DataGeneratorBuilder::build(bool overWrite)
 			std::cout << "outlier percentage to big" << outLierPercentage << std::endl;
 			outLierPercentage = 100;
 		}
-
 		if(outLierPercentage < -0.0000001){
 			std::cout << "negative outlier percentage" << outLierPercentage << std::endl;
 			outLierPercentage = 0;
@@ -307,7 +306,9 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 
 	for(int pointIndex = 0 ; pointIndex < totalSize ; ++pointIndex){
 		unsigned goo = pointIndex;
-
+		if(goo%400000 == 0){
+			//std::cout << pointIndex << std::endl;
+		}
 
 		unsigned int chosenClusterIndex = 0;
 
@@ -492,7 +493,7 @@ bool DataGeneratorBuilder::buildUClusters(std::string fileName_,
 			boundsForUniformDistribution.lower = lowerRange;
 			boundsForUniformDistribution.upper = upperRange;
 			previusClusterBounds.at(dimensionIndex) = boundsForUniformDistribution;
-			cluster->addDimension(uniformDistribution,boundsForUniformDistribution,basicMeanAndVarianceForNormalDistribution,21,*dim);
+			cluster->addDimension(normalDistributionSpecial,boundsForUniformDistribution,basicMeanAndVarianceForNormalDistribution,21,*dim);
 			dimensionIndex++;
 		}
 		dgb.addCluster(*cluster);
@@ -574,7 +575,7 @@ bool DataGeneratorBuilder::buildMGqClusters(std::string fileName_,
 			}
 			float mean = basicMeanAndVarianceForNormalDistribution.mean;
 			float variance = basicMeanAndVarianceForNormalDistribution.variance;
-			cluster->addDimension(normalDistribution,basicBoundsForUniformDistribution,{mean,variance,q},21,*dim);
+			cluster->addDimension(normalDistributionSpecial,basicBoundsForUniformDistribution,{mean,variance,q},21,*dim);
 			dimensionIndex++;
 		}
 		dgb.addCluster(*cluster);

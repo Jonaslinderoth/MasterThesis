@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <ctime>
 #include <new>
+#include <math.h>
 
 
 struct DataUnitStruct{
@@ -80,23 +81,39 @@ DataGenerator::DataGenerator(std::string fileName ,
 
 				}else if(distributionTypeForDataUnit == normalDistribution){
 					MeanAndVarianceForNormalDistribution meanAndVarianceForNormalDistribution = meanAndVarianceForNormalDistributionForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
-					if(!(vectorUsedNormalDistribuitionBefore.at(dimensionIndex))){
-						vectorOfPreviusCentroids.at(dimensionIndex) = meanAndVarianceForNormalDistribution.mean;
-						vectorOfPreviusVariance.at(dimensionIndex) = meanAndVarianceForNormalDistribution.variance;
+					float mean = meanAndVarianceForNormalDistribution.mean;
+					float var = meanAndVarianceForNormalDistribution.variance;
+					dataUnitStruct.dataUnit =  RandomFunction::normalDistributionRandomFloat(mean,var);
+					dataUnitStruct.clusterIndex = clusterIndex;
+
+				}else if(distributionTypeForDataUnit == normalDistributionSpecial){
+					MeanAndVarianceForNormalDistribution meanAndVarianceForNormalDistribution = meanAndVarianceForNormalDistributionForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
+					BoundsForUniformDistribution boundsForUniformDistributionForDataUnit = uniBoundsForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
+					float center = meanAndVarianceForNormalDistribution.variance;
+					float var = meanAndVarianceForNormalDistribution.variance;
+					float lower = boundsForUniformDistributionForDataUnit.lower;
+					float upper = boundsForUniformDistributionForDataUnit.upper;
+					unsigned int q = meanAndVarianceForNormalDistribution.q;
+					float specialVar = (sqrt(var)/(float)q)*(sqrt(var)/(float)q);
+					if(vectorUsedNormalDistribuitionBefore.at(dimensionIndex)){
+						float prevCenter = vectorOfPreviusCentroids.at(dimensionIndex);
+						float prevVar = vectorOfPreviusVariance.at(dimensionIndex);
+						float stdDev = sqrt(prevVar);
+						specialVar = (stdDev/(float)q)*(stdDev/(float)q);
+						float upperMax = boundsForUniformDistributionForDataUnit.upper;
+						upper = prevCenter+2*stdDev;
+						if(upper > upperMax){
+							upper = upperMax;
+						}
+						center = std::fmod(RandomFunction::randomInteger(),upper-lower)+lower;
 					}
 					if(meanAndVarianceForNormalDistribution.q == 1){
-						dataUnitStruct.dataUnit =  RandomFunction::normalDistributionRandomFloat(vectorOfPreviusCentroids.at(dimensionIndex),vectorOfPreviusVariance.at(dimensionIndex));
-
+						dataUnitStruct.dataUnit =  RandomFunction::normalDistributionRandomFloat(center,var);
 					}else{
-
-						BoundsForUniformDistribution boundsForUniformDistributionForDataUnit = uniBoundsForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
-						float lower = boundsForUniformDistributionForDataUnit.lower;
-						float upper = boundsForUniformDistributionForDataUnit.upper;
-						unsigned int q = meanAndVarianceForNormalDistribution.q;
 						unsigned int whatCenteToGenerateTo = RandomFunction::randomInteger()%q;
 						float with = upper-lower;
-						float center = (whatCenteToGenerateTo+1)*(with/(q+1))+lower;
-						dataUnitStruct.dataUnit = RandomFunction::normalDistributionRandomFloat(center,vectorOfPreviusVariance.at(dimensionIndex));
+						center = (whatCenteToGenerateTo+1)*(with/(q+1))+lower;
+						dataUnitStruct.dataUnit = RandomFunction::normalDistributionRandomFloat(center,specialVar);
 					}
 
 					dataUnitStruct.clusterIndex = clusterIndex;
@@ -125,6 +142,9 @@ DataGenerator::DataGenerator(std::string fileName ,
 				vectorUsedNormalDistribuitionBefore.at(dimensionIndex) = false;
 
 			}else if(distributionTypeForDataUnit == normalDistribution){
+				vectorUsedNormalDistribuitionBefore.at(dimensionIndex) = false;
+
+			}else if(distributionTypeForDataUnit == normalDistributionSpecial){
 				vectorUsedNormalDistribuitionBefore.at(dimensionIndex) = true;
 
 			}else if(distributionTypeForDataUnit == constant){
@@ -232,6 +252,10 @@ DataGenerator::DataGenerator(std::string fileName ,
 				outfile << "n,";
 				MeanAndVarianceForNormalDistribution meanAndVarianceForNormalDistribution = meanAndVarianceForNormalDistributionForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
 				outfile << std::to_string(meanAndVarianceForNormalDistribution.mean) << "," << std::to_string(meanAndVarianceForNormalDistribution.variance) << ",";
+			}else if(distributionTypeForDataUnit == normalDistributionSpecial){
+				outfile << "s,";
+				MeanAndVarianceForNormalDistribution meanAndVarianceForNormalDistribution = meanAndVarianceForNormalDistributionForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
+				outfile << std::to_string(meanAndVarianceForNormalDistribution.mean) << "," << std::to_string(meanAndVarianceForNormalDistribution.variance) << "," << std::to_string(meanAndVarianceForNormalDistribution.q) << ",";
 			}else{
 				outfile << "c,";
 				outfile << std::to_string(constantForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex)) << ",";
