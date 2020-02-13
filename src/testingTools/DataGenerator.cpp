@@ -6,6 +6,8 @@
  */
 
 #include <src/testingTools/DataGenerator.h>
+#include <src/testingTools/RandomFunction.h>
+
 #include <fstream>
 #include <iostream>
 #include <stdio.h>
@@ -73,7 +75,7 @@ DataGenerator::DataGenerator(std::string fileName ,
 				if(distributionTypeForDataUnit == uniformDistribution)
 				{
 					BoundsForUniformDistribution boundsForUniformDistributionForDataUnit = uniBoundsForEachClusterForEachDimension.at(clusterIndex).at(dimensionIndex);
-					dataUnitStruct.dataUnit = uniformRandomFloat(boundsForUniformDistributionForDataUnit.lower,boundsForUniformDistributionForDataUnit.upper);
+					dataUnitStruct.dataUnit = RandomFunction::uniformRandomFloat(boundsForUniformDistributionForDataUnit.lower,boundsForUniformDistributionForDataUnit.upper);
 					dataUnitStruct.clusterIndex = clusterIndex;
 
 				}else if(distributionTypeForDataUnit == normalDistribution){
@@ -83,7 +85,7 @@ DataGenerator::DataGenerator(std::string fileName ,
 						vectorOfPreviusVariance.at(dimensionIndex) = meanAndVarianceForNormalDistribution.variance;
 					}
 					if(meanAndVarianceForNormalDistribution.q == 1){
-						dataUnitStruct.dataUnit =  normalDistributionRandomFloat(vectorOfPreviusCentroids.at(dimensionIndex),vectorOfPreviusVariance.at(dimensionIndex));
+						dataUnitStruct.dataUnit =  RandomFunction::normalDistributionRandomFloat(vectorOfPreviusCentroids.at(dimensionIndex),vectorOfPreviusVariance.at(dimensionIndex));
 
 					}else{
 
@@ -91,11 +93,12 @@ DataGenerator::DataGenerator(std::string fileName ,
 						float lower = boundsForUniformDistributionForDataUnit.lower;
 						float upper = boundsForUniformDistributionForDataUnit.upper;
 						unsigned int q = meanAndVarianceForNormalDistribution.q;
-						unsigned int whatCenteToGenerateTo = rand()%q;
+						unsigned int whatCenteToGenerateTo = RandomFunction::randomInteger()%q;
 						float with = upper-lower;
 						float center = (whatCenteToGenerateTo+1)*(with/(q+1))+lower;
-						dataUnitStruct.dataUnit = normalDistributionRandomFloat(center,vectorOfPreviusVariance.at(dimensionIndex));
+						dataUnitStruct.dataUnit = RandomFunction::normalDistributionRandomFloat(center,vectorOfPreviusVariance.at(dimensionIndex));
 					}
+
 					dataUnitStruct.clusterIndex = clusterIndex;
 
 				}else if(distributionTypeForDataUnit == constant)
