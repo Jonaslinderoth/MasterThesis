@@ -298,6 +298,10 @@ TEST_F(dataGenerationTests, testOverWrite){
 		dr->nextPoint();
 		count++;
 	}
+<<<<<<< HEAD
+	//std::cout << count << std::endl;
+=======
+>>>>>>> 565f668a99604f8dabea7cc4479bc98a54c1d397
 	SUCCEED();
 	EXPECT_TRUE(count == 100);
 }

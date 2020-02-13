@@ -1,38 +1,32 @@
 #include <iostream>
-#include <vector>
-#include "src/DOC/DOC.h"
-int main(){
-	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
-		int a = 0;
-		for(float i = 9; i <= 12; i++){
-			for(float j = 9; j <= 12; j++){
-				std::vector<float>* point1 = new std::vector<float>{i,j};
-				data->push_back(point1);
-				a++;
-			}
+#include <chrono>
+#include <random>
+#include <iostream>
+#include "src/DOC_GPU/HyperCube.h"
+
+int main ()
+{
+	auto ps = new std::vector<std::vector<float>*>;
+	{auto p = new std::vector<float>{1,1,1,1};
+		ps->push_back(p);}
+	{auto p = new std::vector<float>{1000,1000,1000,1000};
+	ps->push_back(p);}
+	auto xss = std::vector<std::vector<std::vector<float>*>*>();
+	auto xs = new std::vector<std::vector<float>*>;
+	auto x1 = new std::vector<float>{1,2,1000,1};
+	auto x2 = new std::vector<float>{2,1, 1000,1};
+	xs->push_back(x1);
+	xs->push_back(x2);
+	xss.push_back(xs);
+
+	
+	auto res = findDimmensions(ps, xss);
+
+		std::cout << std::endl;
+	for(int i = 0; i < res->size(); i++){
+		for(int j = 0; j < res->at(i)->size(); j++){
+			std::cout << res->at(i)->at(j) << ", ";
 		}
-
-		int b = 0;
-		for(float i = 60; i <= 65; i++){
-			for(float j = 0; j <= 50; j++){
-				std::vector<float>* point1 = new std::vector<float>{i,j};
-				data->push_back(point1);
-				b++;
-			}
-		}
-
-
-		DOC d = DOC(data, 0.1, 0.25, 5);
-		auto res = d.findCluster();
-
-
-
-
-		delete res.first;
-		delete res.second;
-		for(int i = 0; i< data->size(); i++){
-			delete data->at(i);
-		}
-		delete data;
-
+		std::cout << std::endl;
+	}
 }

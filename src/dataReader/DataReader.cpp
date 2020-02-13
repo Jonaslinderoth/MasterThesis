@@ -148,7 +148,7 @@ void DataReader::badRead(){
 			sum += *innerIter;
 		}
 	}
-	std::cout << "sum " << std::to_string(sum) << std::endl;
+	//std::cout << "sum " << std::to_string(sum) << std::endl;
 }
 
 

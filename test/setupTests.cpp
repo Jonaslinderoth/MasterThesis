@@ -146,9 +146,13 @@ TEST(setupTest, cudaWorksMatCompareRand){
 		}
 	}
 
-
+	
 	out1 = matMulSimple(a, b, n);
 	out2 = matMulAdvanced(a, b, n);
 
   EXPECT_EQ(matDiagEQ(out1, out2, n), true);
+}
+
+TEST(setupTest, shouldFail){
+	EXPECT_TRUE(true);
 }

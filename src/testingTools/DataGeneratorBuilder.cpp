@@ -114,6 +114,7 @@ bool DataGeneratorBuilder::build(bool overWrite)
 			std::cout << "outlier percentage to big" << outLierPercentage << std::endl;
 			outLierPercentage = 100;
 		}
+
 		if(outLierPercentage < -0.0000001){
 			std::cout << "negative outlier percentage" << outLierPercentage << std::endl;
 			outLierPercentage = 0;
@@ -306,9 +307,7 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 
 	for(int pointIndex = 0 ; pointIndex < totalSize ; ++pointIndex){
 		unsigned goo = pointIndex;
-		if(goo%400000 == 0){
-			//std::cout << pointIndex << std::endl;
-		}
+
 
 		unsigned int chosenClusterIndex = 0;
 

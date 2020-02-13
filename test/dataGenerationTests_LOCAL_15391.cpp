@@ -6,36 +6,8 @@
 #include "../src/testingTools/RandomFunction.h"
 #include <iostream>
 
-class dataGenerationTests : public ::testing::Test {
-public:
-  // Per-test-suite set-up.
-  // Called before the first test in this test suite.
-  // Can be omitted if not needed.
-  static void SetUpTestCase() {
-	  if(system("mkdir testData")){
-		  
-	  };
-  }
 
-  // Per-test-suite tear-down.
-  // Called after the last test in this test suite.
-  // Can be omitted if not needed.
-  static void TearDownTestCase() {
-	  if(system("rm -r testData")){
-			  
-		  };
-  }
-
-
-	virtual void SetUp() {
-	}
-
-
-
-};
-auto dir = "testData";
-
-TEST_F(dataGenerationTests, testMakingAfileConstant){
+TEST(dataGenerationTests, testMakingAfileConstant){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(10);
@@ -49,7 +21,7 @@ TEST_F(dataGenerationTests, testMakingAfileConstant){
 	EXPECT_EQ(dr.getSize(), 10);
 }
 
-TEST_F(dataGenerationTests, testMakingAfileUniform){
+TEST(dataGenerationTests, testMakingAfileUniform){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(10000);
@@ -71,7 +43,7 @@ TEST_F(dataGenerationTests, testMakingAfileUniform){
 
 }
 
-TEST_F(dataGenerationTests, testOutLiers){
+TEST(dataGenerationTests, testOutLiers){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(10);
@@ -93,9 +65,8 @@ TEST_F(dataGenerationTests, testOutLiers){
 	EXPECT_EQ(mdfr.getClusters().size(), 3);
 }
 
-TEST_F(dataGenerationTests, testUBuilder){
+TEST(dataGenerationTests, testUBuilder){
 	DataGeneratorBuilder dgb;
-
 	bool res = dgb.buildUClusters("test1",1000,5,15,5,5,0);
 	EXPECT_TRUE(res);
 	SUCCEED();
@@ -103,7 +74,7 @@ TEST_F(dataGenerationTests, testUBuilder){
 }
 
 
-TEST_F(dataGenerationTests, testUBuilderVariance){
+TEST(dataGenerationTests, testUBuilderVariance){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(100000);
@@ -122,7 +93,7 @@ TEST_F(dataGenerationTests, testUBuilderVariance){
 
 }
 
-TEST_F(dataGenerationTests, testUBuilderVarianceMultipleDimensions){
+TEST(dataGenerationTests, testUBuilderVarianceMultipleDimensions){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(30);
@@ -146,7 +117,7 @@ TEST_F(dataGenerationTests, testUBuilderVarianceMultipleDimensions){
 
 }
 
-TEST_F(dataGenerationTests, testDimensionWithMutipleClusters){
+TEST(dataGenerationTests, testDimensionWithMutipleClusters){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(5);
@@ -171,15 +142,14 @@ TEST_F(dataGenerationTests, testDimensionWithMutipleClusters){
 		count++;
 	}
 
-
 	SUCCEED();
 	EXPECT_TRUE(count == 10);
 }
 
 
-TEST_F(dataGenerationTests, testFixFileName){
+TEST(dataGenerationTests, testFixFileName){
 	DataGeneratorBuilder dgb;
-	dgb.setFileName("testData/test2");
+	dgb.setFileName("testDataFilesFolder/test2");
 	Cluster small;
 	small.setAmmount(5);
 	small.addDimension(normalDistribution,{0,0},{50,15},21);
@@ -196,7 +166,7 @@ TEST_F(dataGenerationTests, testFixFileName){
 	dgb.addCluster(big);
 	dgb.build();
 
-	DataReader* dr = new DataReader("testData/test2");
+	DataReader* dr = new DataReader("testDataFilesFolder/test2");
 	unsigned int count = 0;
 	while(dr->isThereANextPoint()){
 		dr->nextPoint();
@@ -208,7 +178,7 @@ TEST_F(dataGenerationTests, testFixFileName){
 }
 
 
-TEST_F(dataGenerationTests, testMultipleNormalDistibuitionsInOneDimension){
+TEST(dataGenerationTests, testMultipleNormalDistibuitionsInOneDimension){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(1000);
@@ -234,7 +204,7 @@ TEST_F(dataGenerationTests, testMultipleNormalDistibuitionsInOneDimension){
 }
 
 
-TEST_F(dataGenerationTests, testMGqBuilder){
+TEST(dataGenerationTests, testMGqBuilder){
 	DataGeneratorBuilder dgb;
 	bool res = dgb.buildMGqClusters("test1",2,500,1,1,1,0);
 
@@ -249,7 +219,7 @@ TEST_F(dataGenerationTests, testMGqBuilder){
 	SUCCEED();
 }
 
-TEST_F(dataGenerationTests, testMGqBuilder2){
+TEST(dataGenerationTests, testMGqBuilder2){
 	DataGeneratorBuilder dgb;
 	dgb.buildMGqClusters("test1",2,500,2,1,1,0,0);
 
@@ -265,7 +235,7 @@ TEST_F(dataGenerationTests, testMGqBuilder2){
 }
 
 
-TEST_F(dataGenerationTests, testBuilder3){
+TEST(dataGenerationTests, testBuilder3){
 	DataGeneratorBuilder dgb;
 	dgb.buildMGqClusters("test1",2,5,5,10,5,0,1);
 
@@ -279,7 +249,7 @@ TEST_F(dataGenerationTests, testBuilder3){
 	SUCCEED();
 }
 
-TEST_F(dataGenerationTests, testOverWrite){
+TEST(dataGenerationTests, testOverWrite){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(100);
@@ -298,6 +268,7 @@ TEST_F(dataGenerationTests, testOverWrite){
 		dr->nextPoint();
 		count++;
 	}
+	//std::cout << count << std::endl;
 	SUCCEED();
 	EXPECT_TRUE(count == 100);
 }
