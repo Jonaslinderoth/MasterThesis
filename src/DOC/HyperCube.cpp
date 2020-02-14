@@ -23,16 +23,10 @@ HyperCube::~HyperCube() {
 }
 
 bool HyperCube::pointContained(std::vector<float>* point) {
+	bool res = true;
 	for(int i = 0; i < centroid->size(); i++){
-		if(i < dimmensions->size() && dimmensions->at(i)){
-			float a = this->centroid->at(i)-this->width;
-			float b = this->centroid->at(i)+this->width;
-			float min = std::min(a,b);
-			float max = std::max(a,b);
-			if(not (min < point->at(i) && max > point->at(i))){
-				return false;
-			}
-		}
+		auto r = (!this->dimmensions->at(i))|| abs(this->centroid->at(i)-point->at(i)) < this->width;
+		if(!r) return false;
 	}
 	return true;
 }
