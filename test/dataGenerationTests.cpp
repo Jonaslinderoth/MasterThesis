@@ -360,23 +360,35 @@ TEST_F(dataGenerationTests, testBuilder){
 	DataGeneratorBuilder dgb;
 	dgb.setSeed(0);
 	Cluster small;
-	small.setAmmount(5);
-	small.addDimension(normalDistributionSpecial,{0,100},{50,20,2},21);
+	small.setAmmount(50);
+	small.addDimension(normalDistributionSpecial,{0,100},{50,0,1},21);
+	small.addDimension(constant,{0,100},{50,1,1},50);
 	small.addDimension(constant,{0,100},{50,1,1},50);
 	dgb.addCluster(small);
 
 	Cluster big;
-	big.setAmmount(5);
+	big.setAmmount(50);
 	big.addDimension(normalDistributionSpecial,{0,100},{50,0,2},21);
 	big.addDimension(uniformDistribution,{0,100},{50,1,6},21);
+	big.addDimension(normalDistributionSpecial,{0,100},{50,0,2},21);
 	dgb.addCluster(big);
 	dgb.build();
 
+	Cluster medium;
+	medium.setAmmount(50);
+	medium.addDimension(constant,{0,100},{50,0,4},60);
+	medium.addDimension(normalDistributionSpecial,{0,100},{50,0,2},21);
+	medium.addDimension(normalDistributionSpecial,{0,100},{50,0,3},21);
+	dgb.addCluster(medium);
+	dgb.build();
+
+
 	DataReader* dr = new DataReader();
 	float sum = 0;
+	/*
 	while(dr->isThereANextPoint()){
-		//std::cout << dr->nextPoint()->at(1) << std::endl;
-	}
+		std::cout << dr->nextPoint()->at(2) << std::endl;
+	}*/
 
 
 	EXPECT_TRUE(true);
