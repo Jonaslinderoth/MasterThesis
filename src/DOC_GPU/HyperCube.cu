@@ -375,7 +375,7 @@ int argMax(std::vector<float>* scores){
 	cudaMemcpy(output_h, output_d, size_of_output, cudaMemcpyDeviceToHost);
 	cudaMemcpy(output_index_h, output_index_d, size_of_output_index, cudaMemcpyDeviceToHost);	
 	
-	
+ 
 
 	cudaFree(scores_d);
 	cudaFree(scores_index_d);
