@@ -250,14 +250,14 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster(std
 	cudaMemcpy(findDim_count_h, findDim_count_d, size_of_findDim_count, cudaMemcpyDeviceToHost);
 
 
-
+	/*
 
 	for(int i = 0; i < number_of_samples; i++){
 		std::cout << scores_h[i] << ", ";
 	}
 
 	std::cout << std::endl;
-
+	*/
 	
 	std::vector<bool>* outDim = new std::vector<bool>;
 	for(int i = 0; i < point_dim; i++){
