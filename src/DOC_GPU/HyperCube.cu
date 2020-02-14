@@ -386,3 +386,6 @@ int argMax(std::vector<float>* scores){
 	
 	
 }
+
+
+

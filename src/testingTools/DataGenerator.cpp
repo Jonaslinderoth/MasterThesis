@@ -193,7 +193,7 @@ DataGenerator::DataGenerator(std::string fileName ,
 	previusClustersInformation->vectorUsedNormalDistribuitionBefore = vectorUsedNormalDistribuitionBefore;
 
 	//now we have to shuffle the data.
-	std::srand ( unsigned ( std::time(0) ) );
+	std::srand ( RandomFunction::randomInteger() );
 	std::random_shuffle ( data.begin(), data.end() );
 
 

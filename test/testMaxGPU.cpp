@@ -45,7 +45,7 @@ TEST(testArgMaxGPU, testSimple4){
 }
 
 
-TEST(testArgMaxGPU, testLarge){
+TEST(testArgMaxGPU, DISABLED_testLarge){
 	std::vector<float>* scores = new std::vector<float>;
 	int n = 1024*2;
 	for(int i = 0; i < n; i++){
@@ -57,7 +57,7 @@ TEST(testArgMaxGPU, testLarge){
 
 
 
-TEST(testArgMaxGPU, testLarge2){
+TEST(testArgMaxGPU, DISABLED_testLarge2){
 	std::vector<float>* scores = new std::vector<float>;
 	int n = 4096;
 	for(int i = 0; i < n; i++){
@@ -68,7 +68,7 @@ TEST(testArgMaxGPU, testLarge2){
 }
 
 
-TEST(testArgMaxGPU, testLarge3){
+TEST(testArgMaxGPU, DISABLED_testLarge3){
 	std::vector<float>* scores = new std::vector<float>;
 	int n = 4096*2;
 	for(int i = 0; i < n; i++){
@@ -79,7 +79,7 @@ TEST(testArgMaxGPU, testLarge3){
 }
 
 
-TEST(testArgMaxGPU, testLarge4){
+TEST(testArgMaxGPU, DISABLED_testLarge4){
 	std::vector<float>* scores = new std::vector<float>;
 	int n = 53687;
 	for(int i = 0; i < n; i++){
