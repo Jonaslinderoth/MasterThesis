@@ -39,6 +39,14 @@ __global__ void pointsContainedDevice(float* data, float* centroids, bool* dims,
 	}
 }
 
+__global__ void score(float* Cluster_size, float* Dim_count, float* score_output, int len, float beta){
+	int entry = blockIdx.x*blockDim.x+threadIdx.x;
+	if(entry < len){
+		score_output[entry] = Cluster_size[entry]*powf(1.0/beta, Dim_count[entry]);	
+	}
+
+}
+
 __global__ void argMaxDevice(float* scores, int* scores_index, float* output ,int* output_index, int input_size){
 	extern __shared__ int array[];
 	int* argData = (int*)array;
@@ -64,7 +72,7 @@ __global__ void argMaxDevice(float* scores, int* scores_index, float* output ,in
 			}
 			__syncthreads();
 		}
-		__syncthreads();	
+	
 		if(tid == 0){
 			output_index[blockIdx.x] = argData[0];
 			output[blockIdx.x] = scoreData[0];
@@ -73,6 +81,31 @@ __global__ void argMaxDevice(float* scores, int* scores_index, float* output ,in
 	}
 	
 }
+
+
+
+
+
+
+
+std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster(std::vector<std::vector<float>*>* data, float alpha, float beta, float width){
+	float d = data->at(0)->size();
+	float r = log2(2*d)/log2(1/(2*beta));
+	float m = pow((2/alpha),2) * log(4);
+
+	unsigned int number_of_ps = 2.0/alpha;
+	unsigned int number_of_samples = number_of_ps*m;
+	unsigned int sample_size = r;
+	unsigned int number_of_points = data->size();
+	unsigned int point_dim = d;
+	unsigned int floats_in_data_array = point_dim*number_of_points;
+	unsigned int floats_in_ps_array = point_dim*number_of_ps; 
+	
+};
+
+
+
+
 
 
 std::vector<std::vector<bool>*>* pointsContained(std::vector<std::vector<bool>*>* dims,

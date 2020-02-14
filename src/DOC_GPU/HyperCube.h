@@ -13,4 +13,8 @@ std::vector<std::vector<bool>*>* pointsContained(std::vector<std::vector<bool>*>
 
 
 int argMax(std::vector<float>* scores);
+
+
+std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster(std::vector<std::vector<float>*>* data, float alpha = 0.1, float beta = 0.25, float width = 15);
+
 #endif
