@@ -3,6 +3,7 @@
 #include "../src/dataReader/Cluster.h"
 #include "../src/dataReader/DataReader.h"
 #include "../src/testingTools/MetaDataFileReader.h"
+#include "../src/testingTools/RandomFunction.h"
 #include <iostream>
 
 class dataGenerationTests : public ::testing::Test {
@@ -272,13 +273,7 @@ TEST_F(dataGenerationTests, testBuilder3){
 	unsigned int count = 0;
 	while(dr->isThereANextPoint()){
 		std::vector<float>* point = dr->nextPoint();
-		/*
-		for(std::vector<float>::iterator iter = point->begin() ; iter != point->end() ; ++iter){
-			std::cout << std::to_string(*iter) ;
 
-			std::cout << std::endl;
-		}*/
-		//std::cout << point->at(0) << std::endl;
 	}
 
 	SUCCEED();
@@ -306,3 +301,98 @@ TEST_F(dataGenerationTests, testOverWrite){
 	SUCCEED();
 	EXPECT_TRUE(count == 100);
 }
+
+TEST_F(dataGenerationTests, testRandom){
+	float res = RandomFunction::uniformRandomFloat(10,100);
+	//std::cout << "res" << res << std::endl;
+	EXPECT_TRUE(res > 5);
+}
+
+TEST_F(dataGenerationTests, testSetSeed){
+	RandomFunction::staticSetSeed(0);
+	float one = RandomFunction::uniformRandomFloat(0,10);
+	RandomFunction::staticSetSeed(0);
+	float two = RandomFunction::uniformRandomFloat(0,10);
+	EXPECT_NEAR(one,two,0.1);
+}
+
+TEST_F(dataGenerationTests, testSetSeed1){
+	RandomFunction::staticSetSeed(0);
+	unsigned int one = RandomFunction::randomInteger();
+	RandomFunction::staticSetSeed(0);
+	unsigned int two = RandomFunction::randomInteger();
+	EXPECT_EQ(one,two);
+}
+
+TEST_F(dataGenerationTests, testSetSeed2){
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(0);
+	Cluster small;
+	small.setAmmount(10);
+	small.addDimension(normalDistribution,{0,100},{50,1,3},21);
+	dgb.addCluster(small);
+	dgb.build();
+
+	DataReader* dr = new DataReader();
+	float sum = 0;
+	while(dr->isThereANextPoint()){
+		sum += dr->nextPoint()->at(0);
+	}
+
+	DataGeneratorBuilder dgb2;
+	dgb2.setSeed(0);
+	Cluster small2;
+	small2.setAmmount(10);
+	small2.addDimension(normalDistribution,{0,100},{50,1,3},21);
+	dgb2.addCluster(small2);
+	dgb2.build();
+
+	DataReader* dr2 = new DataReader();
+	float sum2 = 0;
+	while(dr2->isThereANextPoint()){
+		sum2 += dr2->nextPoint()->at(0);
+	}
+	//std::cout << sum << " " << sum2 << std::endl;
+	EXPECT_TRUE(std::abs(sum -sum2)<0.01);
+}
+
+TEST_F(dataGenerationTests, testBuilder){
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(0);
+	Cluster small;
+	small.setAmmount(50);
+	small.addDimension(normalDistributionSpecial,{0,100},{50,0,1},21);
+	small.addDimension(constant,{0,100},{50,1,1},50);
+	small.addDimension(constant,{0,100},{50,1,1},50);
+	dgb.addCluster(small);
+
+	Cluster big;
+	big.setAmmount(50);
+	big.addDimension(normalDistributionSpecial,{0,100},{50,0,2},21);
+	big.addDimension(uniformDistribution,{0,100},{50,1,6},21);
+	big.addDimension(normalDistributionSpecial,{0,100},{50,0,2},21);
+	dgb.addCluster(big);
+	dgb.build();
+
+	Cluster medium;
+	medium.setAmmount(50);
+	medium.addDimension(constant,{0,100},{50,0,4},60);
+	medium.addDimension(normalDistributionSpecial,{0,100},{50,0,2},21);
+	medium.addDimension(normalDistributionSpecial,{0,100},{50,0,3},21);
+	dgb.addCluster(medium);
+	dgb.build();
+
+
+	DataReader* dr = new DataReader();
+	float sum = 0;
+	/*
+	while(dr->isThereANextPoint()){
+		std::cout << dr->nextPoint()->at(2) << std::endl;
+	}*/
+
+
+	EXPECT_TRUE(true);
+}
+
+
+

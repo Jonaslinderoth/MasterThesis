@@ -8,6 +8,7 @@
 #include <src/testingTools/DataGeneratorBuilder.h>
 #include <src/dataReader/DataReader.h>
 #include <src/testingTools/MetaDataFileReader.h>
+#include <src/testingTools/RandomFunction.h>
 
 #include <cstring>
 #include <chrono>
@@ -113,7 +114,6 @@ bool DataGeneratorBuilder::build(bool overWrite)
 			std::cout << "outlier percentage to big" << outLierPercentage << std::endl;
 			outLierPercentage = 100;
 		}
-
 		if(outLierPercentage < -0.0000001){
 			std::cout << "negative outlier percentage" << outLierPercentage << std::endl;
 			outLierPercentage = 0;
@@ -306,10 +306,13 @@ bool DataGeneratorBuilder::spitFiles(std::string fileName ,
 
 	for(int pointIndex = 0 ; pointIndex < totalSize ; ++pointIndex){
 		unsigned goo = pointIndex;
-
+		if(goo%400000 == 0){
+			//std::cout << pointIndex << std::endl;
+		}
 
 		unsigned int chosenClusterIndex = 0;
-		unsigned int randomNumber = rand() % (totalSize-pointIndex);
+
+		unsigned int randomNumber = RandomFunction::randomInteger() % (totalSize-pointIndex);
 		for(int clusterIndex = 0 ; clusterIndex < numberOfClusters ; ++clusterIndex){
 			if(randomNumber < vectorOfSizesOfFiles.at(clusterIndex)){
 				chosenClusterIndex = clusterIndex;
@@ -422,7 +425,7 @@ bool DataGeneratorBuilder::buildUClusters(std::string fileName_,
 	//pick the dimensions
 	std::vector<int> dimensionChosen;
 	for(int i = 0 ; i < dimensionUsed ; ++i){
-		unsigned int chosen = (unsigned int)rand()%vecOfDimensions.size();
+		unsigned int chosen = (unsigned int)RandomFunction::randomInteger()%vecOfDimensions.size();
 		dimensionChosen.push_back(vecOfDimensions.at(chosen));
 		vecOfDimensions.erase(vecOfDimensions.begin()+chosen);
 	}
@@ -432,7 +435,7 @@ bool DataGeneratorBuilder::buildUClusters(std::string fileName_,
 	for(int i = 0 ; i < dimensionChosen.size() ; ++i){
 		BoundsForUniformDistribution boundsForUniformDistribution;
 		int maxRange = ((int)boundsForUniformDistribution.upper-(int)boundsForUniformDistribution.lower-with);
-		int lowerRange = ((int)rand()%maxRange)+(int)boundsForUniformDistribution.lower;
+		int lowerRange = ((int)RandomFunction::randomInteger()%maxRange)+(int)boundsForUniformDistribution.lower;
 		int upperRange = lowerRange + with;
 		boundsForUniformDistribution.lower = lowerRange;
 		boundsForUniformDistribution.upper = upperRange;
@@ -458,18 +461,18 @@ bool DataGeneratorBuilder::buildUClusters(std::string fileName_,
 			upperRange = previusClusterBounds.at(dimensionIndex).upper;
 
 			//need to decide if to add or subtract the variance
-			if((int)rand()%2 == 0){
+			if((int)RandomFunction::randomInteger()%2 == 0){
 				variace = -variace;
 			}
 			lowerRange += variace;
 			upperRange += variace;
 
 			//we need to flip a coin if next cluster is going to use the same dimension chosen as this one for each dimension
-			if((int)rand()%2 == 0){
+			if((int)RandomFunction::randomInteger()%2 == 0){
 				//we readd the dimension that we are taking away
 				vecOfDimensions.push_back(*dim);
 				//we chose a new one at random
-				unsigned int chosen = (unsigned int)rand()%vecOfDimensions.size();
+				unsigned int chosen = (unsigned int)RandomFunction::randomInteger()%vecOfDimensions.size();
 				//overwirite the ond with the new chosen
 				nextDimensionChosen.at(dimensionIndex) = (vecOfDimensions.at(chosen));
 				//delete the new from the possible future picks
@@ -478,7 +481,7 @@ bool DataGeneratorBuilder::buildUClusters(std::string fileName_,
 
 				BoundsForUniformDistribution boundsForUniformDistribution;
 				int maxRange = ((int)boundsForUniformDistribution.upper-(int)boundsForUniformDistribution.lower-with);
-				float NextlowerRange = ((int)rand()%maxRange)+(int)boundsForUniformDistribution.lower;
+				float NextlowerRange = ((int)RandomFunction::randomInteger()%maxRange)+(int)boundsForUniformDistribution.lower;
 				float NextupperRange = lowerRange + with;
 				boundsForUniformDistribution.lower = NextlowerRange;
 				boundsForUniformDistribution.upper = NextupperRange;
@@ -490,7 +493,7 @@ bool DataGeneratorBuilder::buildUClusters(std::string fileName_,
 			boundsForUniformDistribution.lower = lowerRange;
 			boundsForUniformDistribution.upper = upperRange;
 			previusClusterBounds.at(dimensionIndex) = boundsForUniformDistribution;
-			cluster->addDimension(uniformDistribution,boundsForUniformDistribution,basicMeanAndVarianceForNormalDistribution,21,*dim);
+			cluster->addDimension(normalDistributionSpecial,boundsForUniformDistribution,basicMeanAndVarianceForNormalDistribution,21,*dim);
 			dimensionIndex++;
 		}
 		dgb.addCluster(*cluster);
@@ -546,7 +549,7 @@ bool DataGeneratorBuilder::buildMGqClusters(std::string fileName_,
 	//pick the dimensions
 	std::vector<int> dimensionChosen;
 	for(int i = 0 ; i < dimensionUsed ; ++i){
-		unsigned int chosen = (unsigned int)rand()%vecOfDimensions.size();
+		unsigned int chosen = (unsigned int)RandomFunction::randomInteger()%vecOfDimensions.size();
 		dimensionChosen.push_back(vecOfDimensions.at(chosen));
 		vecOfDimensions.erase(vecOfDimensions.begin()+chosen);
 	}
@@ -564,20 +567,25 @@ bool DataGeneratorBuilder::buildMGqClusters(std::string fileName_,
 
 		unsigned int dimensionIndex = 0;
 		for(std::vector<int>::iterator dim = dimensionChosen.begin() ; dim != dimensionChosen.end() ; ++dim){
-			if((int)rand()%2 == 0){
+			if((int)RandomFunction::randomInteger()%2 == 0){
 				vecOfDimensions.push_back(*dim);
-				unsigned int chosen = (unsigned int)rand()%vecOfDimensions.size();
+				unsigned int chosen = (unsigned int)RandomFunction::randomInteger()%vecOfDimensions.size();
 				nextChosenDimensions.at(dimensionIndex) = (vecOfDimensions.at(chosen));
 				vecOfDimensions.erase(vecOfDimensions.begin()+chosen);
 			}
 			float mean = basicMeanAndVarianceForNormalDistribution.mean;
 			float variance = basicMeanAndVarianceForNormalDistribution.variance;
-			cluster->addDimension(normalDistribution,basicBoundsForUniformDistribution,{mean,variance,q},21,*dim);
+			cluster->addDimension(normalDistributionSpecial,basicBoundsForUniformDistribution,{mean,variance,q},21,*dim);
 			dimensionIndex++;
 		}
 		dgb.addCluster(*cluster);
 		dimensionChosen = nextChosenDimensions;
 	}
 	dgb.build();
+	return true;
+}
+
+bool DataGeneratorBuilder::setSeed(unsigned int seed) {
+	RandomFunction::staticSetSeed(seed);
 	return true;
 }

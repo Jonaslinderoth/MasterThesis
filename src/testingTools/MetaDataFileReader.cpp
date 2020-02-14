@@ -50,6 +50,16 @@ MetaDataFileReader::MetaDataFileReader(std::string fileName_) {
 						++iter;
 						meanAndVarianceForNormalDistribution.variance = std::stof(*iter);
 						cluster.addDimension(normalDistribution,boundsForUniformDistribution,meanAndVarianceForNormalDistribution);
+					}else if((*iter).compare("s") == 0){
+						BoundsForUniformDistribution boundsForUniformDistribution;
+						MeanAndVarianceForNormalDistribution meanAndVarianceForNormalDistribution;
+						++iter;
+						meanAndVarianceForNormalDistribution.mean = std::stof(*iter);
+						++iter;
+						meanAndVarianceForNormalDistribution.variance = std::stof(*iter);
+						++iter;
+						meanAndVarianceForNormalDistribution.q = std::stof(*iter);
+						cluster.addDimension(normalDistributionSpecial,boundsForUniformDistribution,meanAndVarianceForNormalDistribution);
 					}else if((*iter).compare("c") == 0){
 						BoundsForUniformDistribution boundsForUniformDistribution;
 						MeanAndVarianceForNormalDistribution meanAndVarianceForNormalDistribution;

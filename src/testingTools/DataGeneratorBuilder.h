@@ -25,6 +25,7 @@ public:
 	bool build(bool overWrite = true);
 	bool deleteFiles(std::vector<std::string> vecOfFilesNames);
 	virtual ~DataGeneratorBuilder();
+	bool setSeed(unsigned int seed);
 	bool buildUClusters(std::string fileName_ = "test1", unsigned int ammountOfPoint = 100000 , unsigned int ammountOfClusters = 5 , unsigned int with = 15 , unsigned int dimensions = 200 , unsigned int dimensionUsed = 20 , float outLiersPersentage = 5);
 	bool buildMGqClusters(std::string fileName_ = "test1", unsigned int q = 1 , unsigned int ammountOfPoint = 100000 , unsigned int ammountOfClusters = 5 , unsigned int dimensions = 200 , unsigned int dimensionUsed = 20 , float outLiersPersentage = 5, float variance = 15);
 private:

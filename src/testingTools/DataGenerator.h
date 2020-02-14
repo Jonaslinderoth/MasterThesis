@@ -9,11 +9,13 @@
 #define DATAGENERATOR_H_
 
 #include <src/dataReader/Cluster.h>
+#include <src/testingTools/RandomFunction.h>
 #include <string>
 #include <vector>
 #include <iostream>
 #include <random>
 
+/*
 static float uniformRandomFloat(float lowest , float max){
 	std::random_device rd;
 	std::mt19937 generator(rd());
@@ -29,6 +31,7 @@ static float normalDistributionRandomFloat(float mean , float variance){
 	float res = distribution(generator);
 	return res;
 }
+*/
 
 struct PreviusClustersInformation{
 	std::vector<float> vectorOfPreviusCentroids;
