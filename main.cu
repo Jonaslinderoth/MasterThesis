@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <chrono>
 #include <random>
@@ -6,7 +7,7 @@
 
 int main ()
 {
-	auto a = new std::vector<std::vector<bool>*>;
+	/*	auto a = new std::vector<std::vector<bool>*>;
 	{auto aa = new std::vector<bool>{true, true};
 		a->push_back(aa);};
 	auto b = new std::vector<std::vector<float>*>;
@@ -21,5 +22,5 @@ int main ()
 		for(int j = 0; j < c->at(i)->size(); j++){
 			std:: cout << c->at(i)->at(j) << ", ";
 		}
-	}
+		}*/
 }

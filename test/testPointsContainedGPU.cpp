@@ -34,7 +34,8 @@ TEST_F(testPointsContainedGPU, testSimple){
 	auto d = new std::vector<std::vector<float>*>;
 	auto dd = new std::vector<float>{0};
 	d->push_back(dd);
-	auto c = pointsContained(a,b,d);
+	auto c = pointsContained(a,b,d,1).first;
+	
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 }
@@ -53,11 +54,15 @@ TEST_F(testPointsContainedGPU, testWithSimpleData){
     auto centroid = new std::vector<float>{10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c = pointsContained(a,b,centorids);
+	auto c1 = pointsContained(a,b,centorids,1);
+	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 	EXPECT_TRUE(c->at(0)->at(0));
 	EXPECT_FALSE(c->at(0)->at(1));
+
+	EXPECT_EQ(c1.second->size(), 1);
+	EXPECT_EQ(c1.second->at(0), 1);
 }
 TEST_F(testPointsContainedGPU, testWithSimpleData2){
 	auto a = new std::vector<std::vector<bool>*>;
@@ -75,12 +80,17 @@ TEST_F(testPointsContainedGPU, testWithSimpleData2){
     auto centroid = new std::vector<float>{10,10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c = pointsContained(a,b,centorids);
+	auto c1 = pointsContained(a,b,centorids,1);
+	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 	EXPECT_TRUE(c->at(0)->at(0));
 	EXPECT_FALSE(c->at(0)->at(1));
 	EXPECT_FALSE(c->at(0)->at(2));
+
+
+	EXPECT_EQ(c1.second->size(), 1);
+	EXPECT_EQ(c1.second->at(0), 1);
 }
 
 
@@ -103,7 +113,8 @@ TEST_F(testPointsContainedGPU, testWithSimpleData3){
     auto centroid = new std::vector<float>{10,10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c = pointsContained(a,b,centorids);
+	auto c1 = pointsContained(a,b,centorids,1);
+	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 	EXPECT_TRUE(c->at(0)->at(0));
@@ -113,6 +124,11 @@ TEST_F(testPointsContainedGPU, testWithSimpleData3){
 	EXPECT_TRUE(c->at(1)->at(0));
 	EXPECT_FALSE(c->at(1)->at(1));
 	EXPECT_FALSE(c->at(1)->at(2));
+
+
+	EXPECT_EQ(c1.second->size(), 2);
+	EXPECT_EQ(c1.second->at(0), 1);
+	EXPECT_EQ(c1.second->at(1), 1);
 }
 
 TEST_F(testPointsContainedGPU, testWithSimpleData4){
@@ -136,7 +152,8 @@ TEST_F(testPointsContainedGPU, testWithSimpleData4){
     auto centroid = new std::vector<float>{10,10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c = pointsContained(a,b,centorids);
+	auto c1 = pointsContained(a,b,centorids,1);
+	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 	EXPECT_EQ(c->at(0)->size(), 4);
@@ -157,6 +174,11 @@ TEST_F(testPointsContainedGPU, testWithSimpleData4){
 	EXPECT_FALSE(c->at(2)->at(1));
 	EXPECT_FALSE(c->at(2)->at(2));
 	EXPECT_FALSE(c->at(2)->at(3));
+
+	EXPECT_EQ(c1.second->size(), 3);
+	EXPECT_EQ(c1.second->at(0), 2);
+	EXPECT_EQ(c1.second->at(1), 2);
+	EXPECT_EQ(c1.second->at(2), 1);
 	
 }
 
@@ -177,7 +199,8 @@ TEST_F(testPointsContainedGPU, testWithSimpleData5){
     auto centroid = new std::vector<float>{10,10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c = pointsContained(a,b,centorids);
+	auto c1 = pointsContained(a,b,centorids,1);
+	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 	EXPECT_EQ(c->at(0)->size(), 4);
@@ -185,6 +208,10 @@ TEST_F(testPointsContainedGPU, testWithSimpleData5){
 	EXPECT_FALSE(c->at(0)->at(1));
 	EXPECT_TRUE(c->at(0)->at(2));
 	EXPECT_TRUE(c->at(0)->at(3));
+
+
+	EXPECT_EQ(c1.second->size(), 1);
+	EXPECT_EQ(c1.second->at(0), 3);
 }
 
 
@@ -204,7 +231,8 @@ TEST_F(testPointsContainedGPU, testWithSimpleData6){
     auto centroid = new std::vector<float>{10,10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c = pointsContained(a,b,centorids);
+	auto c1 = pointsContained(a,b,centorids,1);
+	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 	EXPECT_EQ(c->at(0)->size(), 4);
@@ -212,6 +240,9 @@ TEST_F(testPointsContainedGPU, testWithSimpleData6){
 	EXPECT_FALSE(c->at(0)->at(1));
 	EXPECT_FALSE(c->at(0)->at(2));
 	EXPECT_FALSE(c->at(0)->at(3));
+
+	EXPECT_EQ(c1.second->size(), 1);
+	EXPECT_EQ(c1.second->at(0), 1);
 }
 
 
@@ -225,11 +256,15 @@ TEST_F(testPointsContainedGPU, testWithSimpleData7){
     auto centroid = new std::vector<float>{10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c = pointsContained(a,b,centorids);
+	auto c1 = pointsContained(a,b,centorids,1);
+	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 	EXPECT_EQ(c->at(0)->size(), 1);
 	EXPECT_TRUE(c->at(0)->at(0));
+	EXPECT_EQ(c1.second->size(), 1);
+	EXPECT_EQ(c1.second->at(0), 1);
+
 }
 
 
@@ -243,11 +278,15 @@ TEST_F(testPointsContainedGPU, testWithSimpleData8){
     auto centroid = new std::vector<float>{10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c = pointsContained(a,b,centorids);
+	auto c1 = pointsContained(a,b,centorids,1);
+	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 	EXPECT_EQ(c->at(0)->size(), 1);
 	EXPECT_FALSE(c->at(0)->at(0));
+
+	EXPECT_EQ(c1.second->size(), 1);
+	EXPECT_EQ(c1.second->at(0), 0);
 }
 
 
@@ -261,11 +300,14 @@ TEST_F(testPointsContainedGPU, testWithSimpleData9){
     auto centroid = new std::vector<float>{10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c = pointsContained(a,b,centorids);
+	auto c1 = pointsContained(a,b,centorids,1);
+	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 	EXPECT_EQ(c->at(0)->size(), 1);
 	EXPECT_FALSE(c->at(0)->at(0));
+	EXPECT_EQ(c1.second->size(), 1);
+	EXPECT_EQ(c1.second->at(0), 0);
 }
 
 
@@ -279,11 +321,14 @@ TEST_F(testPointsContainedGPU, testWithSimpleData10){
     auto centroid = new std::vector<float>{10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c = pointsContained(a,b,centorids);
+	auto c1 = pointsContained(a,b,centorids,1);
+	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 	EXPECT_EQ(c->at(0)->size(), 1);
 	EXPECT_FALSE(c->at(0)->at(0));
+	EXPECT_EQ(c1.second->size(), 1);
+	EXPECT_EQ(c1.second->at(0), 0);
 }
 
 
@@ -297,11 +342,14 @@ TEST_F(testPointsContainedGPU, testWithSimpleData11){
     auto centroid = new std::vector<float>{10,10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c = pointsContained(a,b,centorids);
+	auto c1 = pointsContained(a,b,centorids,1);
+	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
 	EXPECT_EQ(c->at(0)->size(), 1);
 	EXPECT_FALSE(c->at(0)->at(0));
+	EXPECT_EQ(c1.second->size(), 1);
+	EXPECT_EQ(c1.second->at(0), 0);
 }
 
 
@@ -348,7 +396,8 @@ TEST_F(testPointsContainedGPU, testRandomCompCPU){
 		data->push_back(point);
 	}
 
-	auto c = pointsContained(dims, data, centorids);
+	auto c1 = pointsContained(dims, data, centorids,1);
+	auto c = c1.first;
 	int t = 0, f = 0;
 	for(int i = 0; i < centorids->size(); i++){
 		auto cpu = HyperCube(centorids->at(i), 10, dims->at(i));
