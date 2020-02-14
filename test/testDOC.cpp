@@ -546,7 +546,7 @@ TEST_F(testDOC, testWithDataReader2){
 }
 	
 
-TEST_F(testDOC, DISABLED_testWithDataReader3){
+TEST_F(testDOC, testWithDataReader3){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(20);
@@ -634,9 +634,10 @@ TEST_F(testDOC, testWithDataReader4){
 }
 
 
-TEST_F(testDOC, DISABLED_testWithDataReader5){
+TEST_F(testDOC, testWithDataReader5){
 	
 	DataGeneratorBuilder dgb;
+	dgb.setSeed(0);
 	Cluster small;
 	small.setAmmount(100);
 	small.addDimension(normalDistribution, {-10000,10000}, {50,2});

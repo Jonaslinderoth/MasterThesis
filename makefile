@@ -5,7 +5,7 @@ CXX = nvcc
 
 # -g -G for instrumntation for debugger
 CXXFLAGS=-I. -arch=sm_37  -O2 #-g -G
-LIBS = -lpthread
+LIBS = -lpthread -lcurand -L /usr/local/cuda-9.2/lib64
 
 EXE=main
 EXEFILE = main

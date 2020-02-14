@@ -45,6 +45,7 @@ TEST(testArgMaxGPU, testSimple4){
 }
 
 
+
 TEST(testArgMaxGPU, testLarge){
 	std::vector<float>* scores = new std::vector<float>;
 	int n = 1024*2;

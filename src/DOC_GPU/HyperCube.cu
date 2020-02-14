@@ -92,7 +92,7 @@ __global__ void argMaxDevice(float* scores, int* scores_index, float* output ,in
 
 	if(i < input_size){
 		
-		for(unsigned int s=blockDim.x; s > 0; s/=2) {
+		for(unsigned int s=(blockDim.x/2); s > 0; s/=2) {
 
 			if(tid < s){
 				if(scoreData[tid] < scoreData[tid+s]){
@@ -496,15 +496,14 @@ int argMax(std::vector<float>* scores){
 	cudaDeviceGetAttribute(&maxBlock, 
 						   cudaDevAttrMaxThreadsPerBlock, 0); // TODO::: not working::....
 
-	maxBlock = 64;//512; // TODO::: findout why values larger than 64 wont work for all samples larger than 64...
+	//maxBlock = 1024;//512; // TODO::: findout why values larger than 64 wont work for all samples larger than 64...
 	//std::cout << smemSize << std::endl;
 
 	// caluclate the maximum thread size based on shared mem requirements and maximum threads
 	int dimBlock = smemSize/(sizeof(int)+sizeof(float));
 	if(dimBlock > maxBlock) dimBlock = maxBlock;
 	int dimGrid = ceil((float)scores->size()/(float)dimBlock);
-	int sharedMemSize = ((1+dimBlock)*sizeof(int) + (1+dimBlock)*sizeof(float));
-
+	int sharedMemSize = (dimBlock*sizeof(int) + dimBlock*sizeof(float));
 
 	int size_of_score = scores->size()*sizeof(float);
 	int size_of_score_index = scores->size()*sizeof(int);
@@ -520,6 +519,7 @@ int argMax(std::vector<float>* scores){
 	for(int i = 0; i < scores->size(); i++){
 		scores_h[i] = scores->at(i);
 		scores_index_h[i] = i;
+		//std::cout << scores->at(i) << std::endl;
 	}
 
 	//std::cout << "data created" << std::endl;
@@ -534,17 +534,19 @@ int argMax(std::vector<float>* scores){
 	cudaMalloc((void **) &output_index_d, size_of_output_index);
 	//std::cout << "cuda malloc" << std::endl;
 	
+
+
 	cudaMemcpy(scores_d, scores_h, size_of_score, cudaMemcpyHostToDevice);
-	cudaMemcpy(scores_index_d, scores_index_h, size_of_score, cudaMemcpyHostToDevice);
+	cudaMemcpy(scores_index_d, scores_index_h, size_of_score_index, cudaMemcpyHostToDevice);
 	//std::cout << "data copied" << std::endl;
 
 	//std::cout << dimBlock << ", " << dimGrid << ", " << sharedMemSize << std::endl;
 
-	
 	//Call kernel
 	int out_size = scores->size();
 	argMaxDevice<<<dimGrid, dimBlock, sharedMemSize>>>(scores_d, scores_index_d, output_d, output_index_d, out_size);
 
+	out_size = ceil((float)out_size/(float)dimBlock);
 	/*
 	cudaMemcpy(output_h, output_d, size_of_output, cudaMemcpyDeviceToHost);
 	cudaMemcpy(output_index_h, output_index_d, size_of_output_index, cudaMemcpyDeviceToHost);	
@@ -554,6 +556,7 @@ int argMax(std::vector<float>* scores){
 	*/
 	//std::cout << "first pass" << std::endl;
 	//int i = 1;
+
 	while(out_size > 1){
 		//std::cout << i << "th pass" << std::endl;
 		//i++;
@@ -583,3 +586,6 @@ int argMax(std::vector<float>* scores){
 	
 	
 }
+
+
+
