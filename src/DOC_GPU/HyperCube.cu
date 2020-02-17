@@ -77,7 +77,8 @@ float* scoreHost(unsigned int* Cluster_size, unsigned int* Dim_count, float* sco
 	
 }
 
-__global__ void argMaxDevice(float* scores, int* scores_index, float* output ,int* output_index, int input_size){
+
+__global__ void argMaxDevice(float* scores, int* scores_index, int input_size){
 	extern __shared__ int array[];
 	int* argData = (int*)array;
 	float* scoreData = (float*) &argData[blockDim.x];
@@ -104,8 +105,8 @@ __global__ void argMaxDevice(float* scores, int* scores_index, float* output ,in
 		}
 	
 		if(tid == 0){
-			output_index[blockIdx.x] = argData[0];
-			output[blockIdx.x] = scoreData[0];
+			scores_index[blockIdx.x] = argData[0];
+			scores[blockIdx.x] = scoreData[0];
 		}; 
 		
 	}
@@ -225,6 +226,10 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster(std
 																	width, point_dim, number_of_points, number_of_samples, m);
 	
 	score<<<ceil((number_of_samples)/256.0), 256>>>(pointsContained_count_d, findDim_count_d, scores_d, number_of_samples, beta);
+
+
+
+	//argMaxDevice<<<dimGrid, dimBlock, sharedMemSize>>>(scores_d, scores_index_d, output_d, output_index_d, out_size);		
 
 
 	
@@ -512,8 +517,8 @@ int argMax(std::vector<float>* scores){
 	
 	float* scores_h = (float*) malloc(size_of_score);
 	int* scores_index_h = (int*) malloc(size_of_score_index);
-	float* output_h = (float*) malloc(size_of_output);
-	int* output_index_h = (int*) malloc(size_of_output_index);
+	//	float* output_h = (float*) malloc(size_of_output);
+	//int* output_index_h = (int*) malloc(size_of_output_index);
 
 	//std::cout << "creating data..." << scores->size() << std::endl;
 	for(int i = 0; i < scores->size(); i++){
@@ -525,13 +530,13 @@ int argMax(std::vector<float>* scores){
 	//std::cout << "data created" << std::endl;
 	float* scores_d;
 	int* scores_index_d;
-	float* output_d;
-	int* output_index_d;
+	//float* output_d;
+	//	int* output_index_d;
 
 	cudaMalloc((void **) &scores_d, size_of_score);
 	cudaMalloc((void **) &scores_index_d, size_of_score_index);
-	cudaMalloc((void **) &output_d, size_of_output);
-	cudaMalloc((void **) &output_index_d, size_of_output_index);
+	//cudaMalloc((void **) &output_d, size_of_output);
+	//cudaMalloc((void **) &output_index_d, size_of_output_index);
 	//std::cout << "cuda malloc" << std::endl;
 	
 
@@ -544,7 +549,7 @@ int argMax(std::vector<float>* scores){
 
 	//Call kernel
 	int out_size = scores->size();
-	argMaxDevice<<<dimGrid, dimBlock, sharedMemSize>>>(scores_d, scores_index_d, output_d, output_index_d, out_size);
+	argMaxDevice<<<dimGrid, dimBlock, sharedMemSize>>>(scores_d, scores_index_d, out_size);
 
 	out_size = ceil((float)out_size/(float)dimBlock);
 	/*
@@ -560,29 +565,27 @@ int argMax(std::vector<float>* scores){
 	while(out_size > 1){
 		//std::cout << i << "th pass" << std::endl;
 		//i++;
-		auto temp = output_d;
-		auto temp_index = output_index_d;
-		output_index_d = scores_index_d;
-		output_d = scores_d;
-		scores_index_d = temp_index;
-		scores_d = temp;
+		//auto temp = output_d;
+		//auto temp_index = output_index_d;
+		//output_index_d = scores_index_d;
+		//output_d = scores_d;
+		//scores_index_d = temp_index;
+		//scores_d = temp;
 		
 		out_size = dimGrid;
 		dimGrid = ceil((float)out_size/(float)dimBlock);
 		//std::cout << dimBlock << ", " << dimGrid << ", " << sharedMemSize << std::endl;
-		argMaxDevice<<<dimGrid, dimBlock, sharedMemSize>>>(scores_d, scores_index_d, output_d, output_index_d, out_size);		
-		}
+		argMaxDevice<<<dimGrid, dimBlock, sharedMemSize>>>(scores_d, scores_index_d, out_size);		
+	}
 
-	cudaMemcpy(output_h, output_d, size_of_output, cudaMemcpyDeviceToHost);
-	cudaMemcpy(output_index_h, output_index_d, size_of_output_index, cudaMemcpyDeviceToHost);	
+	cudaMemcpy(scores_h, scores_d, size_of_output, cudaMemcpyDeviceToHost);
+	cudaMemcpy(scores_index_h, scores_index_d, size_of_output_index, cudaMemcpyDeviceToHost);	
 	
  
 	cudaFree(scores_d);
 	cudaFree(scores_index_d);
-	cudaFree(output_index_d);	
-	cudaFree(output_d);
 
-	return output_index_h[0] ;
+	return scores_index_h[0] ;
 	
 	
 }

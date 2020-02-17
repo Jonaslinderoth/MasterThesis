@@ -20,4 +20,6 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster(std
 
 float* scoreHost(unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output, int len, float beta);
 
+
+
 #endif
