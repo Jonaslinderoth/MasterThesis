@@ -18,7 +18,7 @@ int argMax(std::vector<float>* scores);
 std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster(std::vector<std::vector<float>*>* data, float alpha = 0.1, float beta = 0.25, float width = 15);
 
 
-float* scoreHost(unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output, int len, float beta);
+float* scoreHost(unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output, int len, float alpha, float beta, unsigned int number_of_points);
 
 
 
