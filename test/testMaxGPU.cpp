@@ -93,15 +93,6 @@ TEST(testArgMaxGPU, testLarge4){
 	EXPECT_EQ(c, n-1);
 }
 
-template <typename T, typename A>
-int arg_max(std::vector<T, A> const& vec) {
-  return static_cast<int>(std::distance(vec.begin(), max_element(vec.begin(), vec.end())));
-}
-
-template <typename T, typename A>
-int arg_min(std::vector<T, A> const& vec) {
-  return static_cast<int>(std::distance(vec.begin(), min_element(vec.begin(), vec.end())));
-}
 
 TEST(testArgMaxGPU, testLarge5){
 	std::vector<float>* scores = new std::vector<float>;
