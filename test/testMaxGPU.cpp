@@ -3,6 +3,9 @@
 #include "../src/DOC_GPU/HyperCube.h"
 #include "../src/DOC/DOC.h"
 #include <random>
+#include <cstdlib>      // std::rand, std::srand
+#include <algorithm>    // std::random_shuffle
+
 
 TEST(testArgMaxGPU, testSimple){
 	std::vector<float>* scores = new std::vector<float>;
@@ -88,4 +91,31 @@ TEST(testArgMaxGPU, testLarge4){
 	}
 	auto c = argMax(scores);
 	EXPECT_EQ(c, n-1);
+}
+
+template <typename T, typename A>
+int arg_max(std::vector<T, A> const& vec) {
+  return static_cast<int>(std::distance(vec.begin(), max_element(vec.begin(), vec.end())));
+}
+
+template <typename T, typename A>
+int arg_min(std::vector<T, A> const& vec) {
+  return static_cast<int>(std::distance(vec.begin(), min_element(vec.begin(), vec.end())));
+}
+
+TEST(testArgMaxGPU, testLarge5){
+	std::vector<float>* scores = new std::vector<float>;
+	int n = 53687;
+	for(int i = 0; i < n; i++){
+		scores->push_back(i);
+	}
+	
+	std::srand ( 0 );
+	std::random_shuffle ( scores->begin(), scores->end(), [](int i){ return std::rand()%i;});
+
+	
+	int max_idx = (std::distance(scores->begin(), max_element(scores->begin(), scores->end())));
+	
+	auto c = argMax(scores);
+	EXPECT_EQ(c, max_idx);
 }
