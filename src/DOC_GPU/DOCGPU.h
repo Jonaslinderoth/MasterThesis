@@ -13,6 +13,7 @@
 # include <stdlib.h>
 # include <cuda.h>
 # include <curand.h>
+#include "../dataReader/DataReader.h"
 
 
 

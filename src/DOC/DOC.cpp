@@ -28,7 +28,6 @@ DOC::DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float
 	this->alpha = alpha;
 	this->width = width;
 	this->beta = beta;
-	this->gen.seed(this->seed);
 
 }
 

@@ -276,7 +276,6 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster(std
 	unsigned int* scores_index_h = (unsigned int*) malloc(size_of_output);
 	cudaMemcpy(scores_index_h, scores_index_d, size_of_output, cudaMemcpyDeviceToHost);
 
-	std::cout << scores_index_h[0] << std::endl;
 
 	
 	bool* output_dims_h = (bool*) malloc(size_of_output_dims);
