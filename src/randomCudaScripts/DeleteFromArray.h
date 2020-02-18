@@ -24,12 +24,15 @@
 #define CONFLICT_FREE_OFFSET(n) ((n) >> LOG_NUM_BANKS)
 #endif
 
-
 void sum_scan_blelloch(unsigned int* const d_out,const unsigned int* const d_in,const size_t numElems);
+void sum_scan_blelloch(unsigned int* const d_out,const bool* const d_in,const size_t numElems);
+void cpu_sum_scan(unsigned int* const h_out,
+	const bool* const h_in,
+	const size_t numElems);
 void cpu_sum_scan(unsigned int* const h_out,
 	const unsigned int* const h_in,
 	const size_t numElems);
 void cpuDeleteFromArray(float* const d_outData, const bool* delete_array, const float* data,unsigned int* indexes , const size_t numElements);
-void deleteFromArray(const float* d_outData, const bool* delete_array, const float* data,unsigned int* indexes, const unsigned long numElements);
+void deleteFromArray(float* d_outData, const bool* delete_array, const float* data,unsigned int* indexes, const unsigned long numElements);
 
 #endif /* DELETEFROMARRAY_H_ */
