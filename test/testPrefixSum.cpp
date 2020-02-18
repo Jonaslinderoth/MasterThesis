@@ -209,7 +209,7 @@ TEST(testPrefixSum, testTwo){
 
 
 		//std::cout << "GPU time: " << duration << std::endl;
-		/*
+
 		// Copy device output array to host output array
 		// And free device-side memory
 		checkCudaErrors(cudaMemcpy(h_outData_gpu, d_outData, sizeof(float) * h_dataLenght, cudaMemcpyDeviceToHost));
@@ -222,6 +222,7 @@ TEST(testPrefixSum, testTwo){
 		for(unsigned int i = 0; i < h_dataLenght; ++i){
 			howManyDeleted += h_deleteArray[i];
 		}
+
 		/*
 		std::cout << "cpu result:";
 		for(int i = 0; i < (h_dataLenght-howManyDeleted); ++i){
@@ -249,7 +250,7 @@ TEST(testPrefixSum, testTwo){
 				break;
 			}
 		}
-		std::cout << "Match: " << match << std::endl;
+		//std::cout << "Match: " << match << std::endl;
 
 		// Detail the mismatch if any
 		if (!match)
