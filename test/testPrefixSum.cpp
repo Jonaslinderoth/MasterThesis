@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <iostream>
-#include "../src/DOC_GPU/HyperCube.h"
+#include "../src/DOC_GPU/DOCGPU_Kernels.h"
 #include "../src/DOC/DOC.h"
 #include <random>
 #include "../src/randomCudaScripts/DeleteFromArray.h"
@@ -76,24 +76,24 @@ TEST(testPrefixSum, testOne){
 		// Detail the mismatch if any
 		if (!match)
 		{
-			std::cout << "Difference in index: " << index_diff << std::endl;
-			std::cout << "CPU: " << h_out_naive[index_diff] << std::endl;
-			std::cout << "Blelloch: " << h_out_blelloch[index_diff] << std::endl;
+			//std::cout << "Difference in index: " << index_diff << std::endl;
+			//std::cout << "CPU: " << h_out_naive[index_diff] << std::endl;
+			//std::cout << "Blelloch: " << h_out_blelloch[index_diff] << std::endl;
 			int window_sz = 10;
 
-			std::cout << "Contents: " << std::endl;
-			std::cout << "CPU: ";
+			//std::cout << "Contents: " << std::endl;
+			//std::cout << "CPU: ";
 			for (int i = -(window_sz / 2); i < (window_sz / 2); ++i)
 			{
-				std::cout << h_out_naive[index_diff + i] << ", ";
+				///	std::cout << h_out_naive[index_diff + i] << ", ";
 			}
-			std::cout << std::endl;
-			std::cout << "Blelloch: ";
+			//std::cout << std::endl;
+			//std::cout << "Blelloch: ";
 			for (int i = -(window_sz / 2); i < (window_sz / 2); ++i)
 			{
-				std::cout << h_out_blelloch[index_diff + i] << ", ";
+				//	std::cout << h_out_blelloch[index_diff + i] << ", ";
 			}
-			std::cout << std::endl;
+			//std::cout << std::endl;
 			EXPECT_TRUE(false);
 		}
 
@@ -102,7 +102,7 @@ TEST(testPrefixSum, testOne){
 		delete[] h_out_naive;
 		delete[] h_out_blelloch;
 
-		std::cout << std::endl;
+		//std::cout << std::endl;
 
 
 	}
@@ -122,7 +122,7 @@ TEST(testPrefixSum, testTwo){
 	{
 		//h_dataLenght = (1 << k) + 3;
 		unsigned int h_dataLenght = 10;
-		std::cout << "h_in size: " << h_dataLenght << std::endl;
+		//std::cout << "h_in size: " << h_dataLenght << std::endl;
 
 		// Generate input data
 		float* h_data = new float[h_dataLenght];
@@ -176,12 +176,12 @@ TEST(testPrefixSum, testTwo){
 			std::cout << std::to_string(h_deleteArray[i])<< " ";
 		}*/
 
-		std::cout << std::endl;
+		//std::cout << std::endl;
 		// Do CPU for reference
 		start = std::clock();
 		cpuDeleteFromArray(h_outData_naive, h_deleteArray, h_data, h_indexes , h_dataLenght);
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-		std::cout << "CPU time: " << duration << std::endl;
+		//std::cout << "CPU time: " << duration << std::endl;
 
 		/*
 		std::cout << "input: ";
@@ -201,7 +201,7 @@ TEST(testPrefixSum, testTwo){
 		start = std::clock();
 		deleteFromArray(d_outData, d_deleteArray, d_inputData,d_inputIndexes , h_dataLenght);
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-		std::cout << "GPU time: " << duration << std::endl;
+		//std::cout << "GPU time: " << duration << std::endl;
 		/*
 		// Copy device output array to host output array
 		// And free device-side memory
@@ -253,7 +253,7 @@ TEST(testPrefixSum, testTwo){
 		//delete[] h_out_naive;
 		//delete[] h_out_blelloch;
 
-		std::cout << std::endl;
+		//std::cout << std::endl;
 
 
 	}

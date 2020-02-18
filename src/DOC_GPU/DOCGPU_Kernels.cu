@@ -3,13 +3,18 @@
 #include <vector>
 #include <math.h>
 #include <random>
+#include <assert.h>
 
 __global__ void findDimmensionsDevice(float* Xs_d, float* ps_d, bool* res_d, unsigned int* Dsum_out,
-									  int point_dim, int no_of_samples, int no_in_sample, int no_of_ps, int m, float width){
+									  int point_dim, int no_of_samples, int no_in_sample, int no_of_ps, float m, float width){
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
 	int pNo = entry/m;
 	
 	if(entry < no_of_samples){
+		//if(pNo >= no_of_ps){
+		//	printf("entry %i, looks for centorid %i, but there is only %i centroids. m : %i\n", entry, pNo, no_of_ps, m);
+		//}
+		assert(pNo < no_of_ps);
 		unsigned int Dsum = 0;
 		// for each dimension
 		for(int i = 0; i < point_dim; i++){
@@ -124,7 +129,7 @@ __global__ void argMaxDevice(float* scores, unsigned int* scores_index, int inpu
 
 void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, float* Xs_d, float* ps_d, bool* res_d,
 						   unsigned int* Dsum_out, int point_dim, int no_of_samples, int sample_size, int no_of_ps,
-						   int m, float width){
+						   float m, float width){
 
     findDimmensionsDevice<<<dimGrid, dimBlock>>>(Xs_d, ps_d, res_d,  Dsum_out,
 												 point_dim, no_of_samples, sample_size,
@@ -205,191 +210,6 @@ void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int shar
 
 
 
-std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findClusterUsingGPU(std::vector<std::vector<float>*>* data, float alpha, float beta, float width){
-	float d = data->at(0)->size();
-	float r = log2(2*d)/log2(1/(2*beta));
-	float m = pow((2/alpha),2) * log(4);
-	
-	unsigned int number_of_ps = 2.0/alpha;
-	unsigned int number_of_samples = number_of_ps*m;
-	
-	unsigned int sample_size = r;
-	unsigned int number_of_points = data->size();
-	unsigned int point_dim = d;
-	
-	unsigned int floats_in_data_array = point_dim*number_of_points;
-	unsigned int floats_in_ps_array = point_dim*number_of_ps;
-	unsigned int floats_in_Xs_array = point_dim*number_of_samples*sample_size;
-
-	unsigned int size_of_data = floats_in_data_array*sizeof(float);
-	unsigned int size_of_ps = floats_in_ps_array*sizeof(float);
-	unsigned int size_of_xs = floats_in_Xs_array*sizeof(float);
-	unsigned int size_of_output_dims = point_dim*sizeof(bool);
-	unsigned int size_of_output_cluster = number_of_points*sizeof(bool);
-
-
-	float* data_h = (float*) malloc(size_of_data);
-	float* ps_h = (float*) malloc(size_of_ps);
-	float* xs_h = (float*) malloc(size_of_xs);
-	
-	for(int i = 0; i < number_of_points; i++){
-		for(int j = 0; j < point_dim; j++){
-			data_h[i*point_dim+j] = data->at(i)->at(j);
-		}
-	}
-
-
-	std::mt19937 gen;
-	gen.seed(1);
-	
-	std::uniform_int_distribution<> dis(0, number_of_points-1); //inclusive
-
-	for(int i = 0; i < number_of_ps; i++){
-		unsigned int id = dis(gen);
-		for(int j = 0; j < point_dim; j++){
-			ps_h[i*point_dim+j] = data->at(id)->at(j);
-		}
-	}
-
-	for(int i = 0; i < number_of_samples*sample_size; i++){
-		unsigned int id = dis(gen);
-		for(int j = 0; j < point_dim; j++){
-			xs_h[i*point_dim+j] = data->at(id)->at(j);
-		}
-	}
-	
-
-	float* data_d;
-	float* ps_d;
-	float* xs_d;
-	
-
-	cudaMalloc((void **) &data_d, size_of_data);
-	cudaMalloc((void **) &ps_d, size_of_ps);
-	cudaMalloc((void **) &xs_d, size_of_xs);
-
-	cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice);
-	cudaMemcpy(xs_d, xs_h, size_of_xs, cudaMemcpyHostToDevice);
-	cudaMemcpy(ps_d, ps_h, size_of_ps, cudaMemcpyHostToDevice);
-
-
-	
-	unsigned int findDim_bools = number_of_samples*point_dim;
-	unsigned int number_of_points_contained = number_of_samples*number_of_points;
-
-
-	unsigned int size_of_findDim = findDim_bools*sizeof(bool);
-	unsigned int size_of_pointsContained = number_of_points_contained*sizeof(bool);
-	unsigned int size_of_findDim_count = number_of_samples*sizeof(unsigned int);
-	unsigned int size_of_pointsContained_count = number_of_samples*sizeof(unsigned int);
-	unsigned int size_of_scores = number_of_samples*sizeof(float);
-	unsigned int size_of_scores_index = number_of_samples*sizeof(unsigned int);
-
-
-	bool* findDim_output_d;
-	bool* pointsContained_output_d;
-	unsigned int* pointsContained_count_d;
-	unsigned int* findDim_count_d;
-	float* scores_d;
-	unsigned int* scores_index_d;
-	
-	
-	cudaMalloc((void **) &findDim_output_d, size_of_findDim);
-	cudaMalloc((void **) &pointsContained_output_d, size_of_pointsContained);
-	cudaMalloc((void **) &findDim_count_d, size_of_findDim_count);
-	cudaMalloc((void **) &pointsContained_count_d, size_of_pointsContained_count);
-	cudaMalloc((void **) &scores_d, size_of_scores);
-	cudaMalloc((void **) &scores_index_d, size_of_scores_index );
-	
-
-	int smemSize, maxBlock;
-	cudaDeviceGetAttribute(&smemSize, 
-    cudaDevAttrMaxSharedMemoryPerBlock, 0);
-	cudaDeviceGetAttribute(&maxBlock, 
-						   cudaDevAttrMaxThreadsPerBlock, 0); 
-
-	// caluclate the maximum thread size based on shared mem requirements and maximum threads
-	int dimBlock = smemSize/(sizeof(int)+sizeof(float));
-	if(dimBlock > maxBlock) dimBlock = maxBlock;
-	int dimGrid = ceil((float)number_of_samples/(float)dimBlock);
-	int sharedMemSize = (dimBlock*sizeof(unsigned int) + dimBlock*sizeof(float));
-
-	
-	
-	findDimmensionsKernel(dimGrid, dimBlock, xs_d, ps_d, findDim_output_d,
-						   findDim_count_d, point_dim, number_of_samples, sample_size, number_of_ps,
-						  m, width);
-	cudaFree(xs_d);
-
-
-	pointsContainedKernel(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
-												 pointsContained_output_d, pointsContained_count_d,
-												 width, point_dim, number_of_points, number_of_samples, m);
-
-
-	cudaFree(ps_d);
-	cudaFree(data_d);
-	
-	scoreKernel(dimGrid, dimBlock,
-				pointsContained_count_d,
-				findDim_count_d, scores_d,
-				number_of_samples,
-				alpha, beta, number_of_points);
-
-	cudaFree(findDim_count_d);
-	cudaFree(pointsContained_count_d);
-
-
-
-	createIndicesKernel(dimGrid, dimBlock,scores_index_d, number_of_samples);
-
-	
-	argMaxKernel(dimGrid, dimBlock, sharedMemSize, scores_d, scores_index_d, number_of_samples);
-
-
-	cudaFree(scores_d);
-
-
-
-
-	unsigned int size_of_output = sizeof(unsigned int);
-	unsigned int* scores_index_h = (unsigned int*) malloc(size_of_output);
-	cudaMemcpy(scores_index_h, scores_index_d, size_of_output, cudaMemcpyDeviceToHost);
-
-
-	
-	bool* output_dims_h = (bool*) malloc(size_of_output_dims);
-	bool* output_cluster_h = (bool*) malloc(size_of_output_cluster);
-	float* scores_h = (float*) malloc(size_of_scores);
-	unsigned int* findDim_count_h = (unsigned int*) malloc(size_of_findDim_count);
-
-
-
-	cudaMemcpy(output_dims_h, findDim_output_d+(scores_index_h[0]*point_dim), size_of_output_dims, cudaMemcpyDeviceToHost);
-	cudaMemcpy(output_cluster_h, pointsContained_output_d+(scores_index_h[0]*number_of_points), size_of_output_cluster, cudaMemcpyDeviceToHost);
-
-	cudaFree(scores_index_d);
-	cudaFree(findDim_output_d);
-	cudaFree(pointsContained_output_d);
-
-
-	
-	std::vector<bool>* outDim = new std::vector<bool>;
-	for(int i = 0; i < point_dim; i++){
-		outDim->push_back(output_dims_h[i]);
-	}
-	
-
-	std::vector<std::vector<float>*>* outCluster = new std::vector<std::vector<float>*>;
-
-	for(int i = 0; i < number_of_points; i++){
-		if(output_cluster_h[i]){
-			outCluster->push_back(data->at(i));
-		}
-	}	
-	
-	return std::make_pair(outCluster, outDim);
-};
 
 
 
@@ -499,6 +319,11 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 	cudaFree(centroids_d);
 	cudaFree(output_d);
 	cudaFree(output_count_d);
+	free(data_h);
+	free(dims_h);
+	free(centroids_h);
+	free(output_h);
+	free(output_count_h);
 
 	
 	return std::make_pair(output,output_count);
@@ -507,14 +332,17 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 
 std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimmensions(std::vector<std::vector<float>*>* ps,
 																					   std::vector<std::vector<std::vector<float>*>*> Xs, int m, float width){
-	
-	int point_dim = Xs.at(0)->at(0)->size();
+
+	int no_of_samples = Xs.size();	
 	int no_in_sample = Xs.at(0)->size();
-	int no_of_samples = Xs.size();
+	int point_dim = Xs.at(0)->at(0)->size();
+
 
 	
 	int sizeOfXs = no_of_samples*no_in_sample*point_dim*sizeof(float);
+	
 	float* xs_h = (float*) malloc(sizeOfXs);
+
 	for(int i = 0; i < no_of_samples; i++){
 		for(int j = 0; j < no_in_sample; j++){
 			for(int k = 0; k < point_dim; k++){
@@ -523,14 +351,18 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimme
 		}
 	}
 
+
 	int no_of_ps = ps->size();
 	int sizeOfps = point_dim*no_of_ps*sizeof(float);
 	float* ps_h = (float*) malloc(sizeOfps);
+
+
 	for(int i = 0; i < no_of_ps; i++){
 		for(int j = 0; j < point_dim; j++){
 			ps_h[i*point_dim+j] = ps->at(i)->at(j);
 		}
 	}
+
 	/*
 	std::cout << "xs: " << std::endl;
 	for(int i = 0; i < no_of_samples*no_in_sample*point_dim; i++){
@@ -570,6 +402,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimme
 	cudaMemcpy( Xs_d, xs_h, sizeOfXs, cudaMemcpyHostToDevice);
     cudaMemcpy( ps_d, ps_h, sizeOfps, cudaMemcpyHostToDevice);
 
+
 	findDimmensionsDevice<<<ceil((no_of_samples)/256.0), 256>>>(Xs_d, ps_d, result_d, count_d, point_dim, no_of_samples, no_in_sample, no_of_ps, m, width);
 
    
@@ -596,6 +429,10 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimme
 	cudaFree(ps_d);
 	cudaFree(result_d);
 	cudaFree(count_d);
+	free(result_h);
+	free(count_h);
+	free(ps_h);
+	free(xs_h);
 	
 	return std::make_pair(output, count);
 }
@@ -655,11 +492,13 @@ int argMax(std::vector<float>* scores){
 
 	cudaMemcpy(scores_index_h, scores_index_d, size_of_output, cudaMemcpyDeviceToHost);
 	
- 
+	int result = scores_index_h[0];
 	cudaFree(scores_d);
 	cudaFree(scores_index_d);
+	free(scores_index_h);
+	free(scores_h);
 
-	return scores_index_h[0];
+	return result;
 	
 	
 }

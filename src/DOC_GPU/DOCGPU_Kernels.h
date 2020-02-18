@@ -34,7 +34,7 @@ float* scoreHost(unsigned int* Cluster_size,
 
 void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, float* Xs_d, float* ps_d, bool* res_d,
 						   unsigned int* Dsum_out, int point_dim, int no_of_samples, int no_in_sample, int no_of_ps,
-						   int m, float width);
+						   float m, float width);
 
 void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
 						   float* data, float* centroids, bool* dims, bool* output, unsigned int* Csum_out,
