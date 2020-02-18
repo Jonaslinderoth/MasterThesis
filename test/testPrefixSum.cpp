@@ -1,9 +1,5 @@
 #include <gtest/gtest.h>
 #include <iostream>
-<<<<<<< HEAD
-=======
-#include "../src/DOC_GPU/DOCGPU_Kernels.h"
->>>>>>> d75f16de71dd1b114e4c2d82427eae9d7adc22ca
 #include "../src/DOC/DOC.h"
 #include <random>
 #include "../src/randomCudaScripts/DeleteFromArray.h"
