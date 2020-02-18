@@ -1,10 +1,10 @@
 #ifndef TESTDATA_h
 #define TESTDATA_h
 #include <vector>
-int numPoints_4dim2cluster(){
+inline int numPoints_4dim2cluster(){
 	return 397;
 }
-std::vector<std::vector<float>*>* data_4dim2cluster(){
+inline std::vector<std::vector<float>*>* data_4dim2cluster(){
 return  new std::vector<std::vector<float>*>{
 
 new std::vector<float>{46.75622700184638, -15414.87023199175, -5718.128808289039,-16322.951083165928},
@@ -414,11 +414,11 @@ new std::vector<float>{52.566655188968944, -29953.733793336767, 21958.6765507496
 
 
 
-std::vector<int> numPoints_2dim2cluster2(){
+inline std::vector<int> numPoints_2dim2cluster2(){
 	return std::vector<int>{100,100};
 }
 
-std::vector<std::vector<float>*>* data_2dim2cluster(){
+inline std::vector<std::vector<float>*>* data_2dim2cluster(){
 	return  new std::vector<std::vector<float>*>{
 		new std::vector<float>{5.1199283994902665, 2.091797919492602},
 new std::vector<float>{4.735705732442211, 0.1886125930289122},

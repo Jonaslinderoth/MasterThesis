@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
-#include "../src/DOC_GPU/HyperCube.h"
+#include "../src/DOC_GPU/DOCGPU.h"
+#include "../src/DOC_GPU/DOCGPU_Kernels.h"
 #include <vector>
 #include <math.h>
 TEST(testFindClusterGPU, testSimple){
@@ -20,8 +21,8 @@ TEST(testFindClusterGPU, testSimple){
 		auto point = new std::vector<float>{0,0};
 		data->push_back(point);
 	}
-	
-	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = findCluster(data);
+	DOCGPU d = DOCGPU(data);
+	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = d.findCluster();
 	EXPECT_EQ(res.first->size(),4);
 	EXPECT_TRUE(res.first->at(0));
 	EXPECT_TRUE(res.first->at(1));
@@ -52,8 +53,9 @@ TEST(testFindClusterGPU, testSimple1){
 		auto point = new std::vector<float>{0,0};
 		data->push_back(point);
 	}
-	
-	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = findCluster(data);
+	DOCGPU d = DOCGPU(data);
+	d.setSeed(1);
+	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = d.findCluster();
 	EXPECT_EQ(res.first->size(),1);
 	//std::cout << res.first->at(0)->at(0) << ", " << res.first->at(0)->at(1) << std::endl;
 	//std::cout << res.first->at(1)->at(0) << ", " << res.first->at(1)->at(1) << std::endl;
@@ -82,8 +84,11 @@ TEST(testFindClusterGPU, testSimple2){
 		auto point = new std::vector<float>{0,0};
 		data->push_back(point);
 	}
-	
-	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = findCluster(data, 0.1, 0.11);
+	DOCGPU d = DOCGPU(data);
+	d.setSeed(1);
+	d.setAlpha(0.1);
+	d.setBeta(0.11);
+	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = d.findCluster();
 	EXPECT_EQ(res.first->size(),1);
 	//std::cout << res.first->at(0)->at(0) << ", " << res.first->at(0)->at(1) << std::endl;
 	//std::cout << res.first->at(1)->at(0) << ", " << res.first->at(1)->at(1) << std::endl;
@@ -115,8 +120,9 @@ TEST(testFindClusterGPU, testSimple3){
 		auto point = new std::vector<float>{0,-1000};
 		data->push_back(point);
 	}
-	
-	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = findCluster(data);
+	DOCGPU d = DOCGPU(data);
+	d.setSeed(1);
+	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = d.findCluster();
 	EXPECT_EQ(res.first->size(),4);
 
 	
@@ -149,8 +155,10 @@ TEST(testFindClusterGPU, testSimple4){
 	{
 		auto point = new std::vector<float>{1000,-10000};
 		data->push_back(point);
-	}	
-	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = findCluster(data);
+	}
+	DOCGPU d = DOCGPU(data);
+	d.setSeed(1);
+	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = d.findCluster();
 	EXPECT_EQ(res.first->size(),4);
 
 	
@@ -168,7 +176,13 @@ TEST(testFindClusterGPU, testLarge){
 
 		}
 	}
-	auto res = findCluster(data, 0.1, 0.25, 5);
+	DOCGPU d = DOCGPU(data);
+	d.setSeed(1);
+	d.setAlpha(0.1);
+	d.setBeta(0.25);
+	d.setWidth(5);
+	auto res = d.findCluster();
+	
 	SUCCEED();
 	EXPECT_TRUE(res.second->at(0));
 	EXPECT_FALSE(res.second->at(1));

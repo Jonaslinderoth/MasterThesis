@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <iostream>
-#include "../src/DOC_GPU/HyperCube.h"
+#include "../src/DOC_GPU/DOCGPU_Kernels.h"
 #include "../src/DOC/HyperCube.h"
 #include <random>
  

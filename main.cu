@@ -3,7 +3,7 @@
 #include <chrono>
 #include <random>
 #include <iostream>
-#include "src/DOC_GPU/HyperCube.h"
+#include "src/DOC_GPU/DOCGPU_Kernels.h"
 
 int main ()
 {
