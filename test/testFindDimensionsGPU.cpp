@@ -115,7 +115,7 @@ TEST(testHyperCubeGPU, testFindDimmensions2){
 		xss.push_back(xs);
 	}
 	
-	auto res2 = findDimmensions(ps, xss, 1);
+	auto res2 = findDimmensions(ps, xss, 2);
 	auto res = res2.first;
 	SUCCEED();
 	EXPECT_EQ(res->size(), 2);
@@ -136,7 +136,7 @@ TEST(testHyperCubeGPU, testFindDimmensions2){
 }
 
 
-TEST(testHyperCubeGPU, testFindDimmensions3){
+TEST(testFindDimensionsGPU, testFindDimmensions3){
 	auto ps = new std::vector<std::vector<float>*>;
 	auto p = new std::vector<float>{1,1,1,9};
 	ps->push_back(p);
@@ -159,7 +159,7 @@ TEST(testHyperCubeGPU, testFindDimmensions3){
 		xss.push_back(xs);
 	}
 	
-	auto res2 = findDimmensions(ps, xss, 3);
+	auto res2 = findDimmensions(ps, xss, 6);
 	auto res = res2.first;
 	
 	SUCCEED();
@@ -188,7 +188,7 @@ TEST(testHyperCubeGPU, testFindDimmensions3){
 }
 
 
-TEST(testHyperCubeGPU, testFindDimmensions4){
+TEST(testFindDimensionsGPU, testFindDimmensions4){
 	auto ps = new std::vector<std::vector<float>*>;
 	{auto p = new std::vector<float>{1,1,1,9};
 	ps->push_back(p);}
@@ -263,7 +263,7 @@ TEST(testHyperCubeGPU, testFindDimmensions4){
 }
 
 
-TEST(testHyperCubeGPU, testFindDimmensions5){
+TEST(testFindDimensionsGPU, testFindDimmensions5){
 	auto ps = new std::vector<std::vector<float>*>;
 	{auto p = new std::vector<float>{1,1,1,1};
 		ps->push_back(p);}
@@ -306,7 +306,7 @@ TEST(testHyperCubeGPU, testFindDimmensions5){
 
 
 
-TEST(testHyperCubeGPU, testFindDimmensionsRandom){
+TEST(testFindDimensionsGPU, testFindDimmensionsRandom){
 	std::vector<std::vector<float>*>* ps = new std::vector<std::vector<float>*>;
 	int amount_of_ps = 100;
 	int number_of_samples = 200;
@@ -373,7 +373,7 @@ TEST(testHyperCubeGPU, testFindDimmensionsRandom){
 			*/
 			
 			for(int k = 0; k < res->size(); k++){
-				EXPECT_EQ(res->at(k), res2->at(k)) << "Not equal at k: " << k << ", and " << i <<"th sample and " << i/m << "th centroid";
+				ASSERT_EQ(res->at(k), res2->at(k)) << "Not equal at k: " << k << ", and " << i <<"th sample and " << i/m << "th centroid";
 				if(res->at(k)){
 					t++;
 				}else{
