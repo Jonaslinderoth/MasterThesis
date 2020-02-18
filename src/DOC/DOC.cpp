@@ -21,7 +21,7 @@ std::vector<std::vector<float>*>* DOC::initDataReader(DataReader* dr){
 		delete block;
 	}
 	return data;
-};
+	};
 
 DOC::DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float width){
 	this->data = input;
