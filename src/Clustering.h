@@ -1,7 +1,7 @@
 #ifndef CLUSTERING_H
 #define CLUSTERING_H
 #include <vector>
-
+#include <iostream>
 class Clustering{
  public:
 	Clustering(){};
@@ -10,9 +10,13 @@ class Clustering{
 	void setSeed(int s){
 		this->gen.seed(s);
 	}
+	virtual void setAlpha(float value){};
+	virtual void setBeta(float value){};
+	virtual void setWidth(float value){};
 	virtual ~Clustering(){};
  private:
 	std::mt19937 gen;
+
 
  protected:
 	size_t seed = std::random_device()();

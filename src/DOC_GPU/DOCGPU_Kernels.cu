@@ -1,4 +1,4 @@
-#include "HyperCube.h"
+#include "DOCGPU_Kernels.h"
 #include <iostream>
 #include <vector>
 #include <math.h>
@@ -52,10 +52,11 @@ __global__ void pointsContainedDevice(float* data, float* centroids, bool* dims,
 __global__ void score(unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output, int len, float alpha, float beta, unsigned int num_points){
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
 	if(entry < len){
-		score_output[entry] = ((Cluster_size[entry])* powf(1.0/beta, (Dim_count[entry])))*(Dim_count[entry] >= (alpha*num_points));	
+		score_output[entry] = ((Cluster_size[entry])* powf(1.0/beta, (Dim_count[entry])))*(Cluster_size[entry] >= (alpha*num_points));	
 	}
 
 }
+
 
 
 float* scoreHost(unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output, int len, float alpha, float beta, unsigned int number_of_points){
@@ -121,13 +122,90 @@ __global__ void argMaxDevice(float* scores, unsigned int* scores_index, int inpu
 	
 }
 
+void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, float* Xs_d, float* ps_d, bool* res_d,
+						   unsigned int* Dsum_out, int point_dim, int no_of_samples, int sample_size, int no_of_ps,
+						   int m, float width){
+
+    findDimmensionsDevice<<<dimGrid, dimBlock>>>(Xs_d, ps_d, res_d,  Dsum_out,
+												 point_dim, no_of_samples, sample_size,
+												 no_of_ps, m, width);
+	
+};
+
+void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
+						   float* data, float* centroids, bool* dims, bool* output, unsigned int* Csum_out,
+						   float width, int point_dim, int no_data, int number_of_samples, int m){
+
+	pointsContainedDevice<<<dimGrid, dimBlock>>>(data, centroids, dims,
+												 output, Csum_out,
+												 width, point_dim, no_data, number_of_samples, m);
+	
+};
+
+
+void scoreKernel(unsigned int dimGrid, unsigned int dimBlock,
+				 unsigned int* cluster_size, unsigned int* dim_count, float* score_output,
+				 int len, float alpha, float beta, unsigned int num_points){
+
+	score<<<dimGrid, dimBlock>>>(cluster_size, dim_count, score_output,
+								 len, alpha, beta, num_points);
+	unsigned int* out = (unsigned int*) malloc(sizeof(unsigned int)*len);
+	cudaMemcpy(out, cluster_size, sizeof(unsigned int)*len, cudaMemcpyDeviceToHost);
+	/*std::cout << "cluster_size: " << std::endl;
+	for(int i = 0; i < len; i++){
+		std::cout << out[i] << ", ";
+	}
+	std::cout << std::endl;
+	std::cout << num_points << std::endl;*/
+	
+
+	
+};
+
+void createIndicesKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* index, unsigned int length){
+	createIndices<<<dimGrid, dimBlock>>>(index, length);
+
+};
+
+void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int sharedMemorySize,
+				  float* scores, unsigned int* scores_index, int input_size){
+
+	unsigned int* out = (unsigned int*) malloc(sizeof(unsigned int)*input_size);
+	float* outScores = (float*) malloc(sizeof(float)*input_size);
+	
+	
+	
+	unsigned int out_size = input_size;
+	while(out_size > 1){
+		/*argMaxDevice<<<dimGrid, dimBlock, sharedMemorySize>>>(scores, scores_index, out_size);
+		cudaMemcpy(out, scores_index, sizeof(unsigned int)*input_size, cudaMemcpyDeviceToHost);
+		cudaMemcpy(outScores, scores, sizeof(float)*input_size, cudaMemcpyDeviceToHost);
+		std::cout << "indecies: " << std::endl;
+		for(int i = 0; i < out_size; i++){
+			std::cout << out[i] << ", ";
+		}
+		std::cout << std::endl;
+		std::cout << "Scores: " << std::endl;
+		for(int i = 0; i < out_size; i++){
+			std::cout << outScores[i] << ", ";
+		}
+		std::cout << std::endl;*/
+		
+		out_size = dimGrid;
+		dimGrid = ceil((float)out_size/(float)dimBlock);
+	}
+	
+	argMaxDevice<<<dimGrid, dimBlock, sharedMemorySize>>>(scores, scores_index, out_size);
+
+	
+};
 
 
 
 
 
 
-std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster(std::vector<std::vector<float>*>* data, float alpha, float beta, float width){
+std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findClusterUsingGPU(std::vector<std::vector<float>*>* data, float alpha, float beta, float width){
 	float d = data->at(0)->size();
 	float r = log2(2*d)/log2(1/(2*beta));
 	float m = pow((2/alpha),2) * log(4);
@@ -237,34 +315,36 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster(std
 	int sharedMemSize = (dimBlock*sizeof(unsigned int) + dimBlock*sizeof(float));
 
 	
-    findDimmensionsDevice<<<dimGrid, dimBlock>>>(xs_d, ps_d, findDim_output_d, findDim_count_d,
-												 point_dim, number_of_samples, sample_size,
-												 number_of_ps, m, width);
+	
+	findDimmensionsKernel(dimGrid, dimBlock, xs_d, ps_d, findDim_output_d,
+						   findDim_count_d, point_dim, number_of_samples, sample_size, number_of_ps,
+						  m, width);
 	cudaFree(xs_d);
 
 
-	pointsContainedDevice<<<dimGrid, dimBlock>>>(data_d, ps_d, findDim_output_d,
+	pointsContainedKernel(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
 												 pointsContained_output_d, pointsContained_count_d,
 												 width, point_dim, number_of_points, number_of_samples, m);
+
+
 	cudaFree(ps_d);
 	cudaFree(data_d);
 	
-	score<<<dimGrid, dimBlock>>>(pointsContained_count_d, findDim_count_d, scores_d, number_of_samples, alpha, beta, number_of_points);
+	scoreKernel(dimGrid, dimBlock,
+				pointsContained_count_d,
+				findDim_count_d, scores_d,
+				number_of_samples,
+				alpha, beta, number_of_points);
 
 	cudaFree(findDim_count_d);
 	cudaFree(pointsContained_count_d);
 
 
 
-	createIndices<<<dimGrid, dimBlock>>>(scores_index_d, number_of_samples);	
-	unsigned int out_size = number_of_samples;
-	while(out_size > 1){
-		argMaxDevice<<<dimGrid, dimBlock, sharedMemSize>>>(scores_d, scores_index_d, out_size);				
-		out_size = dimGrid;
-		dimGrid = ceil((float)out_size/(float)dimBlock);
-	}
+	createIndicesKernel(dimGrid, dimBlock,scores_index_d, number_of_samples);
+
 	
-	argMaxDevice<<<dimGrid, dimBlock, sharedMemSize>>>(scores_d, scores_index_d, out_size);
+	argMaxKernel(dimGrid, dimBlock, sharedMemSize, scores_d, scores_index_d, number_of_samples);
 
 
 	cudaFree(scores_d);

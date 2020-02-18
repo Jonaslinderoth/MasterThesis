@@ -8,23 +8,39 @@
 #ifndef DOCGPU_H_
 #define DOCGPU_H_
 
-#include "src/dataReader/DataReader.h"
-# include <stdio.h>
-# include <stdlib.h>
-# include <cuda.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <random>
+//# include <cuda.h>
 # include <curand.h>
 #include "../dataReader/DataReader.h"
+#include "../Clustering.h"
 
 
-
-
-class DOCGPU {
+class DOCGPU : public Clustering{
 public:
-	DOCGPU();
+ DOCGPU() : DOCGPU(new std::vector<std::vector<float>*>){};
+ DOCGPU(DataReader* dr) : DOCGPU(initDataReader(dr)){};
+ DOCGPU(std::vector<std::vector<float>*>* input) : DOCGPU(input, 0.1, 0.25, 15) {};
+ DOCGPU(float alpha, float beta, float width) : DOCGPU(new std::vector<std::vector<float>*>, alpha, beta, width){};
+	DOCGPU(std::vector<std::vector<float>*>* input, float alpha, float beta, float width);
+	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster();
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> findKClusters(int k);
+	
 	bool generateRandomSubSets(DataReader* dataReader);
 	unsigned int* cudaRandomNumberArray(const size_t lenght ,const curandGenerator_t* gen, unsigned int* array = nullptr);
 	virtual ~DOCGPU();
+	void setAlpha(float value){this->alpha = value;};
+	void setBeta(float value){this->beta = value;};
+	void setWidth(float value){this->width = value;};
 
+ private:
+	float alpha;
+	float beta;
+	float width;
+	std::vector<std::vector<float>*>* data;
+	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
+	
 };
 
 #endif /* DOCGPU_H_ */
