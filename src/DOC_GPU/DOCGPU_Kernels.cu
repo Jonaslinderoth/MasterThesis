@@ -4,6 +4,8 @@
 #include <math.h>
 #include <random>
 #include <assert.h>
+#include <unistd.h>
+#include <stdio.h>
 
 __global__ void findDimmensionsDevice(float* Xs_d, float* ps_d, bool* res_d, unsigned int* Dsum_out,
 									  unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps, unsigned int m, float width){
@@ -126,6 +128,25 @@ __global__ void argMaxDevice(float* scores, unsigned int* scores_index, unsigned
 		
 	}
 	
+}
+__global__ void randIntArrayInit(curandState_t* states , unsigned int seed){
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	curand_init(seed,   /* the seed controls the sequence of random values that are produced */
+			idx, /* the sequence number is only important with multiple cores */
+			0,/* the offset is how much extra we advance in the sequence for each call, can be 0 */
+			&states[idx]);
+}
+
+
+__global__ void randIntArray(unsigned int *result , curandState_t* states , const unsigned int size , const unsigned int max, const unsigned min){
+	unsigned int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if(idx < size){
+		float myrandf = curand_uniform(&states[idx]);
+		myrandf *= (max - min + 0.999999);
+		myrandf += min;
+		result[idx] = (int)truncf(myrandf);
+	}
+
 }
 
 void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, float* Xs_d, float* ps_d, bool* res_d,
@@ -504,5 +525,59 @@ int argMax(std::vector<float>* scores){
 	
 }
 
+/*
+ * this function makes the states of the random number generator
+ * this needs to be called before generateRandomIntArrayDevice.
+ * "save" the states to save on compiutational time.
+ */
+bool generateRandomStatesArray(curandState* d_randomStates,
+		const size_t size,
+		const bool randomSeed,
+		unsigned int seed,
+		unsigned int dimBlock){
+	//set the seed
+	if(randomSeed){
+		std::random_device rd;
+		seed = rd();
+		std::cout << "seed: " << seed << std::endl;
+	}
+	//calculate the ammount of blocks
+	int ammountOfBlocks = size/dimBlock;
+	if(size%dimBlock != 0){
+		ammountOfBlocks++;
+	}
+	randIntArrayInit<<<ammountOfBlocks,dimBlock>>>(d_randomStates ,seed);
+
+	return true;
+}
+
+
+/* This fuction makes an array of random numbers between min and max in the gpu , given the allocation
+ * and the states.
+ * to get the states generate random states array call generateRandomStatesArray.
+ */
+bool generateRandomIntArrayDevice(unsigned int* d_randomIndexes,
+		curandState* d_randomStates,
+		const size_t size,
+		const unsigned int max,
+		const unsigned int min,
+		unsigned int dimBlock){
+	if(max<min){
+		return false;
+	}
+
+
+	//calculate the ammount of blocks
+	int ammountOfBlocks = size/dimBlock;
+	if(size%dimBlock != 0){
+		ammountOfBlocks++;
+	}
+
+	std::cout << "max: " << max << std::endl;
+	//call the generation of random numbers
+	randIntArray<<<ammountOfBlocks,dimBlock>>>(d_randomIndexes, d_randomStates , size , max , min);
+
+	return true;
+}
 
 

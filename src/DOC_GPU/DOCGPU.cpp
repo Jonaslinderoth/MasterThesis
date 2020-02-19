@@ -268,6 +268,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 
 
 
+<<<<<<< HEAD
+=======
 bool DOCGPU::generateRandomSubSets(DataReader* dataReader){
 	//https://stackoverflow.com/questions/18501081/generating-random-number-within-cuda-kernel-in-a-varying-range
 	// TODO:
@@ -303,3 +305,4 @@ bool DOCGPU::generateRandomSubSets(DataReader* dataReader){
 
 	return true;
 }
+>>>>>>> 700363a6eb896e19e130674c8887958c26136e70

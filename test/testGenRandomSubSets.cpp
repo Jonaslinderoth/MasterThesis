@@ -5,11 +5,7 @@
 #include "../src/DOC_GPU/DOCGPU.h"
 
 
-TEST(testGenRandomSubSets, testRandomOne){
-	DOCGPU docgpu;
-	docgpu.generateRandomSubSets(nullptr);
-	EXPECT_TRUE(true);
-}
+
 
 TEST(testGenRandomSubSets, testGenerateRandomArray){
 	size_t size= 100;

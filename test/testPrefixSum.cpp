@@ -117,7 +117,7 @@ TEST(testPrefixSum, testTwo){
 	double duration;
 
 	unsigned int h_in_len = 0;
-	for (int k = 1; k < 20; ++k)
+	for (int k = 1; k < 8; ++k)
 	{
 
 
@@ -143,7 +143,40 @@ TEST(testPrefixSum, testTwo){
 				h_deleteArray[i] = false;
 			}
 		}
-		h_deleteArray[h_dataLenght] = true;
+		h_deleteArray[h_dataLenght] = false;
+
+		//extra stuff
+		if(k==1){
+			for (int i = 0; i < h_dataLenght; ++i)
+			{
+				h_deleteArray[i] = false;
+			}
+			h_deleteArray[h_dataLenght] = true;
+		}
+		if(k==2){
+			for (int i = 0; i < h_dataLenght; ++i)
+			{
+				h_deleteArray[i] = true;
+			}
+			h_deleteArray[h_dataLenght] = false;
+		}
+		if(k == 3){
+			h_deleteArray[h_dataLenght-1] = true;
+			h_deleteArray[h_dataLenght] = false;
+		}
+		if(k == 4){
+			h_deleteArray[h_dataLenght-1] = false;
+			h_deleteArray[h_dataLenght] = false;
+		}
+		if(k == 5){
+			h_deleteArray[h_dataLenght-1] = true;
+			h_deleteArray[h_dataLenght] = true;
+		}
+		if(k == 6){
+			h_deleteArray[h_dataLenght-1] = false;
+			h_deleteArray[h_dataLenght] = true;
+		}
+
 
 		unsigned int* h_indexes = new unsigned int[h_dataLenght];
 		for(int i = 0; i < h_dataLenght; ++i){
@@ -172,18 +205,24 @@ TEST(testPrefixSum, testTwo){
 		// Set up device-side memory for output data
 		float* d_outData;
 		checkCudaErrors(cudaMalloc(&d_outData, sizeof(float) * h_dataLenght));
-		//to test
-		//checkCudaErrors(cudaMemcpy(d_outData, h_data, sizeof(float) * h_dataLenght, cudaMemcpyHostToDevice));
+		//to test , i fill out the imput
+		float* h_garbageArray = new float[h_dataLenght];
+		for(int i = 0; i < h_dataLenght; ++i)
+		{
+			h_garbageArray[i] = -1.0;
+		}
+		checkCudaErrors(cudaMemcpy(d_outData, h_garbageArray, sizeof(float) * h_dataLenght, cudaMemcpyHostToDevice));
 
-		/*
-		//to test the cpu thing actualy works (test of test :( )
-		std::cout << std::endl << "bool array: ";
-		for(int i = 0; i < (h_dataLenght+1); ++i){
-			std::cout << std::to_string(h_deleteArray[i])<< "         ";
-		}*/
+		bool print = false;
+		if(print){
+			//to test the cpu thing actualy works (test of test :( )
+			std::cout << std::endl << "bool array: ";
+			for(int i = 0; i < (h_dataLenght+1); ++i){
+				std::cout << std::to_string(h_deleteArray[i])<< "         ";
+			}
+			std::cout << std::endl;
 
-
-		//std::cout << std::endl;
+		}
 
 		// Do CPU for reference
 		start = std::clock();
@@ -191,14 +230,17 @@ TEST(testPrefixSum, testTwo){
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 		//std::cout << "CPU time: " << duration << std::endl;
 
-		/*
-		std::cout << "input:     ";
-		for(int i = 0; i < h_dataLenght; ++i){
-			std::cout << std::to_string(h_data[i])<< " ";
+
+		if(print){
+			std::cout << "input:     ";
+			for(int i = 0; i < h_dataLenght; ++i){
+				std::cout << std::to_string(h_data[i])<< " ";
+			}
+			std::cout << std::endl;
 		}
 
-		std::cout << std::endl;
-		 */
+
+
 
 
 
@@ -223,20 +265,22 @@ TEST(testPrefixSum, testTwo){
 			howManyDeleted += h_deleteArray[i];
 		}
 
-		/*
-		std::cout << "cpu result:";
-		for(int i = 0; i < (h_dataLenght-howManyDeleted); ++i){
-			std::cout << std::to_string(h_outData_naive[i])<< " ";
+		if(print){
+			std::cout << "cpu result:";
+			for(int i = 0; i < (h_dataLenght-howManyDeleted); ++i){
+				std::cout << std::to_string(h_outData_naive[i])<< " ";
+			}
+			std::cout << std::endl;
+
+
+			std::cout << "gpu result: ";
+			for(int i = 0; i < (h_dataLenght-howManyDeleted); ++i){
+				std::cout << std::to_string(h_outData_gpu[i]) << " ";
+			}
+			std::cout << std::endl;
+
+
 		}
-		std::cout << std::endl;
-		 */
-		/*
-		std::cout << "gpu result: ";
-		for(int i = 0; i < (h_dataLenght-howManyDeleted); ++i){
-			std::cout << std::to_string(h_outData_gpu[i]) << " ";
-		}
-		std::cout << std::endl;
-		*/
 
 		// Check for any mismatches between outputs of CPU and GPU
 		bool match = true;
