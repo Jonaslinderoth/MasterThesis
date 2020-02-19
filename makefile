@@ -1,11 +1,17 @@
 include config.mk
+OS_NAME := $(shell uname -s | tr A-Z a-z)
 
-
+ifeq ($(OS_NAME),darwin)
+CXX = g++
+CXXFLAGS=-I. -nocudalib  -O2  #-g -G
+else
 CXX = nvcc
+CXXFLAGS=-I. -arch=sm_37  -O2  #-g -G
+endif
 
 # -g -G for instrumntation for debugger
 # -DNDEBUG will remove assertions
-CXXFLAGS=-I. -arch=sm_37  -O2  #-g -G   
+
 LIBS = -lpthread -lcurand -L /usr/local/cuda-9.2/lib64
 
 EXE=main
@@ -29,6 +35,9 @@ TESTOBJS= $(patsubst %.cu, %.o, $(patsubst %.cpp, %.o, $(TESTFILES)))
 
 all: $(sources) $(EXE_DIR)/${EXE}  $(EXE_DIR)/${TEST}
 
+
+os:
+	echo $(OS_NAME)
 
 .PHONY: all multi multi_test
 multi:

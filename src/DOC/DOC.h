@@ -27,7 +27,6 @@ class DOC : public Clustering{
 		return a*pow(((float) 1/this->beta),b);
 	};
 
-
 	void setAlpha(float value){this->alpha = value;};
 	void setBeta(float value){this->beta = value;};
 	void setWidth(float value){this->width = value;};

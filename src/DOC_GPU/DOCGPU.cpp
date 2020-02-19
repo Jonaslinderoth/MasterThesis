@@ -8,13 +8,13 @@
 #include "DOCGPU.h"
 #include "DOCGPU_Kernels.h"
 
-
 # define CUDA_CALL ( x) do { if (( x) != cudaSuccess ) { \
 	printf (" Error at % s :% d\ n" , __FILE__ , __LINE__ ) ;\
 return EXIT_FAILURE ;}} while (0)
 # define CURAND_CALL ( x) do { if (( x) != CURAND_STATUS_SUCCESS ) { \
 printf (" Error at % s :% d\ n" , __FILE__ , __LINE__ ) ;\
 return EXIT_FAILURE ;}} while (0)
+
 
 DOCGPU::DOCGPU(std::vector<std::vector<float>*>* input, float alpha, float beta, float width) {
 	this->data = input;
@@ -59,9 +59,9 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	auto beta = this->beta;
 	auto width = this->width;
 	
-	float d = data->at(0)->size();
-	float r = log2(2*d)/log2(1/(2*beta));
-	float m = pow((2/alpha),2) * log(4);
+	unsigned int d = data->at(0)->size();
+	unsigned int r = log2(2*d)/log2(1/(2*beta));
+	unsigned int m = pow((2/alpha),2) * log(4);
 	
 	unsigned int number_of_ps = 2.0/alpha;
 	unsigned int number_of_samples = number_of_ps*m;
@@ -268,3 +268,41 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 
 
 
+<<<<<<< HEAD
+=======
+bool DOCGPU::generateRandomSubSets(DataReader* dataReader){
+	//https://stackoverflow.com/questions/18501081/generating-random-number-within-cuda-kernel-in-a-varying-range
+	// TODO:
+
+	size_t size= 100;
+	curandGenerator_t gen ;
+
+	//Create pseudo - random number generator
+	curandCreateGenerator(&gen ,CURAND_RNG_PSEUDO_MTGP32 );
+
+
+	//seed the generator
+	curandSetPseudoRandomGeneratorSeed(gen,1345);
+
+
+	unsigned int* randomNumberArray_d = cudaRandomNumberArray( size , &gen );
+	unsigned int* hostData;
+
+	// Allocate n floats on host
+	hostData = ( unsigned int*) calloc (size , sizeof ( unsigned int) );
+
+
+	// Copy device memory to host
+	cudaMemcpy ( hostData , randomNumberArray_d , size * sizeof ( unsigned int ) ,cudaMemcpyDeviceToHost );
+
+
+	// Cleanup
+
+	cudaFree( randomNumberArray_d );
+	free( hostData );
+
+	curandDestroyGenerator(gen);
+
+	return true;
+}
+>>>>>>> 700363a6eb896e19e130674c8887958c26136e70

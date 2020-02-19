@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 __global__ void findDimmensionsDevice(float* Xs_d, float* ps_d, bool* res_d, unsigned int* Dsum_out,
-									  int point_dim, int no_of_samples, int no_in_sample, int no_of_ps, float m, float width){
+									  unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps, unsigned int m, float width){
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
 	int pNo = entry/m;
 	
@@ -35,11 +35,12 @@ __global__ void findDimmensionsDevice(float* Xs_d, float* ps_d, bool* res_d, uns
 }
 
 __global__ void pointsContainedDevice(float* data, float* centroids, bool* dims, bool* output, unsigned int* Csum_out,
-									  float width, int point_dim, int no_data, int no_dims, int m){
+									  float width, unsigned int point_dim, unsigned int no_data, unsigned int no_dims, unsigned int m){
 	// one kernel for each hypercube
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
 	int currentCentroid = entry/m;
 	if(entry < no_dims){
+		//assert(currentCentroid < no_of_ps);
 		// for each data point
 		unsigned int Csum = 0;
 		for(int j = 0; j < no_data; j++){
@@ -56,7 +57,7 @@ __global__ void pointsContainedDevice(float* data, float* centroids, bool* dims,
 	}
 }
 
-__global__ void score(unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output, int len, float alpha, float beta, unsigned int num_points){
+__global__ void score(unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output, unsigned int len, float alpha, float beta, unsigned int num_points){
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
 	if(entry < len){
 		score_output[entry] = ((Cluster_size[entry])* powf(1.0/beta, (Dim_count[entry])))*(Cluster_size[entry] >= (alpha*num_points));	
@@ -94,7 +95,7 @@ __global__ void createIndices(unsigned int* index, unsigned int length){
 
 };
 
-__global__ void argMaxDevice(float* scores, unsigned int* scores_index, int input_size){
+__global__ void argMaxDevice(float* scores, unsigned int* scores_index, unsigned int input_size){
 	extern __shared__ int array[];
 	int* argData = (int*)array;
 	float* scoreData = (float*) &argData[blockDim.x];
@@ -149,8 +150,8 @@ __global__ void randIntArray(unsigned int *result , curandState_t* states , cons
 }
 
 void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, float* Xs_d, float* ps_d, bool* res_d,
-						   unsigned int* Dsum_out, int point_dim, int no_of_samples, int sample_size, int no_of_ps,
-						   float m, float width){
+						   unsigned int* Dsum_out, unsigned int point_dim, unsigned int no_of_samples, unsigned int sample_size, unsigned int no_of_ps,
+						   unsigned int m, float width){
 
     findDimmensionsDevice<<<dimGrid, dimBlock>>>(Xs_d, ps_d, res_d,  Dsum_out,
 												 point_dim, no_of_samples, sample_size,
@@ -160,7 +161,7 @@ void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, float* X
 
 void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
 						   float* data, float* centroids, bool* dims, bool* output, unsigned int* Csum_out,
-						   float width, int point_dim, int no_data, int number_of_samples, int m){
+						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples, unsigned int m){
 
 	pointsContainedDevice<<<dimGrid, dimBlock>>>(data, centroids, dims,
 												 output, Csum_out,
@@ -171,7 +172,7 @@ void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
 
 void scoreKernel(unsigned int dimGrid, unsigned int dimBlock,
 				 unsigned int* cluster_size, unsigned int* dim_count, float* score_output,
-				 int len, float alpha, float beta, unsigned int num_points){
+				 unsigned int len, float alpha, float beta, unsigned int num_points){
 
 	score<<<dimGrid, dimBlock>>>(cluster_size, dim_count, score_output,
 								 len, alpha, beta, num_points);
@@ -194,7 +195,7 @@ void createIndicesKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned i
 };
 
 void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int sharedMemorySize,
-				  float* scores, unsigned int* scores_index, int input_size){
+				  float* scores, unsigned int* scores_index, unsigned int input_size){
 
 	unsigned int* out = (unsigned int*) malloc(sizeof(unsigned int)*input_size);
 	float* outScores = (float*) malloc(sizeof(float)*input_size);

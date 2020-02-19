@@ -92,7 +92,7 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 }
 
 std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > DOC::findKClusters(int k){
-	auto res = std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> >();
+	auto res = std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>>();
 	for(int i = 0; i < k; i++){
 		if(this->data->size() <= 0) {break;}
 		auto cluster = this->findCluster();
@@ -130,6 +130,7 @@ std::vector<std::vector<float>*>* DOC::pickRandom(int n) {
 	}
 	return res;
 }
+
 
 std::vector<bool>* DOC::findDimensions(std::vector<float>* centroid,
 		std::vector<std::vector<float>* >* points, float width) {

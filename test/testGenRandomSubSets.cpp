@@ -32,9 +32,11 @@ TEST(testGenRandomSubSets, testGenerateRandomArray){
 	// sum result
 	unsigned int sum = 0;
 	for (int i = 0; i < size; i ++) {
+   
 		sum += hostData [i];
 	}
 
+	
 	// Cleanup
 
 	cudaFree( randomNumberArray_d );

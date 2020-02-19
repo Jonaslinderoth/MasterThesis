@@ -113,7 +113,7 @@ TEST_F(testPointsContainedGPU, testWithSimpleData3){
     auto centroid = new std::vector<float>{10,10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c1 = pointsContained(a,b,centorids,1);
+	auto c1 = pointsContained(a,b,centorids,2);
 	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());
@@ -152,7 +152,7 @@ TEST_F(testPointsContainedGPU, testWithSimpleData4){
     auto centroid = new std::vector<float>{10,10,10};
 	auto centorids = new std::vector<std::vector<float>*>;
 	centorids->push_back(centroid);
-	auto c1 = pointsContained(a,b,centorids,1);
+	auto c1 = pointsContained(a,b,centorids,3);
 	auto c = c1.first;
 	SUCCEED();
 	EXPECT_EQ(c->size(), a->size());

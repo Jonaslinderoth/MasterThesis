@@ -18,9 +18,9 @@ class Clustering{
 	std::mt19937 gen;
 
 
+
  protected:
 	size_t seed = std::random_device()();
-	
 	std::vector<int> randInt(int upper, int n){
 		return randInt(0,upper, n);
 	};
