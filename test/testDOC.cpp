@@ -16,21 +16,21 @@
 
 class testDOC : public ::testing::Test {
 public:
-  // Per-test-suite set-up.
-  // Called before the first test in this test suite.
-  // Can be omitted if not needed.
-  static void SetUpTestCase() {
-	  if(system("mkdir -p test/testData")){
+	// Per-test-suite set-up.
+	// Called before the first test in this test suite.
+	// Can be omitted if not needed.
+	static void SetUpTestCase() {
+		if(system("mkdir -p test/testData")){
 		  
-	  };
-  }
+		};
+	}
 
-  // Per-test-suite tear-down.
-  // Called after the last test in this test suite.
-  // Can be omitted if not needed.
-  static void TearDownTestCase() {
+	// Per-test-suite tear-down.
+	// Called after the last test in this test suite.
+	// Can be omitted if not needed.
+	static void TearDownTestCase() {
 
-  }
+	}
 
 
 	virtual void SetUp() {
@@ -216,6 +216,7 @@ TEST_F(testDOC, testFindCluster2){
 	delete res.second;
 }
 
+
 TEST_F(testDOC, testMu){
 	auto d = DOC();
 	EXPECT_EQ(d.mu(1,1), 4);
@@ -226,7 +227,7 @@ TEST_F(testDOC, testMu){
 }
 
 
-TEST_F(testDOC, testFindCluster3){
+TEST_F(testDOC, _SLOW_testFindCluster3){
 	std::vector<std::vector<float>*>* data = data_4dim2cluster();
 
 	//std::cout << a << ", " << b << std::endl;
@@ -266,7 +267,7 @@ TEST_F(testDOC, testFindKClusters){
 
 }
 
-TEST_F(testDOC, testFindKClusters2){
+TEST_F(testDOC, _SLOW_testFindKClusters2){
 	std::vector<std::vector<float>*>* data = data_4dim2cluster();
 
 
@@ -374,11 +375,11 @@ TEST_F(testDOC, testHelperFunctions){
 }
 
 
-TEST_F(testDOC, testFindKClusters3){
+TEST_F(testDOC, _SLOW_testFindKClusters3){
 	std::vector<std::vector<float>*>* data = data_4dim2cluster();
 
 
-	DOC d = DOC(data, 0.1, 0.25, 6);
+	DOC d = DOC(data, 0.1, 0.25, 7);
 	d.setSeed(1);
 	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(2);
 	
@@ -390,7 +391,7 @@ TEST_F(testDOC, testFindKClusters3){
 	EXPECT_FALSE(res.at(0).second->at(3));
 
 
-	EXPECT_LT(abs((int)res.at(0).first->size()-397), 10);
+	EXPECT_LT(abs((int)res.at(0).first->size()-397), 5);
 
 	
 	for(int i = 0; i< data->size(); i++){
@@ -546,7 +547,7 @@ TEST_F(testDOC, testWithDataReader2){
 }
 	
 
-TEST_F(testDOC, testWithDataReader3){
+TEST_F(testDOC, _SLOW_testWithDataReader3){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(20);
@@ -589,7 +590,7 @@ TEST_F(testDOC, testWithDataReader3){
 }
 	
 
-TEST_F(testDOC, testWithDataReader4){
+TEST_F(testDOC, _SLOW_testWithDataReader4){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(1000);
@@ -634,7 +635,7 @@ TEST_F(testDOC, testWithDataReader4){
 }
 
 
-TEST_F(testDOC, testWithDataReader5){
+TEST_F(testDOC, _SLOW_testWithDataReader5){
 	
 	DataGeneratorBuilder dgb;
 	dgb.setSeed(0);

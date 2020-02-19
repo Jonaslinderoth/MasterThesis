@@ -34,7 +34,7 @@ DOC::DOC(std::vector<std::vector<float>*>* input, float alpha, float beta, float
 std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluster() {
 	float d = this->data->at(0)->size();
 	float r = log2(2*d)/log2(1/(2*this->beta));
-	float m = pow((2/this->alpha),2) * log(4);
+	float m = pow((2/this->alpha),r) * log(4);
 
 	auto resD = new std::vector<bool>;
 	std::vector<std::vector<float>*>* resC = new std::vector<std::vector<float>*>;
@@ -47,6 +47,7 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 			std::vector<std::vector<float>*>* X = this->pickRandom(r);
 			auto D = this->findDimensions(p,X,this->width);
 			std::vector<std::vector<float>*>* C = new std::vector<std::vector<float>*>;
+
 			auto b_pD = HyperCube(p,this->width,D);
 
 			for(int l = 0; l < this->data->size(); l++){
@@ -54,7 +55,6 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 				if (b_pD.pointContained(point)){
 					C->push_back(point);
 				}
-
 			}
 
 			// to not find too small clusters, then we prefer it to pick

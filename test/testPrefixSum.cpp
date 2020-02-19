@@ -255,11 +255,12 @@ TEST(testPrefixSum, testTwo){
 		// Detail the mismatch if any
 		if (!match)
 		{
-			std::cout << "Difference in index: " << index_diff << std::endl;
+			//std::cout << "Difference in index: " << index_diff << std::endl;
 			//std::cout << "CPU: " << h_outData_naive[index_diff] << std::endl;
 			//std::cout << "GPU: " << h_outData_gpu[index_diff] << std::endl;
 			/*
 			int window_sz = 4;
+
 
 			std::cout << "Contents: " << std::endl;
 			std::cout << "CPU: ";
@@ -275,6 +276,8 @@ TEST(testPrefixSum, testTwo){
 			}
 			std::cout << std::endl;
 			*/
+
+
 			EXPECT_TRUE(false);
 
 		}
