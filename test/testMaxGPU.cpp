@@ -49,6 +49,14 @@ TEST(testArgMaxGPU, testSimple4){
 
 
 
+TEST(testArgMaxGPU, testSimple5){
+	std::vector<float>* scores = new std::vector<float>{0,9,5,3,2,9,11,4,4,4,4,4,5,6};
+	auto c = argMax(scores);
+	EXPECT_EQ(c, 6);
+}
+
+
+
 TEST(testArgMaxGPU, testLarge){
 	std::vector<float>* scores = new std::vector<float>;
 	int n = 1024*2;
@@ -97,6 +105,23 @@ TEST(testArgMaxGPU, testLarge4){
 TEST(testArgMaxGPU, testLarge5){
 	std::vector<float>* scores = new std::vector<float>;
 	int n = 53687;
+	for(int i = 0; i < n; i++){
+		scores->push_back(i);
+	}
+	
+	std::srand ( 0 );
+	std::random_shuffle ( scores->begin(), scores->end(), [](int i){ return std::rand()%i;});
+
+	
+	int max_idx = (std::distance(scores->begin(), max_element(scores->begin(), scores->end())));
+	
+	auto c = argMax(scores);
+	EXPECT_EQ(c, max_idx);
+}
+
+TEST(testArgMaxGPU, testLarge6){
+	std::vector<float>* scores = new std::vector<float>;
+	int n = 536870;
 	for(int i = 0; i < n; i++){
 		scores->push_back(i);
 	}

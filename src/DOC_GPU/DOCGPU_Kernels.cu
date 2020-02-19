@@ -99,20 +99,22 @@ __global__ void argMaxDevice(float* scores, unsigned int* scores_index, unsigned
 	extern __shared__ int array[];
 	int* argData = (int*)array;
 	float* scoreData = (float*) &argData[blockDim.x];
-
 	
 	unsigned int tid = threadIdx.x;
 	unsigned int i = blockIdx.x*blockDim.x+threadIdx.x;
+
+	argData[tid] = 0;
+	scoreData[tid] = 0;
+
+	if(i < input_size){
 	argData[tid] = scores_index[i];
 	scoreData[tid] = scores[i];
 	
-	__syncthreads();
-
-	if(i < input_size){
-		
+	__syncthreads();		
 		for(unsigned int s=(blockDim.x/2); s > 0; s/=2) {
-
 			if(tid < s){
+				assert(tid+s < blockDim.x);
+				//assert(tid+s < (input_size-blockDim.x*blockIdx.x));
 				if(scoreData[tid] < scoreData[tid+s]){
 					scoreData[tid] = scoreData[tid+s];
 					argData[tid] = argData[tid+s];
@@ -218,11 +220,12 @@ void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int shar
 		}
 		std::cout << std::endl;*/
 		
+		argMaxDevice<<<dimGrid, dimBlock, sharedMemorySize>>>(scores, scores_index, out_size);
 		out_size = dimGrid;
 		dimGrid = ceil((float)out_size/(float)dimBlock);
 	}
 	
-	argMaxDevice<<<dimGrid, dimBlock, sharedMemorySize>>>(scores, scores_index, out_size);
+
 
 	
 };
@@ -498,15 +501,18 @@ int argMax(std::vector<float>* scores){
 	//Call kernel
 	int out_size = scores->size();
    
-	createIndices<<<dimGrid, dimBlock>>>(scores_index_d, out_size);	
+	createIndices<<<dimGrid, dimBlock>>>(scores_index_d, out_size);
+   
 	
 	while(out_size > 1){
+		//std::cout << "called" << std::endl;
+		//std::cout << "dimGrid:" << dimGrid << " dimBlock: " << dimBlock << " out_size: " << out_size << std::endl;
 		argMaxDevice<<<dimGrid, dimBlock, sharedMemSize>>>(scores_d, scores_index_d, out_size);				
 		out_size = dimGrid;
 		dimGrid = ceil((float)out_size/(float)dimBlock);
 	}
 	
-	argMaxDevice<<<dimGrid, dimBlock, sharedMemSize>>>(scores_d, scores_index_d, out_size);		
+	//argMaxDevice<<<dimGrid, dimBlock, sharedMemSize>>>(scores_d, scores_index_d, out_size);		
 
 	unsigned int size_of_output = sizeof(unsigned int);
 	
