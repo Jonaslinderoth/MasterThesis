@@ -268,35 +268,3 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 
 
 
-bool DOCGPU::generateRandomSubSets(DataReader* dataReader){
-
-	size_t size= 100;
-	curandGenerator_t gen ;
-
-	//Create pseudo - random number generator
-	curandCreateGenerator(&gen ,CURAND_RNG_PSEUDO_MTGP32 );
-
-
-	//seed the generator
-	curandSetPseudoRandomGeneratorSeed(gen,1345);
-
-
-	unsigned int* randomNumberArray_d = cudaRandomNumberArray( size , &gen );
-	unsigned int* hostData;
-
-	// Allocate n floats on host
-	hostData = ( unsigned int*) calloc (size , sizeof ( unsigned int) );
-
-
-	// Copy device memory to host
-	cudaMemcpy ( hostData , randomNumberArray_d , size * sizeof ( unsigned int ) ,cudaMemcpyDeviceToHost );
-
-	// Cleanup
-
-	cudaFree( randomNumberArray_d );
-	free( hostData );
-
-	curandDestroyGenerator(gen);
-
-	return true;
-}

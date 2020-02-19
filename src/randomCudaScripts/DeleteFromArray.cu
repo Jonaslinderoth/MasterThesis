@@ -358,8 +358,8 @@ __global__ void gpuDeleteFromArray(float* d_outData, const unsigned int* delete_
 
 	if(i < numElements){
 		unsigned int offset = delete_array[i];
-		unsigned int previusPrefix = delete_array[i+1];
-		if(offset == previusPrefix){
+		unsigned int nextPrefix = delete_array[i+1];
+		if(offset == nextPrefix){
 			offset = i-delete_array[i];
 			d_outData[offset] = data[i];
 			indexes[offset] = indexes[i];
