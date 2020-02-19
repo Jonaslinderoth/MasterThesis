@@ -353,16 +353,23 @@ void sum_scan_blelloch(unsigned int* const d_out,
 }
 
 //this is mikkel and jonas work.
-__global__ void gpuDeleteFromArray(float* d_outData, const unsigned int* delete_array, const float* data,unsigned int* indexes , const size_t numElements){
+__global__ void gpuDeleteFromArray(float* d_outData,
+		const unsigned int* d_delete_array,
+		const float* d_data,
+		const size_t numElements,
+		const unsigned int dimensions){
 	unsigned int i = blockIdx.x*blockDim.x+threadIdx.x;
 
 	if(i < numElements){
-		unsigned int offset = delete_array[i];
-		unsigned int nextPrefix = delete_array[i+1];
+		unsigned int offset = d_delete_array[i];
+		unsigned int nextPrefix = d_delete_array[i+1];
 		if(offset == nextPrefix){
-			offset = i-delete_array[i];
-			d_outData[offset] = data[i];
-			indexes[offset] = indexes[i];
+			offset = i-offset;
+			unsigned int offsetWithDim = offset*dimensions;
+			unsigned int iWithDim = i*dimensions;
+			for(int dimIndex = 0 ; dimIndex < dimensions ; ++dimIndex){
+				d_outData[offsetWithDim+dimIndex] = d_data[iWithDim+dimIndex];
+			}
 		}
 
 	}
@@ -483,13 +490,18 @@ void cpu_sum_scan(unsigned int* const h_out,
 
 
 
-void cpuDeleteFromArray(float* const h_outData, const bool* delete_array, const float* data,unsigned int* indexes , const size_t numElements){
-	unsigned int ammountNotDelted = 0;
+void cpuDeleteFromArray(float* const h_outData,
+		const bool* h_delete_array,
+		const float* data,
+		const size_t numElements,
+		unsigned int dimension){
+	unsigned int ammountNotDeleted = 0;
 	for(unsigned int i = 0 ; i < numElements ; ++i){
-		if(!delete_array[i]){
-			h_outData[ammountNotDelted] = data[i];
-			indexes[ammountNotDelted] = indexes[i];
-			ammountNotDelted++;
+		if(!h_delete_array[i]){
+			for(unsigned int dimIndex = 0 ; dimIndex < dimension ; ++dimIndex){
+				h_outData[ammountNotDeleted+dimIndex] = data[i*dimension+dimIndex];
+			}
+			ammountNotDeleted += dimension;
 		}
 	}
 
@@ -502,7 +514,11 @@ void cpuDeleteFromArray(float* const h_outData, const bool* delete_array, const 
  * it also deletes from the indexes keeping track of what is what.
  * but it does not resize the indexs , meaning that some if the indexs array can be garbage.
  */
-void deleteFromArray(float* d_outData, const bool* delete_array, const float* data,unsigned int* indexes, const unsigned long numElements){
+void deleteFromArray(float* d_outData,
+		const bool* d_delete_array,
+		const float* d_data,
+		const unsigned long numElements,
+		const unsigned int dimension){
 
 	// Set up device-side memory for output
 	unsigned int* d_out_blelloch;
@@ -510,7 +526,7 @@ void deleteFromArray(float* d_outData, const bool* delete_array, const float* da
 
 
 
-	sum_scan_blelloch(d_out_blelloch,delete_array,(numElements+1));
+	sum_scan_blelloch(d_out_blelloch,d_delete_array,(numElements+1));
 
 	/*
 	unsigned int* h_prefixSum = new unsigned int[numElements+1];
@@ -530,9 +546,9 @@ void deleteFromArray(float* d_outData, const bool* delete_array, const float* da
 	if(numElements%1024 != 0){
 		blocksNeccesary++;
 	}
-	gpuDeleteFromArray<<<blocksNeccesary,threadsUsed>>>(d_outData,d_out_blelloch,data,indexes,numElements);
+	gpuDeleteFromArray<<<blocksNeccesary,threadsUsed>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
 
-
+	cudaFree(d_out_blelloch);
 
 }
 

@@ -32,7 +32,7 @@ void cpu_sum_scan(unsigned int* const h_out,
 void cpu_sum_scan(unsigned int* const h_out,
 	const unsigned int* const h_in,
 	const size_t numElems);
-void cpuDeleteFromArray(float* const d_outData, const bool* delete_array, const float* data,unsigned int* indexes , const size_t numElements);
-void deleteFromArray(float* d_outData, const bool* delete_array, const float* data,unsigned int* indexes, const unsigned long numElements);
+void cpuDeleteFromArray(float* const d_outData, const bool* delete_array, const float* data, const size_t numElements, unsigned int dimension = 1);
+void deleteFromArray(float* d_outData, const bool* delete_array, const float* data, const unsigned long numElements, unsigned int dimension = 1);
 
 #endif /* DELETEFROMARRAY_H_ */

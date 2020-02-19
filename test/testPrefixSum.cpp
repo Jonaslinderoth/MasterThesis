@@ -226,7 +226,7 @@ TEST(testPrefixSum, testTwo){
 
 		// Do CPU for reference
 		start = std::clock();
-		cpuDeleteFromArray(h_outData_naive, h_deleteArray, h_data, h_indexes , h_dataLenght);
+		cpuDeleteFromArray(h_outData_naive, h_deleteArray, h_data, h_dataLenght);
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 		//std::cout << "CPU time: " << duration << std::endl;
 
@@ -246,7 +246,7 @@ TEST(testPrefixSum, testTwo){
 
 		// Do GPU run
 		start = std::clock();
-		deleteFromArray(d_outData, d_deleteArray, d_inputData,d_inputIndexes , h_dataLenght);
+		deleteFromArray(d_outData, d_deleteArray, d_inputData ,(long unsigned int) h_dataLenght);
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
 
@@ -339,3 +339,212 @@ TEST(testPrefixSum, testTwo){
 
 }
 
+TEST(testPrefixSum, testThree){
+	// Set up clock for timing comparisons
+	srand(time(NULL));
+	std::clock_t start;
+	double duration;
+	unsigned int dimensions = 3;
+	unsigned int h_in_len = 0;
+	for (int k = 1; k < 8; ++k)
+	{
+
+
+		//h_dataLenght = (1 << k) + 3;
+		unsigned int h_dataLenght = 10;
+		//std::cout << "h_in size: " << h_dataLenght << std::endl;
+
+
+		// Generate input data
+		float* h_data = new float[h_dataLenght*dimensions];
+		for (int i = 0; i <h_dataLenght*dimensions; ++i)
+		{
+			h_data[i] = (float)(rand() % 100);
+			//h_data[i] = i;
+		}
+		// Generate bool data
+		bool* h_deleteArray = new bool[h_dataLenght+1];
+		for (int i = 0; i < h_dataLenght; ++i)
+		{
+			if(rand() % 2){
+				h_deleteArray[i] = true;
+			}else{
+				h_deleteArray[i] = false;
+			}
+		}
+		h_deleteArray[h_dataLenght] = false;
+
+		//extra stuff
+		if(k==1){
+			for (int i = 0; i < h_dataLenght; ++i)
+			{
+				h_deleteArray[i] = false;
+			}
+			h_deleteArray[h_dataLenght] = true;
+		}
+		if(k==2){
+			for (int i = 0; i < h_dataLenght; ++i)
+			{
+				h_deleteArray[i] = true;
+			}
+			h_deleteArray[h_dataLenght] = false;
+		}
+		if(k == 3){
+			h_deleteArray[h_dataLenght-1] = true;
+			h_deleteArray[h_dataLenght] = false;
+		}
+		if(k == 4){
+			h_deleteArray[h_dataLenght-1] = false;
+			h_deleteArray[h_dataLenght] = false;
+		}
+		if(k == 5){
+			h_deleteArray[h_dataLenght-1] = true;
+			h_deleteArray[h_dataLenght] = true;
+		}
+		if(k == 6){
+			h_deleteArray[h_dataLenght-1] = false;
+			h_deleteArray[h_dataLenght] = true;
+		}
+
+
+
+		// Set up host-side memory for output data
+		float* h_outData_naive = new float[h_dataLenght * dimensions];
+		float* h_outData_gpu = new float[h_dataLenght * dimensions];
+
+		// Set up device-side memory for bool data
+		bool* d_deleteArray;
+		checkCudaErrors(cudaMalloc(&d_deleteArray, sizeof(bool) * (h_dataLenght+1)));
+		checkCudaErrors(cudaMemcpy(d_deleteArray, h_deleteArray, sizeof(bool) * (h_dataLenght+1), cudaMemcpyHostToDevice));
+
+		// Set up device-side memory for input data
+		float* d_inputData;
+		checkCudaErrors(cudaMalloc(&d_inputData, sizeof(float) * h_dataLenght * dimensions));
+		checkCudaErrors(cudaMemcpy(d_inputData, h_data, sizeof(float) * h_dataLenght * dimensions, cudaMemcpyHostToDevice));
+
+
+		// Set up device-side memory for output data
+		float* d_outData;
+		checkCudaErrors(cudaMalloc(&d_outData, sizeof(float) * h_dataLenght * dimensions));
+
+		bool print = true;
+		if(print){
+			//to test the cpu thing actualy works (test of test :( )
+			std::cout << std::endl << "bool array: ";
+			for(int i = 0; i < (h_dataLenght+1); ++i){
+				std::cout << std::to_string(h_deleteArray[i])<< "         ";
+			}
+			std::cout << std::endl;
+
+		}
+
+		// Do CPU for reference
+		start = std::clock();
+		cpuDeleteFromArray(h_outData_naive, h_deleteArray, h_data, h_dataLenght,dimensions);
+		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+		//std::cout << "CPU time: " << duration << std::endl;
+
+
+		if(print){
+			std::cout << "input:     ";
+			for(int i = 0; i < h_dataLenght*dimensions; ++i){
+				std::cout << std::to_string(h_data[i])<< " ";
+			}
+			std::cout << std::endl;
+		}
+
+
+		// Do GPU run
+		start = std::clock();
+		deleteFromArray(d_outData, d_deleteArray, d_inputData ,(long unsigned int) h_dataLenght,dimensions);
+		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+
+
+		//std::cout << "GPU time: " << duration << std::endl;
+
+		// Copy device output array to host output array
+		// And free device-side memory
+		checkCudaErrors(cudaMemcpy(h_outData_gpu, d_outData, sizeof(float) * h_dataLenght*dimensions, cudaMemcpyDeviceToHost));
+		checkCudaErrors(cudaFree(d_outData));
+		checkCudaErrors(cudaFree(d_inputData));
+		checkCudaErrors(cudaFree(d_deleteArray));
+
+		//need to get how many were deleted
+		unsigned int howManyDeleted = 0;
+		for(unsigned int i = 0; i < h_dataLenght; ++i){
+			howManyDeleted += h_deleteArray[i];
+		}
+
+		if(print){
+			std::cout << "cpu result:";
+			for(int i = 0; i < (h_dataLenght-howManyDeleted)*dimensions; ++i){
+				std::cout << std::to_string(h_outData_naive[i])<< " ";
+			}
+			std::cout << std::endl;
+
+
+			std::cout << "gpu result: ";
+			for(int i = 0; i < (h_dataLenght-howManyDeleted)*dimensions; ++i){
+				std::cout << std::to_string(h_outData_gpu[i]) << " ";
+			}
+			std::cout << std::endl;
+
+
+		}
+
+		// Check for any mismatches between outputs of CPU and GPU
+		bool match = true;
+		int index_diff = 0;
+		for (int i = 0; i < (h_dataLenght-howManyDeleted)*dimensions; ++i)
+		{
+			if (h_outData_naive[i] != h_outData_gpu[i])
+			{
+				match = false;
+				index_diff = i;
+				break;
+			}
+		}
+		//std::cout << "Match: " << match << std::endl;
+
+		// Detail the mismatch if any
+		if (!match)
+		{
+			std::cout << "Difference in index: " << index_diff << std::endl;
+			//std::cout << "CPU: " << h_outData_naive[index_diff] << std::endl;
+			//std::cout << "GPU: " << h_outData_gpu[index_diff] << std::endl;
+			/*
+			int window_sz = 4;
+
+			std::cout << "Contents: " << std::endl;
+			std::cout << "CPU: ";
+			for (int i = -(window_sz / 2); i < (window_sz / 2); ++i)
+			{
+				std::cout << std::to_string(h_outData_naive[index_diff + i]) << ", ";
+			}
+			std::cout << std::endl;
+			std::cout << "GPU: ";
+			for (int i = -(window_sz / 2); i < (window_sz / 2); ++i)
+			{
+				std::cout << std::to_string(h_outData_gpu[index_diff + i]) << ", ";
+			}
+			std::cout << std::endl;
+			*/
+			EXPECT_TRUE(false);
+
+		}
+
+		// Free host-side memory
+		//delete[] h_in;
+		//delete[] h_out_naive;
+		//delete[] h_out_blelloch;
+
+		//std::cout << std::endl;
+
+
+	}
+
+	EXPECT_TRUE(true);
+
+
+
+}

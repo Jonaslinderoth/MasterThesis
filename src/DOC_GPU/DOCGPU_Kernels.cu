@@ -539,7 +539,7 @@ bool generateRandomStatesArray(curandState* d_randomStates,
 	if(randomSeed){
 		std::random_device rd;
 		seed = rd();
-		std::cout << "seed: " << seed << std::endl;
+		//std::cout << "seed: " << seed << std::endl;
 	}
 	//calculate the ammount of blocks
 	int ammountOfBlocks = size/dimBlock;
@@ -573,7 +573,7 @@ bool generateRandomIntArrayDevice(unsigned int* d_randomIndexes,
 		ammountOfBlocks++;
 	}
 
-	std::cout << "max: " << max << std::endl;
+	//std::cout << "max: " << max << std::endl;
 	//call the generation of random numbers
 	randIntArray<<<ammountOfBlocks,dimBlock>>>(d_randomIndexes, d_randomStates , size , max , min);
 
