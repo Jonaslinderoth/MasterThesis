@@ -61,7 +61,7 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	
 	unsigned int d = data->at(0)->size();
 	unsigned int r = log2(2*d)/log2(1/(2*beta));
-	unsigned int m = pow((2/alpha),2) * log(4);
+	unsigned int m = pow((2/alpha),r) * log(4);
 	
 	unsigned int number_of_ps = 2.0/alpha;
 	unsigned int number_of_samples = number_of_ps*m;
@@ -264,6 +264,4 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DOCGPU::findKClusters(int k){
 	
 };
-
-
 

@@ -103,7 +103,7 @@ TEST_F(dataGenerationTests, testUBuilder){
 }
 
 
-TEST_F(dataGenerationTests, testUBuilderVariance){
+TEST_F(dataGenerationTests, _SLOW_testUBuilderVariance){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(100000);
@@ -208,7 +208,7 @@ TEST_F(dataGenerationTests, testFixFileName){
 }
 
 
-TEST_F(dataGenerationTests, testMultipleNormalDistibuitionsInOneDimension){
+TEST_F(dataGenerationTests, _SLOW_testMultipleNormalDistibuitionsInOneDimension){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(1000);

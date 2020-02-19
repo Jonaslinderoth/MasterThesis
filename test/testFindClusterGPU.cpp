@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "../src/DOC_GPU/DOCGPU.h"
+#include "../src/DOC/DOC.h"
 #include "../src/DOC_GPU/DOCGPU_Kernels.h"
 #include <vector>
 #include <math.h>
@@ -46,7 +47,7 @@ TEST(testFindClusterGPU, testSimple1){
 		data->push_back(point);
 	}
 	{
-		auto point = new std::vector<float>{100,00};
+		auto point = new std::vector<float>{100,0};
 		data->push_back(point);
 	}
 	{
@@ -63,6 +64,10 @@ TEST(testFindClusterGPU, testSimple1){
 	EXPECT_EQ(res.second->size(),2);
 	EXPECT_TRUE(res.second->at(0));
 	EXPECT_TRUE(res.second->at(1));
+
+
+	DOC d2 = DOC();
+	EXPECT_LE(d2.mu(2, 1), d2.mu(1, 2));
 }
 
 
@@ -121,7 +126,7 @@ TEST(testFindClusterGPU, testSimple3){
 		data->push_back(point);
 	}
 	DOCGPU d = DOCGPU(data);
-	d.setSeed(1);
+	d.setSeed(2);
 	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = d.findCluster();
 	EXPECT_EQ(res.first->size(),4);
 

@@ -53,6 +53,10 @@ b:
 test: $(EXE_DIR)/${TEST}
 	./$(EXE_DIR)/${TEST}
 
+
+test_fast: $(EXE_DIR)/${TEST}
+	./$(EXE_DIR)/${TEST} --gtest_filter=-*_SLOW*:-*testClusteringPattern*
+
 # Target for the main file defined in EXEFILE
 $(EXE_DIR)/$(EXE): $(BUILD_DIR)/$(EXEFILE).o $(BUILD_DIR)/$(EXEFILE).d $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS))
 	mkdir -p $(EXE_DIR)

@@ -2,6 +2,7 @@
 #define CLUSTERING_H
 #include <vector>
 #include <iostream>
+#include <random>
 class Clustering{
  public:
 	Clustering(){};
@@ -14,6 +15,7 @@ class Clustering{
 	virtual void setBeta(float value){};
 	virtual void setWidth(float value){};
 	virtual ~Clustering(){};
+	
  private:
 	std::mt19937 gen;
 
