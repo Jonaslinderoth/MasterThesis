@@ -430,7 +430,7 @@ TEST(testPrefixSum, testThree){
 		float* d_outData;
 		checkCudaErrors(cudaMalloc(&d_outData, sizeof(float) * h_dataLenght * dimensions));
 
-		bool print = true;
+		bool print = false;
 		if(print){
 			//to test the cpu thing actualy works (test of test :( )
 			std::cout << std::endl << "bool array: ";

@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-__global__ void findDimmensionsDevice(float* Xs_d, float* ps_d, bool* res_d, unsigned int* Dsum_out,
+__global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d, unsigned int* Dsum_out,
 									  unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps, unsigned int m, float width){
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
 	int pNo = entry/m;
@@ -21,10 +21,13 @@ __global__ void findDimmensionsDevice(float* Xs_d, float* ps_d, bool* res_d, uns
 		// for each dimension
 		for(int i = 0; i < point_dim; i++){
 			bool d = true;
-			float p_tmp = ps_d[pNo*point_dim+i];
+			float p_tmp = data[ps_d[pNo]*point_dim+i];
 			// for each point in sample
 			for(int j = 0; j < no_in_sample; j++){
-				d &= abs(p_tmp-Xs_d[entry*no_in_sample*point_dim+j*point_dim+i]) < width;
+				unsigned int sampleNo = Xs_d[entry*no_in_sample+j];
+
+				float point = data[sampleNo*point_dim+i];
+				d &= abs(p_tmp-point) < width;
 			}
 			res_d[entry*point_dim+i] = d;
 			Dsum += d;
@@ -34,7 +37,7 @@ __global__ void findDimmensionsDevice(float* Xs_d, float* ps_d, bool* res_d, uns
 	}
 }
 
-__global__ void pointsContainedDevice(float* data, float* centroids, bool* dims, bool* output, unsigned int* Csum_out,
+__global__ void pointsContainedDevice(float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
 									  float width, unsigned int point_dim, unsigned int no_data, unsigned int no_dims, unsigned int m){
 	// one kernel for each hypercube
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
@@ -48,7 +51,9 @@ __global__ void pointsContainedDevice(float* data, float* centroids, bool* dims,
 			bool d = true;
 			for(int i = 0; i < point_dim; i++){
 				//(not (dims[entry*point_dim+i])) ||
-				d &= (not (dims[entry*point_dim+i])) || (abs(centroids[currentCentroid*point_dim+i] - data[j*point_dim+i]) < width);
+				unsigned int centroid_index = centroids[currentCentroid];
+				assert(centroid_index < no_data);
+				d &= (not (dims[entry*point_dim+i])) || (abs(data[centroid_index*point_dim+i] - data[j*point_dim+i]) < width);
 			}
 			output[entry*no_data+j] = d;
 			Csum += d;
@@ -151,19 +156,20 @@ __global__ void randIntArray(unsigned int *result , curandState_t* states , cons
 
 }
 
-void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, float* Xs_d, float* ps_d, bool* res_d,
+void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d,
 						   unsigned int* Dsum_out, unsigned int point_dim, unsigned int no_of_samples, unsigned int sample_size, unsigned int no_of_ps,
 						   unsigned int m, float width){
 
-    findDimmensionsDevice<<<dimGrid, dimBlock>>>(Xs_d, ps_d, res_d,  Dsum_out,
+    findDimmensionsDevice<<<dimGrid, dimBlock>>>(Xs_d, ps_d, data, res_d, Dsum_out,
 												 point_dim, no_of_samples, sample_size,
 												 no_of_ps, m, width);
 	
 };
 
 void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
-						   float* data, float* centroids, bool* dims, bool* output, unsigned int* Csum_out,
-						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples, unsigned int m){
+						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
+						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
+						   unsigned int m){
 
 	pointsContainedDevice<<<dimGrid, dimBlock>>>(data, centroids, dims,
 												 output, Csum_out,
@@ -247,31 +253,30 @@ void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int shar
 
 std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsContained(std::vector<std::vector<bool>*>* dims,
 																					   std::vector<std::vector<float>*>* data,
-																					   std::vector<std::vector<float>*>* centroids,
+																					   std::vector<unsigned int>* centroids,
 																					   int m, float width){
 
 	// Calculaating sizes
-	int point_dim = centroids->at(0)->size();
+	int point_dim = data->at(0)->size();
 	int no_of_points = data->size();
 	int no_of_dims = dims->size();
 	int no_of_centroids = centroids->size();
 
 	int floats_in_data = point_dim * no_of_points;
 	int bools_in_dims = no_of_dims * point_dim;
-	int floats_in_centorids = no_of_centroids * point_dim;
 	int bools_in_output = no_of_points * no_of_dims;
 	int ints_in_output_count = no_of_dims;
 	
 	int size_of_data = floats_in_data*sizeof(float);
 	int size_of_dims = bools_in_dims*sizeof(bool);
-	int size_of_centroids = floats_in_centorids*sizeof(float);
+	int size_of_centroids = no_of_centroids*sizeof(unsigned int);
 	int size_of_output = bools_in_output*sizeof(bool);
 	int size_of_output_count = ints_in_output_count*sizeof(unsigned int);
 
 	// allocating on the host
 	float* data_h = (float*) malloc(size_of_data);
 	bool* dims_h = (bool*) malloc(size_of_dims);
-	float* centroids_h = (float*) malloc(size_of_centroids);
+	unsigned int* centroids_h = (unsigned int*) malloc(size_of_centroids);
 	bool* output_h = (bool*) malloc(size_of_output);
 	unsigned int* output_count_h = (unsigned int*) malloc(size_of_output_count);
 
@@ -291,15 +296,13 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 
 	// filling centroid array
 	for(int i= 0; i < no_of_centroids; i++){
-		for(int j = 0; j < point_dim; j++){
-			centroids_h[i*point_dim+j] = centroids->at(i)->at(j);
-		}
+		centroids_h[i] = centroids->at(i);
 	}
 
 	// allocating on device
 	float* data_d;
 	bool* dims_d;
-	float* centroids_d;
+	unsigned int* centroids_d;
 	bool* output_d;
 	unsigned int* output_count_d;
 	
@@ -359,57 +362,46 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 };
 
 
-std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimmensions(std::vector<std::vector<float>*>* ps,
-																					   std::vector<std::vector<std::vector<float>*>*> Xs, int m, float width){
+std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimmensions(std::vector<std::vector<float>*>* data,
+																					   std::vector<unsigned int>* centroids,
+																					   std::vector<std::vector<unsigned int>*>* samples,
+																					   int m, float width){
 
-	int no_of_samples = Xs.size();	
-	int no_in_sample = Xs.at(0)->size();
-	int point_dim = Xs.at(0)->at(0)->size();
+	int no_of_samples = samples->size();	
+	int no_in_sample = samples->at(0)->size();
+	int no_of_centroids = centroids->size();
 
-
+	int no_of_points = data->size();
+	int point_dim = data->at(0)->size();
+   
+	int sizeOfData = no_of_points*point_dim*sizeof(unsigned int);
+	int sizeOfSamples = no_of_samples*no_in_sample*sizeof(unsigned int);
+	int sizeOfCentroids = point_dim*no_of_centroids*sizeof(unsigned int);
 	
-	int sizeOfXs = no_of_samples*no_in_sample*point_dim*sizeof(float);
 	
-	float* xs_h = (float*) malloc(sizeOfXs);
+	unsigned int* centroids_h = (unsigned int*) malloc(sizeOfCentroids);
+	unsigned int* samples_h = (unsigned int*) malloc(sizeOfSamples);
+	float* data_h = (float*) malloc(sizeOfData);
+	
+
+	for(int i = 0; i < no_of_points; i++){
+		for(int j = 0; j < point_dim; j++){
+			data_h[i*point_dim+j] = data->at(i)->at(j);
+		}
+	}
 
 	for(int i = 0; i < no_of_samples; i++){
-		for(int j = 0; j < no_in_sample; j++){
-			for(int k = 0; k < point_dim; k++){
-				xs_h[i*no_in_sample*point_dim+j*point_dim+k] = Xs.at(i)->at(j)->at(k);
-			}
+		for(int j = 0;  j < no_in_sample; j++){
+			samples_h[i*no_in_sample+j] = samples->at(i)->at(j);
 		}
 	}
 
-
-	int no_of_ps = ps->size();
-	int sizeOfps = point_dim*no_of_ps*sizeof(float);
-	float* ps_h = (float*) malloc(sizeOfps);
-
-
-	for(int i = 0; i < no_of_ps; i++){
-		for(int j = 0; j < point_dim; j++){
-			ps_h[i*point_dim+j] = ps->at(i)->at(j);
-		}
+	for(int i = 0; i < no_of_centroids; i++){
+		centroids_h[i] = centroids->at(i);
 	}
 
-	/*
-	std::cout << "xs: " << std::endl;
-	for(int i = 0; i < no_of_samples*no_in_sample*point_dim; i++){
-		std::cout << xs_h[i] << ", ";
-		if((i+1)% point_dim == 0){
-			std::cout << std::endl;
-		}
-	}
-	std::cout << std::endl;
 	
 
-	std::cout << "ps: " << std::endl;
-
-	for(int i = 0; i < no_of_ps*point_dim; i++){
-		std::cout << ps_h[i] << ", ";
-	}
-	std::cout << std::endl;
-	*/
 	unsigned int size_of_count = (no_of_samples)*sizeof(unsigned int);
 	
 	int outputDim = no_of_samples*point_dim;		
@@ -418,25 +410,31 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimme
 	unsigned int* count_h = (unsigned int*) malloc(size_of_count);
 
 
-	float* Xs_d;
-	float* ps_d;
+	unsigned int* samples_d;
+	unsigned int* centroids_d;
+	float* data_d;
 	bool* result_d;
 	unsigned int* count_d;
 	
-	cudaMalloc((void **) &Xs_d, sizeOfXs);
-	cudaMalloc((void **) &ps_d, sizeOfps);
+	cudaMalloc((void **) &samples_d, sizeOfSamples);
+	cudaMalloc((void **) &centroids_d, sizeOfCentroids);
+	cudaMalloc((void **) &data_d, sizeOfData);
 	cudaMalloc((void **) &result_d, outputSize);
 	cudaMalloc((void **) &count_d, size_of_count);
 
-	cudaMemcpy( Xs_d, xs_h, sizeOfXs, cudaMemcpyHostToDevice);
-    cudaMemcpy( ps_d, ps_h, sizeOfps, cudaMemcpyHostToDevice);
+	cudaMemcpy( samples_d, samples_h, sizeOfSamples, cudaMemcpyHostToDevice);
+    cudaMemcpy( centroids_d, centroids_h, sizeOfCentroids, cudaMemcpyHostToDevice);
+	cudaMemcpy( data_d, data_h, sizeOfData, cudaMemcpyHostToDevice);
 
 
-	findDimmensionsDevice<<<ceil((no_of_samples)/256.0), 256>>>(Xs_d, ps_d, result_d, count_d, point_dim, no_of_samples, no_in_sample, no_of_ps, m, width);
+	findDimmensionsDevice<<<ceil((no_of_samples)/256.0), 256>>>(samples_d, centroids_d, data_d, result_d, count_d, point_dim, no_of_samples, no_in_sample, no_of_centroids, m, width);
 
    
 	cudaMemcpy(result_h, result_d, outputSize, cudaMemcpyDeviceToHost);
 	cudaMemcpy(count_h, count_d, size_of_count, cudaMemcpyDeviceToHost);
+
+
+	
 
 	auto output =  new std::vector<std::vector<bool>*>;
 	
@@ -454,14 +452,14 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimme
 		count->push_back(count_h[i]);
 	}
 
-	cudaFree(Xs_d);
-	cudaFree(ps_d);
+	cudaFree(samples_d);
+	cudaFree(centroids_d);
 	cudaFree(result_d);
 	cudaFree(count_d);
 	free(result_h);
 	free(count_h);
-	free(ps_h);
-	free(xs_h);
+	free(centroids_h);
+	free(samples_h);
 	
 	return std::make_pair(output, count);
 }

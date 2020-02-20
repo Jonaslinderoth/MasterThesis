@@ -6,14 +6,18 @@
 
 
 TEST(testHyperCubeGPU, testFindDimmensionsInit){
-	auto a = new std::vector<std::vector<float>*>;
+	auto data = new std::vector<std::vector<float>*>;
 	auto b = new std::vector<float>{1,2,3,4};
-	a->push_back(b);
+	data->push_back(b);
 
-	auto c = std::vector<std::vector<std::vector<float>*>*>();
-	c.push_back(a);
 	
-	auto res = findDimmensions(a, c, 1);
+	auto c = new std::vector<unsigned int>{0};
+
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+	auto d = new std::vector<unsigned int>{0};
+	samples->push_back(d);
+	
+	auto res = findDimmensions(data, c, samples, 1);
    
 	SUCCEED();
 	EXPECT_EQ(res.first->size(), 1);
@@ -21,19 +25,28 @@ TEST(testHyperCubeGPU, testFindDimmensionsInit){
 
 
 TEST(testHyperCubeGPU, testFindDimmensions){
-	auto ps = new std::vector<std::vector<float>*>;
+	auto data = new std::vector<std::vector<float>*>;
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+
+	auto centroids = new std::vector<unsigned int>;
+	
+	
+	
 	auto p = new std::vector<float>{1,1,1};
-	ps->push_back(p);
-	auto xss = std::vector<std::vector<std::vector<float>*>*>();
-	auto xs = new std::vector<std::vector<float>*>;
 	auto x1 = new std::vector<float>{1,2,1000};
 	auto x2 = new std::vector<float>{2,1, 1000};
-	xs->push_back(x1);
-	xs->push_back(x2);
-	xss.push_back(xs);
+
+	data->push_back(p);
+	data->push_back(x1);
+	data->push_back(x2);
+	
+	centroids->push_back(0);
+	auto sample = new std::vector<unsigned int>{1,2};
+	samples->push_back(sample);
+
 
 	
-	auto res2 = findDimmensions(ps, xss, 1);
+	auto res2 = findDimmensions(data, centroids, samples, 1);
 	auto res = res2.first;
 	SUCCEED();
 	EXPECT_EQ(res->size(), 1);
@@ -47,31 +60,36 @@ TEST(testHyperCubeGPU, testFindDimmensions){
 	EXPECT_EQ(res2.second->at(0), 2);
 }
 
+
+
 TEST(testHyperCubeGPU, testFindDimmensions_1){
-	auto ps = new std::vector<std::vector<float>*>;
+
+	auto data = new std::vector<std::vector<float>*>;
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+	auto centroids = new std::vector<unsigned int>{0,1};
+
 	auto p = new std::vector<float>{1,1,1};
 	auto p2 = new std::vector<float>{10,10,10};
-	ps->push_back(p);
-	ps->push_back(p2);
-	auto xss = std::vector<std::vector<std::vector<float>*>*>();
+	data->push_back(p);
+	data->push_back(p2);
+	
+
+	
 	{
-		auto xs = new std::vector<std::vector<float>*>;
+		auto xs = new std::vector<unsigned int>{2,3};
+		auto xs2 = new std::vector<unsigned int>{2,4};
 		auto x1 = new std::vector<float>{1,2,1000};
 		auto x2 = new std::vector<float>{2,1, 1000};
-		xs->push_back(x1);
-		xs->push_back(x2);
-		xss.push_back(xs);
+		auto x3 = new std::vector<float>{1,-2, 1000};
+		data->push_back(x1);
+		data->push_back(x2);
+		data->push_back(x3);
+		samples->push_back(xs);
+		samples->push_back(xs2);
 	}
-	{
-		auto xs = new std::vector<std::vector<float>*>;
-		auto x1 = new std::vector<float>{1,-2,1000};
-		auto x2 = new std::vector<float>{2,1, 1000};
-		xs->push_back(x1);
-		xs->push_back(x2);
-		xss.push_back(xs);
-	}
+
 	
-	auto res2 = findDimmensions(ps, xss, 1);
+	auto res2 = findDimmensions(data, centroids, samples, 1);
 	auto res = res2.first;
 	SUCCEED();
 	EXPECT_EQ(res->size(), 2);
@@ -92,30 +110,33 @@ TEST(testHyperCubeGPU, testFindDimmensions_1){
 	EXPECT_EQ(res2.second->at(1), 1);
 }
 
-TEST(testHyperCubeGPU, testFindDimmensions2){
-	auto ps = new std::vector<std::vector<float>*>;
-	auto p = new std::vector<float>{1,1,1};
-	ps->push_back(p);
-	auto xss = std::vector<std::vector<std::vector<float>*>*>();
-	{
-		auto xs = new std::vector<std::vector<float>*>;
-		auto x1 = new std::vector<float>{1,2,1000};
-		auto x2 = new std::vector<float>{2,1, 1000};
-		xs->push_back(x1);
-		xs->push_back(x2);
-		xss.push_back(xs);
-	}
 
-	{
-		auto xs = new std::vector<std::vector<float>*>;
-		auto x1 = new std::vector<float>{1,2,1};
-		auto x2 = new std::vector<float>{2,10000, 3};
-		xs->push_back(x1);
-		xs->push_back(x2);
-		xss.push_back(xs);
-	}
+
+
+
+TEST(testHyperCubeGPU, testFindDimmensions2){
+	auto data = new std::vector<std::vector<float>*>;
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+	auto centroids = new std::vector<unsigned int>{0};
+
 	
-	auto res2 = findDimmensions(ps, xss, 2);
+	auto x = new std::vector<float>{1,1,1};
+	auto x1 = new std::vector<float>{1,2,1000};
+	auto x2 = new std::vector<float>{2,1, 1000};
+	auto x3 = new std::vector<float>{1,2,1};
+	auto x4 = new std::vector<float>{2,10000, 3};
+	data->push_back(x);
+	data->push_back(x1);
+	data->push_back(x2);
+	data->push_back(x3);
+	data->push_back(x4);
+	auto sample1 = new std::vector<unsigned int>{1,2};
+	auto sample2 = new std::vector<unsigned int>{3,4};
+	samples->push_back(sample1);
+	samples->push_back(sample2);
+
+
+	auto res2 = findDimmensions(data, centroids, samples, 2);
 	auto res = res2.first;
 	SUCCEED();
 	EXPECT_EQ(res->size(), 2);
@@ -135,6 +156,7 @@ TEST(testHyperCubeGPU, testFindDimmensions2){
 	EXPECT_EQ(res2.second->at(1), 2);
 }
 
+/*
 
 TEST(testFindDimensionsGPU, testFindDimmensions3){
 	auto ps = new std::vector<std::vector<float>*>;
@@ -188,37 +210,46 @@ TEST(testFindDimensionsGPU, testFindDimmensions3){
 }
 
 
-TEST(testFindDimensionsGPU, testFindDimmensions4){
-	auto ps = new std::vector<std::vector<float>*>;
-	{auto p = new std::vector<float>{1,1,1,9};
-	ps->push_back(p);}
-	{auto p = new std::vector<float>{1000,1000,1000,9000};
-	ps->push_back(p);}
-	auto xss = std::vector<std::vector<std::vector<float>*>*>();
-	{
-		auto xs = new std::vector<std::vector<float>*>;
-		auto x1 = new std::vector<float>{1,2,1000,9};
-		auto x2 = new std::vector<float>{2,1, 1000,9};
-		xs->push_back(x1);
-		xs->push_back(x2);
-		xss.push_back(xs);
-	}
+*/
 
-	for(int i = 0; i < 5; i++){
-		auto xs = new std::vector<std::vector<float>*>;
-		auto x1 = new std::vector<float>{1,1000,1,9};
-		auto x2 = new std::vector<float>{2,1000, 1,9};
-		xs->push_back(x1);
-		xs->push_back(x2);
-		xss.push_back(xs);
-	}
+TEST(testFindDimensionsGPU, testFindDimmensions4){
+	auto data = new std::vector<std::vector<float>*>;
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+	auto centroids = new std::vector<unsigned int>{0,1};
+
+	{auto p = new std::vector<float>{1,1,1,9};
+	data->push_back(p);}
+	{auto p = new std::vector<float>{1000,1000,1000,9000};
+	data->push_back(p);}
+	auto x1 = new std::vector<float>{1,2,1000,9};
+	auto x2 = new std::vector<float>{2,1, 1000,9};
+	auto x3 = new std::vector<float>{1,1000,1,9};
+	auto x4 = new std::vector<float>{2,1000, 1,9};
+	data->push_back(x1);
+	data->push_back(x2);
+	data->push_back(x3);
+	data->push_back(x4);
+
+	auto sample1 = new std::vector<unsigned int>{2,3};
+	auto sample2 = new std::vector<unsigned int>{4,5};
+	auto sample3 = new std::vector<unsigned int>{4,5};
+	auto sample4 = new std::vector<unsigned int>{4,5};
+	auto sample5 = new std::vector<unsigned int>{4,5};
+	auto sample6 = new std::vector<unsigned int>{4,5};
+
+	samples->push_back(sample1);
+	samples->push_back(sample2);
+	samples->push_back(sample3);
+	samples->push_back(sample4);
+	samples->push_back(sample5);
+	samples->push_back(sample6);
 	
-	auto res2 = findDimmensions(ps, xss, 3);
+	auto res2 = findDimmensions(data, centroids, samples, 3);
 	auto res = res2.first;
 	SUCCEED();
 	EXPECT_EQ(res->size(), 6);
 
-	/*
+	
 	  std::cout << std::endl;
 	for(int i = 0; i < res->size(); i++){
 		for(int j = 0; j < res->at(i)->size(); j++){
@@ -226,7 +257,7 @@ TEST(testFindDimensionsGPU, testFindDimmensions4){
 		}
 		std::cout << std::endl;
 	}
-	*/
+	
 	
 	
 	EXPECT_EQ(res->at(0)->size(), 4);
@@ -261,7 +292,7 @@ TEST(testFindDimensionsGPU, testFindDimmensions4){
 	EXPECT_EQ(res2.second->at(5), 1);
 
 }
-
+/*
 
 TEST(testFindDimensionsGPU, testFindDimmensions5){
 	auto ps = new std::vector<std::vector<float>*>;
@@ -289,7 +320,7 @@ TEST(testFindDimensionsGPU, testFindDimmensions5){
 			std::cout << res->at(i)->at(j) << ", ";
 		}
 		std::cout << std::endl;
-		}*/
+		}
 	
 	
 	EXPECT_EQ(res->size(), 1);
@@ -370,7 +401,7 @@ TEST(testFindDimensionsGPU, testFindDimmensionsRandom){
 				std::cout << res2->at(k) << ", ";
 			}
 			std::cout << std::endl;
-			*/
+			
 			
 			for(int k = 0; k < res->size(); k++){
 				ASSERT_EQ(res->at(k), res2->at(k)) << "Not equal at k: " << k << ", and " << i <<"th sample and " << i/m << "th centroid";
@@ -389,3 +420,4 @@ TEST(testFindDimensionsGPU, testFindDimmensionsRandom){
 
 	
 }
+*/

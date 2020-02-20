@@ -6,7 +6,7 @@
 
 
 TEST(testRandomSubSetMaker, testOne){
-	bool print = true;
+	bool print = false;
 	//test size
 	const unsigned int size = 1000;
 	//allocate memory
@@ -44,7 +44,7 @@ TEST(testRandomSubSetMaker, testOne){
 
 
 TEST(testRandomSubSetMaker, testTwo){
-	bool print = true;
+	bool print = false;
 	//test size
 	const unsigned int size = 1000;
 	//allocate memory
@@ -76,3 +76,5 @@ TEST(testRandomSubSetMaker, testTwo){
 
 
 }
+
+

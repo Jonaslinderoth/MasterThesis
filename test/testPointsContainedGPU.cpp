@@ -3,7 +3,7 @@
 #include "../src/DOC_GPU/DOCGPU_Kernels.h"
 #include "../src/DOC/HyperCube.h"
 #include <random>
- 
+
 
 class testPointsContainedGPU : public ::testing::Test {
 public:
@@ -29,16 +29,74 @@ public:
 };
 
 TEST_F(testPointsContainedGPU, testSimple){
-	auto a = new std::vector<std::vector<bool>*>;
-	auto b = new std::vector<std::vector<float>*>;
-	auto d = new std::vector<std::vector<float>*>;
-	auto dd = new std::vector<float>{0};
-	d->push_back(dd);
-	auto c = pointsContained(a,b,d,1).first;
+	auto dims = new std::vector<std::vector<bool>*>;
+	auto data = new std::vector<std::vector<float>*>;
+	auto centroids = new std::vector<unsigned int>{0};
+	
+	auto dd = new std::vector<float>{0,0};
+	data->push_back(dd);
+
+	auto dim = new std::vector<bool>{true, true};
+	dims->push_back(dim);
+	auto c = pointsContained(dims,data,centroids,1);
 	
 	SUCCEED();
-	EXPECT_EQ(c->size(), a->size());
+	EXPECT_EQ(c.first->size(), 1);
+	EXPECT_EQ(c.first->at(0)->size(), 1);
+	EXPECT_EQ(c.first->at(0)->at(0), true);
 }
+
+TEST_F(testPointsContainedGPU, testSimple2){
+	auto dims = new std::vector<std::vector<bool>*>;
+	auto data = new std::vector<std::vector<float>*>;
+	auto centroids = new std::vector<unsigned int>{0};
+	
+	auto dd = new std::vector<float>{0,0};
+	auto dd2 = new std::vector<float>{0,100};
+	data->push_back(dd);
+	data->push_back(dd2);
+
+	auto dim = new std::vector<bool>{true, true};
+	dims->push_back(dim);
+	auto c = pointsContained(dims,data,centroids,1);
+	
+	SUCCEED();
+	EXPECT_EQ(c.first->size(), 1);
+	EXPECT_EQ(c.first->at(0)->size(), 2);
+	EXPECT_EQ(c.first->at(0)->at(0), true);
+	EXPECT_EQ(c.first->at(0)->at(1), false);
+}
+
+
+TEST_F(testPointsContainedGPU, testSimple3){
+	auto dims = new std::vector<std::vector<bool>*>;
+	auto data = new std::vector<std::vector<float>*>;
+	auto centroids = new std::vector<unsigned int>{0,1};
+	
+	auto dd = new std::vector<float>{0,0};
+	auto dd2 = new std::vector<float>{0,100};
+	data->push_back(dd);
+	data->push_back(dd2);
+
+	auto dim = new std::vector<bool>{true, true};
+	dims->push_back(dim);
+	auto dim2 = new std::vector<bool>{true, true};
+	dims->push_back(dim2);
+	auto c = pointsContained(dims,data,centroids,1);
+	
+	SUCCEED();
+	EXPECT_EQ(c.first->size(), 2);
+	EXPECT_EQ(c.first->at(0)->size(), 2);
+	EXPECT_EQ(c.first->at(0)->at(0), true);
+	EXPECT_EQ(c.first->at(0)->at(1), false);
+
+	EXPECT_EQ(c.first->at(1)->size(), 2);
+	EXPECT_EQ(c.first->at(1)->at(0), false);
+	EXPECT_EQ(c.first->at(1)->at(1), true);
+}
+
+
+/*
 
 TEST_F(testPointsContainedGPU, testWithSimpleData){
 	auto a = new std::vector<std::vector<bool>*>;
@@ -64,35 +122,70 @@ TEST_F(testPointsContainedGPU, testWithSimpleData){
 	EXPECT_EQ(c1.second->size(), 1);
 	EXPECT_EQ(c1.second->at(0), 1);
 }
+
+*/
 TEST_F(testPointsContainedGPU, testWithSimpleData2){
-	auto a = new std::vector<std::vector<bool>*>;
-	auto aa = new std::vector<bool>{true, false, false};
-	a->push_back(aa);
+	auto dims = new std::vector<std::vector<bool>*>;
+	auto data = new std::vector<std::vector<float>*>;
+	auto centroids = new std::vector<unsigned int>{0};
 
-	auto b = new std::vector<std::vector<float>*>;
-    auto bb = new std::vector<float>{9,9,9};
-	b->push_back(bb);
-	{auto bbb = new std::vector<float>{111,111,111};
-		b->push_back(bbb);};
-	{auto bbb = new std::vector<float>{-111,-111,-111};
-		b->push_back(bbb);};
+	data->push_back(new std::vector<float>{10,10,10});
+	dims->push_back(new std::vector<bool>{true, false, false});
+	data->push_back(new std::vector<float>{9,9,9});
+	data->push_back(new std::vector<float>{111,111,111});
+	data->push_back(new std::vector<float>{-111,-111,-111});
 
-    auto centroid = new std::vector<float>{10,10,10};
-	auto centorids = new std::vector<std::vector<float>*>;
-	centorids->push_back(centroid);
-	auto c1 = pointsContained(a,b,centorids,1);
+
+	auto c1 = pointsContained(dims,data,centroids,1);
 	auto c = c1.first;
 	SUCCEED();
-	EXPECT_EQ(c->size(), a->size());
+	EXPECT_EQ(c->size(), dims->size());
 	EXPECT_TRUE(c->at(0)->at(0));
-	EXPECT_FALSE(c->at(0)->at(1));
+	EXPECT_TRUE(c->at(0)->at(1));
 	EXPECT_FALSE(c->at(0)->at(2));
+	EXPECT_FALSE(c->at(0)->at(3));
 
 
 	EXPECT_EQ(c1.second->size(), 1);
-	EXPECT_EQ(c1.second->at(0), 1);
+	EXPECT_EQ(c1.second->at(0), 2);
 }
 
+
+TEST_F(testPointsContainedGPU, testWithSimpleData2_2){
+	auto dims = new std::vector<std::vector<bool>*>;
+	auto data = new std::vector<std::vector<float>*>;
+	auto centroids = new std::vector<unsigned int>{0,1};
+
+	data->push_back(new std::vector<float>{10,10,10});
+	data->push_back(new std::vector<float>{110,10,10});
+	dims->push_back(new std::vector<bool>{true, false, false});
+	dims->push_back(new std::vector<bool>{true, false, true});
+	data->push_back(new std::vector<float>{9,9,9});
+	data->push_back(new std::vector<float>{111,111,111});
+	data->push_back(new std::vector<float>{-111,-111,-111});
+
+
+	auto c1 = pointsContained(dims,data,centroids,1);
+	auto c = c1.first;
+	SUCCEED();
+	EXPECT_EQ(c->size(), dims->size());
+	EXPECT_TRUE(c->at(0)->at(0));
+	EXPECT_FALSE(c->at(0)->at(1));
+	EXPECT_TRUE(c->at(0)->at(2));
+	EXPECT_FALSE(c->at(0)->at(3));
+	EXPECT_FALSE(c->at(0)->at(4));
+
+	EXPECT_FALSE(c->at(1)->at(0));
+	EXPECT_TRUE(c->at(1)->at(1));
+	EXPECT_FALSE(c->at(1)->at(2));
+	EXPECT_FALSE(c->at(1)->at(3));
+	EXPECT_FALSE(c->at(1)->at(4));
+
+	EXPECT_EQ(c1.second->size(), 2);
+	EXPECT_EQ(c1.second->at(0), 2);
+	EXPECT_EQ(c1.second->at(1), 1);
+}
+/*
 
 
 TEST_F(testPointsContainedGPU, testWithSimpleData3){
@@ -456,6 +549,7 @@ TEST_F(testPointsContainedGPU, testRandomCompCPU){
 	std::cout << data->at(747)->at(id) << std::endl;
 	std::cout << centorids->at(98)->at(id) << std::endl;
 	std::cout << dims->at(98)->at(id) << std::endl;
-	*/
+	
 	
 }
+*/
