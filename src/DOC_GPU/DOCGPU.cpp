@@ -81,9 +81,14 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	unsigned int size_of_output_cluster = number_of_points*sizeof(bool);
 
 
-	float* data_h = (float*) malloc(size_of_data);
-	float* ps_h = (float*) malloc(size_of_ps);
-	float* xs_h = (float*) malloc(size_of_xs);
+
+	
+	float* data_h;
+	float* ps_h;
+	float* xs_h;
+	cudaMallocHost((void**) &data_h, size_of_data);
+	cudaMallocHost((void**) &ps_h, size_of_ps);
+	cudaMallocHost((void**) &xs_h, size_of_xs);
 	
 	for(int i = 0; i < number_of_points; i++){
 		for(int j = 0; j < point_dim; j++){
@@ -121,9 +126,9 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	cudaMemcpy(ps_d, ps_h, size_of_ps, cudaMemcpyHostToDevice);
 
 
-	free(data_h);
-	free(ps_h);
-	free(xs_h);
+	cudaFreeHost(data_h);
+	cudaFreeHost(ps_h);
+	cudaFree(xs_h);
 
 
 	
@@ -262,6 +267,6 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 };
 
 std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DOCGPU::findKClusters(int k){
-	
+	throw std::runtime_error("Not implemented yet");	
 };
 

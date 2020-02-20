@@ -549,6 +549,7 @@ TEST_F(testDOC, testWithDataReader2){
 
 TEST_F(testDOC, _SLOW_testWithDataReader3){
 	DataGeneratorBuilder dgb;
+	dgb.setSeed(10);
 	Cluster small;
 	small.setAmmount(20);
 	small.addDimension(uniformDistribution, {-10000,10000});

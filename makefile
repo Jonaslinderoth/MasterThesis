@@ -6,13 +6,13 @@ CXX = g++
 CXXFLAGS=-I. -nocudalib  -O2  #-g -G
 else
 CXX = nvcc
-CXXFLAGS=-I. -arch=sm_37  -O2  #-g -G
+CXXFLAGS=-I. -arch=sm_37  -O2 # 
 endif
 
-# -g -G for instrumntation for debugger
+# -g -G for instrumntation for debugger, these might cause curand to not generate random numbers properly...
 # -DNDEBUG will remove assertions
 
-LIBS = -lpthread -lcurand -L /usr/local/cuda-9.2/lib64
+LIBS = -lpthread -lcurand -L /usr/local/cuda-10.2/lib64
 
 EXE=main
 EXEFILE = main
@@ -30,6 +30,10 @@ TESTDIR = test
 TESTFILES = $(shell find $(TESTDIR) -name '*.cu') $(shell find $(TESTDIR) -name '*.cpp')
 TESTOBJS= $(patsubst %.cu, %.o, $(patsubst %.cpp, %.o, $(TESTFILES)))
 
+BENCHMARK = benchmark
+BENCHMARKDIR = benchmark
+BENCHMARKFILES = $(shell find $(BENCHMARKDIR) -name '*.cu') $(shell find $(BENCHMARKDIR) -name '*.cpp')
+BENCHMARKOBJS= $(patsubst %.cu, %.o, $(patsubst %.cpp, %.o, $(BENCHMARKFILES)))
 
 
 
@@ -54,6 +58,9 @@ test: $(EXE_DIR)/${TEST}
 	./$(EXE_DIR)/${TEST}
 
 
+benchmark: $(EXE_DIR)/$(BENCHMARK)
+	./$(EXE_DIR)/$(BENCHMARK) --benchmark_repetitions=10 --benchmark_report_aggregates_only=true
+
 test_fast: $(EXE_DIR)/${TEST}
 	./$(EXE_DIR)/${TEST} --gtest_filter=-*_SLOW*:-*testClusteringPattern*
 
@@ -67,7 +74,7 @@ $(EXE_DIR)/$(EXE): $(BUILD_DIR)/$(EXEFILE).o $(BUILD_DIR)/$(EXEFILE).d $(addpref
 ${BUILD_DIR}/%.d: %.cu main.cu
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(addprefix $(BUILD_DIR)/, $(shell find $(SOURCEDIR) -type d)) 
-	$(CXX) -MT $(@:.d=.o) -M $(CXXFLAGS) $^ > $@
+	$(CXX) -MT $(@:.d=.o) -M $(CXXFLAGS) $(LIBS) $^ > $@
 
 ${BUILD_DIR}/%.d: %.cpp
 	mkdir -p $(BUILD_DIR)
@@ -83,12 +90,21 @@ ${BUILD_DIR}/%.o: %.cpp
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(BUILD_DIR)/$(TESTDIR)
 	mkdir -p $(BUILD_DIR)/$(SOURCEDIR)
+	mkdir -p $(BUILD_DIR)/$(BENCHMARKDIR)	
 	${CXX} $(CXXFLAGS) -c $^ -o $@	
+
+
 
 #Target for test 	
 $(EXE_DIR)/$(TEST): $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(addprefix $(BUILD_DIR)/, $(TESTOBJS))
 	mkdir -p $(EXE_DIR)
 	$(CXX) $(CXXFLAGS) $(addprefix $(BUILD_DIR)/, $(TESTOBJS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBGTEST) $(LIBS) -o $@
+
+#Target for benchmark 	
+$(EXE_DIR)/$(BENCHMARK): $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(addprefix $(BUILD_DIR)/, $(BENCHMARKOBJS))
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(addprefix $(BUILD_DIR)/, $(BENCHMARKOBJS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -lbenchmark -lbenchmark_main -o $@
+
 
 
 clean:

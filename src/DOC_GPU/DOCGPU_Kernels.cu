@@ -178,14 +178,18 @@ void scoreKernel(unsigned int dimGrid, unsigned int dimBlock,
 
 	score<<<dimGrid, dimBlock>>>(cluster_size, dim_count, score_output,
 								 len, alpha, beta, num_points);
-	unsigned int* out = (unsigned int*) malloc(sizeof(unsigned int)*len);
-	cudaMemcpy(out, cluster_size, sizeof(unsigned int)*len, cudaMemcpyDeviceToHost);
-	/*std::cout << "cluster_size: " << std::endl;
-	for(int i = 0; i < len; i++){
-		std::cout << out[i] << ", ";
-	}
-	std::cout << std::endl;
-	std::cout << num_points << std::endl;*/
+
+	/*
+	  unsigned int* out = (unsigned int*) malloc(sizeof(unsigned int)*len);
+
+	  cudaMemcpy(out, cluster_size, sizeof(unsigned int)*len, cudaMemcpyDeviceToHost);
+	  std::cout << "cluster_size: " << std::endl;
+	  for(int i = 0; i < len; i++){
+	  std::cout << out[i] << ", ";
+	  }
+	  std::cout << std::endl;
+	  std::cout << num_points << std::endl;
+	*/
 	
 
 	
