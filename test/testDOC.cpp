@@ -440,7 +440,51 @@ TEST_F(testDOC, testFindKClusters5){
 	equal(res1.at(0).first, res3.at(0).first);
 }
 
+TEST_F(testDOC, testLarge5){
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	std::default_random_engine generator;
+	generator.seed(100);
+	std::uniform_real_distribution<double> distribution(50000.0,500000.0);
+	std::uniform_real_distribution<double> distribution2(5.0,15.0);
+	
+	for(float i = 0; i < 100; i++){
+		std::vector<float>* point1 = new std::vector<float>;
+		point1->push_back(distribution2(generator));
+		point1->push_back(distribution2(generator));
+		point1->push_back(distribution2(generator));
+		for(int j = 0; j < 3; j++){
+			point1->push_back(distribution(generator));
+		}
 
+		data->push_back(point1);
+
+	}
+	
+	DOC d = DOC(data);
+	d.setSeed(1);
+	d.setAlpha(0.1);
+	d.setBeta(0.25);
+	d.setWidth(15);
+	auto res = d.findCluster();
+	
+	SUCCEED();
+	EXPECT_EQ(res.second->size(),6);
+	EXPECT_TRUE(res.second->at(0));
+	EXPECT_TRUE(res.second->at(1));
+	EXPECT_TRUE(res.second->at(2));
+	for(int i = 3; i < 6;i++){
+		EXPECT_FALSE(res.second->at(i));
+	}
+	EXPECT_EQ(res.first->size(), 100);
+
+	/*EXPECT_EQ(res.first->size(), 100);
+	for(int i = 0; i < res.first->size(); i++){
+		for(int j = 0; j < 6; j++){
+			std::cout << res.first->at(i)->at(j) << ", ";
+		}
+		std::cout <<std::endl;
+		}*/
+}
 
 
 TEST_F(testDOC, testFindKClusters4){

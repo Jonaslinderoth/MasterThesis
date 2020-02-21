@@ -250,13 +250,13 @@ TEST(testFindDimensionsGPU, testFindDimmensions4){
 	EXPECT_EQ(res->size(), 6);
 
 	
-	  std::cout << std::endl;
+	/*	  std::cout << std::endl;
 	for(int i = 0; i < res->size(); i++){
 		for(int j = 0; j < res->at(i)->size(); j++){
 			std::cout << res->at(i)->at(j) << ", ";
 		}
 		std::cout << std::endl;
-	}
+	}*/
 	
 	
 	
@@ -334,73 +334,80 @@ TEST(testFindDimensionsGPU, testFindDimmensions5){
 	//EXPECT_FALSE(res->at(1)->at(1));
 	//EXPECT_TRUE(res->at(1)->at(2));
 }
-
+*/
 
 
 TEST(testFindDimensionsGPU, testFindDimmensionsRandom){
-	std::vector<std::vector<float>*>* ps = new std::vector<std::vector<float>*>;
+
 	int amount_of_ps = 100;
-	int number_of_samples = 200;
+	int number_of_samples = 2000;
 	int m = number_of_samples/amount_of_ps;
 
-	int sample_size = 20;
+	int sample_size = 200;
+	int data_size = (amount_of_ps+number_of_samples*sample_size)*2;
 	int point_dim = 200;
 	std::default_random_engine generator;
 	generator.seed(100);
-	std::uniform_real_distribution<double> distribution(0.0,20.0);
+	std::uniform_real_distribution<double> distribution(5.0,20.0);
+	std::uniform_int_distribution<int> distribution_int(0,data_size-1);
 
-	
-	for(int i = 0; i < amount_of_ps; i++){
+
+	auto data = new std::vector<std::vector<float>*>;
+	auto centroids = new std::vector<unsigned int>;
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+
+
+	for(int j = 0; j < data_size; j++){
 		auto p = new std::vector<float>;
-		for(int j = 0; j < point_dim; j++){
+		for(int k = 0; k < point_dim; k++){
 			float d = distribution(generator);
-			//std::cout << d << ", ";
 			p->push_back(d);
 		}
-		//std::cout << std::endl;
-		ps->push_back(p);
+		data->push_back(p);
 	}
-	//std::cout << std::endl;
 
-	std::vector<std::vector<std::vector<float>*>*> xs = std::vector<std::vector<std::vector<float>*>*>();
+	for(int i = 0; i < amount_of_ps; i++){
+		centroids->push_back(distribution_int(generator));
+	}
+
 	for(int i = 0; i < number_of_samples; i++){
-		auto pk = new std::vector<std::vector<float>*>;
+		auto sample = new std::vector<unsigned int>;
 		for(int j = 0; j < sample_size; j++){
-			auto p = new std::vector<float>;
-			for(int k = 0; k < point_dim; k++){
-				float d = distribution(generator);
-				p->push_back(d);
-				//std::cout << d << ", ";
-			}
-			pk->push_back(p);
-			//std::cout << std::endl;
+			sample->push_back(distribution_int(generator));
 		}
-		//std::cout << std::endl;
-		xs.push_back(pk);
+		samples->push_back(sample);
 	}
 
-	auto res2 = findDimmensions(ps, xs, m);
+	auto res2 = findDimmensions(data, centroids, samples, m);
 	auto resGPU = res2.first;
 	
 	
 	DOC d;
 	int f = 0,t = 0;
 	for(int i = 0; i < number_of_samples; i++){
-			std::vector<bool>* res = d.findDimensions(ps->at(i/m), xs.at(i), 10);
-			std::vector<bool>* res2 = resGPU->at(i);
-			EXPECT_EQ(res->size(), res2->size());
-			/*
-			std::cout << "CPU: ";
-			for(int k = 0; k < res->size();k++){
-				std::cout << res->at(k) << ", ";
-			}
-			std::cout << std::endl;
+		auto centroid = data->at(centroids->at(i/m));
+		auto sample = new std::vector<std::vector<float>*>;
+		for(int j = 0; j < sample_size; j++){
+			sample->push_back(data->at(samples->at(i)->at(j)));
+		}
+		std::vector<bool>* res = d.findDimensions(centroid, sample, 10);
+
+		std::vector<bool>* res2 = resGPU->at(i);
+		EXPECT_EQ(res->size(), res2->size());
 			
-			std::cout << "GPU: ";
-			for(int k = 0; k < res->size();k++){
-				std::cout << res2->at(k) << ", ";
-			}
-			std::cout << std::endl;
+		/*
+		  std::cout << "CPU: ";
+		  for(int k = 0; k < res->size();k++){
+		  std::cout << res->at(k) << ", ";
+		  }
+		  std::cout << std::endl;
+			
+		  std::cout << "GPU: ";
+		  for(int k = 0; k < res->size();k++){
+		  std::cout << res2->at(k) << ", ";
+		  }
+		  std::cout << std::endl;
+		*/
 			
 			
 			for(int k = 0; k < res->size(); k++){
@@ -411,6 +418,7 @@ TEST(testFindDimensionsGPU, testFindDimmensionsRandom){
 					f++;
 				}
 			}
+			
 		  
 			
 		
@@ -420,4 +428,4 @@ TEST(testFindDimensionsGPU, testFindDimmensionsRandom){
 
 	
 }
-*/
+

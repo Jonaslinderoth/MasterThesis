@@ -105,6 +105,8 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 
 	cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice);
 
+
+	
 	curandState* randomStates_d;
 	cudaMalloc((void**)&randomStates_d, sizeof(curandState) * numbers_in_Xs_array);
 	generateRandomStatesArray(randomStates_d,numbers_in_Xs_array);
@@ -114,9 +116,11 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	cudaMalloc((void**)&randomStates2_d, sizeof(curandState) * number_of_ps);
 	generateRandomStatesArray(randomStates2_d,number_of_ps);
 	generateRandomIntArrayDevice(ps_d, randomStates2_d , number_of_ps , this->data->size()-1 , 0);
+	//std::cout << "number_of_ps: " << number_of_ps << std::endl;
+ 
 
+	//std::cout << "size_of_data: " << size_of_data << std::endl;
 
-	
 	/*std::cout << number_of_ps << "!!!!!" << std::endl;
 	unsigned int* test_h = (unsigned int*) malloc(number_of_ps*sizeof(unsigned int));
 	cudaMemcpy(test_h, ps_d, number_of_ps*sizeof(unsigned int), cudaMemcpyDeviceToHost);
@@ -200,8 +204,8 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 
 
 	pointsContainedKernel(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
-												 pointsContained_output_d, pointsContained_count_d,
-												 width, point_dim, number_of_points, number_of_samples, m);
+						  pointsContained_output_d, pointsContained_count_d,
+						  width, point_dim, number_of_points, number_of_samples, m);
 
 
 	cudaFree(ps_d);
@@ -212,7 +216,56 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 				findDim_count_d, scores_d,
 				number_of_samples,
 				alpha, beta, number_of_points);
+	
 
+	/*unsigned int* scores_h = (unsigned int*) malloc(size_of_scores);
+	std::cout<< std::endl << "points: " <<std::endl;
+	cudaMemcpy(scores_h, pointsContained_count_d, size_of_scores, cudaMemcpyDeviceToHost);
+	for(int i = 0; i < number_of_samples; i++){
+		std::cout << scores_h[i] << ", ";
+		if(i == 20) break;
+	}
+	std::cout<< std::endl << "dimmensions: " <<std::endl;
+	cudaMemcpy(scores_h, findDim_count_d, size_of_scores, cudaMemcpyDeviceToHost);
+	for(int i = 0; i < number_of_samples; i++){
+		std::cout << scores_h[i] << ", ";
+		if(i == 20) break;
+	}
+
+	std::cout<< std::endl<< "ps:" <<std::endl;
+	unsigned int* ps_h = (unsigned int*) malloc(size_of_ps);
+	cudaMemcpy(ps_h, ps_d, size_of_ps, cudaMemcpyDeviceToHost);
+	for(int i = 0; i < number_of_ps; i++){
+		std::cout << ps_h[i] << ", ";
+		if(i == 20) break;
+	}
+
+
+
+	std::cout<< std::endl<< "xs:" <<std::endl;
+	unsigned int* xs_h = (unsigned int*) malloc(size_of_xs);
+	cudaMemcpy(xs_h, xs_d, size_of_xs, cudaMemcpyDeviceToHost);
+	for(int i = 0; i < numbers_in_Xs_array; i++){
+		if(i <= 20){
+			std::cout << xs_h[i] << ", ";
+		}
+		if(xs_h[i] > this->data->size()){
+			std::cout << "error" <<std::endl;;
+		}
+	}
+
+
+	std::cout<< std::endl<< "dims:" <<std::endl;
+	bool* dims_h = (bool*) malloc(size_of_findDim);
+	cudaMemcpy(dims_h, findDim_output_d, size_of_findDim, cudaMemcpyDeviceToHost);
+	for(int i = 0; i < number_of_samples; i++){
+		for(int j= 0; j < point_dim; j++){
+			std::cout << dims_h[i*point_dim+j] << ", ";			
+		}
+		std::cout << std::endl;
+		if(i == 20) break;
+	}
+	*/
 	cudaFree(findDim_count_d);
 	cudaFree(pointsContained_count_d);
 

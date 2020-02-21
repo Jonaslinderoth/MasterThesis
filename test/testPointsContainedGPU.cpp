@@ -444,56 +444,56 @@ TEST_F(testPointsContainedGPU, testWithSimpleData11){
 	EXPECT_EQ(c1.second->size(), 1);
 	EXPECT_EQ(c1.second->at(0), 0);
 }
-
-
+*/
 
 TEST_F(testPointsContainedGPU, testRandomCompCPU){
-	int no_dims = 100;
-	int point_dim = 200;
-	int data_size = 1001;
+	unsigned int point_dim = 100;
+	unsigned int no_data = 2000;
+	unsigned int no_centroids = 20;
+	unsigned int no_dims = 1000;
+	unsigned int m = no_dims/no_centroids;
 	std::default_random_engine generator;
 	generator.seed(100);
 	
 	std::uniform_real_distribution<double> distribution(15,20);
 	std::uniform_real_distribution<double> distribution2(9,26);
 
-	std::vector<std::vector<float>*>* centorids = new std::vector<std::vector<float>*>;
-	for(int i = 0; i < no_dims; i++){
-		auto point = new std::vector<float>;
-		for(int j = 0; j < point_dim; j++){
-			point->push_back(distribution(generator));
-		}
-		centorids->push_back(point);
-	}
 
+	auto data = new std::vector<std::vector<float>*>;
+	auto centroids = new std::vector<unsigned int>;
+	auto dims = new std::vector<std::vector<bool>*>;
 
-	std::vector<std::vector<bool>*>* dims = new std::vector<std::vector<bool>*>;
-	for(int i = 0; i < no_dims; i++){
-		auto point = new std::vector<bool>;
-		for(int j = 0; j < point_dim; j++){
-			auto a = distribution2(generator)< 13;
-			point->push_back(a);
-			
-		}
-		dims->push_back(point);
-	}
-
-	
-	
-	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
-	for(int i = 0; i < data_size; i++){
+	for(int i = 0; i < no_data; i++){
 		auto point = new std::vector<float>;
 		for(int j = 0; j < point_dim; j++){
 			point->push_back(distribution2(generator));
 		}
 		data->push_back(point);
+		centroids->push_back(i);
 	}
-
-	auto c1 = pointsContained(dims, data, centorids,1);
+	for(int i = data->size()-1; i < no_data; i++){
+		auto point = new std::vector<float>;
+		for(int j = 0; j < point_dim; j++){
+			point->push_back(distribution(generator));
+		}
+		data->push_back(point);
+	}
+	for(int i = 0; i < no_dims; i++){
+		auto dim = new std::vector<bool>;
+		for(int j = 0; j < point_dim; j++){
+			dim->push_back(distribution2(generator)< 13);
+		}
+		dims->push_back(dim);
+	}
+	auto c1 = pointsContained(dims, data, centroids,m);
+	
 	auto c = c1.first;
+
 	int t = 0, f = 0;
-	for(int i = 0; i < centorids->size(); i++){
-		auto cpu = HyperCube(centorids->at(i), 10, dims->at(i));
+	for(int i = 0; i < dims->size(); i++){
+
+		auto centroid = data->at(centroids->at(i/m));
+		auto cpu = HyperCube(centroid, 10, dims->at(i));
 		for(int j = 0; j < data->size(); j++){
 			auto d = cpu.pointContained(data->at(j));
 			if(d){
@@ -504,52 +504,5 @@ TEST_F(testPointsContainedGPU, testRandomCompCPU){
 			EXPECT_EQ(d,c->at(i)->at(j)) << "i: " << i << " j: " <<j << " : " << data->at(j);
 		}
 	}
-	/*
-	std::cout << "number of true: " << t << " number of false: " << f << std::endl;
 
-
-
-	for(int i = 0; i < point_dim; i++){
-		std::cout << centorids->at(98)->at(i) << ", ";
-	}
-	
-	std::cout << std::endl;
-	
-	for(int i = 0; i < point_dim; i++){
-		std::cout << data->at(747)->at(i) << ", ";
-	}
-	std::cout << std::endl;
-
-	std::cout << "GPU version:" << std::endl;
-	for(int i = 0; i < point_dim; i++){
-		std::cout << ((!dims->at(98)->at(i))|| abs(centorids->at(98)->at(i) - data->at(747)->at(i)) < 10.0) << ", ";
-	}
-	std::cout << std::endl;
-	int id = 0;
-	std::cout << "CPU version:" << std::endl;
-	for(int i = 0; i < point_dim; i++){
-		
-
-		float a = centorids->at(98)->at(i)-10.0;
-		float b = centorids->at(98)->at(i)+10.0;
-		float min = std::min(a,b);
-		float max = std::max(a,b);
-		if(not (min < data->at(747)->at(i) && max > data->at(747)->at(i))){
-			std::cout << 0 << ", ";
-			id = i;
-		}else{
-			std::cout << 1 << ", ";			
-		}
-		
-		
-	}
-	std::cout << std::endl;
-	std::cout << id << std::endl;
-
-	std::cout << data->at(747)->at(id) << std::endl;
-	std::cout << centorids->at(98)->at(id) << std::endl;
-	std::cout << dims->at(98)->at(id) << std::endl;
-	
-	
 }
-*/

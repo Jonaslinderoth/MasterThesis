@@ -11,7 +11,7 @@ __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, fl
 									  unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps, unsigned int m, float width){
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
 	int pNo = entry/m;
-	
+
 	if(entry < no_of_samples){
 		//if(pNo >= no_of_ps){
 		//	printf("entry %i, looks for centorid %i, but there is only %i centroids. m : %i\n", entry, pNo, no_of_ps, m);
@@ -21,11 +21,12 @@ __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, fl
 		// for each dimension
 		for(int i = 0; i < point_dim; i++){
 			bool d = true;
+			//assert(ps_d[pNo]*point_dim+i < 100*6);
 			float p_tmp = data[ps_d[pNo]*point_dim+i];
 			// for each point in sample
 			for(int j = 0; j < no_in_sample; j++){
+				assert(entry*no_in_sample+j < no_of_samples*no_in_sample);
 				unsigned int sampleNo = Xs_d[entry*no_in_sample+j];
-
 				float point = data[sampleNo*point_dim+i];
 				d &= abs(p_tmp-point) < width;
 			}
@@ -53,6 +54,9 @@ __global__ void pointsContainedDevice(float* data, unsigned int* centroids, bool
 				//(not (dims[entry*point_dim+i])) ||
 				unsigned int centroid_index = centroids[currentCentroid];
 				assert(centroid_index < no_data);
+				assert(entry*point_dim+i < no_dims*point_dim);
+				assert(centroid_index*point_dim+i < no_data*point_dim);
+				assert(j*point_dim+i < no_data*point_dim);
 				d &= (not (dims[entry*point_dim+i])) || (abs(data[centroid_index*point_dim+i] - data[j*point_dim+i]) < width);
 			}
 			output[entry*no_data+j] = d;
@@ -136,12 +140,14 @@ __global__ void argMaxDevice(float* scores, unsigned int* scores_index, unsigned
 	}
 	
 }
-__global__ void randIntArrayInit(curandState_t* states , unsigned int seed){
+__global__ void randIntArrayInit(curandState_t* states , unsigned int seed, unsigned int size){
 	int idx = threadIdx.x + blockIdx.x * blockDim.x;
-	curand_init(seed,   /* the seed controls the sequence of random values that are produced */
+	if(idx < size)
+		{	curand_init(seed,   /* the seed controls the sequence of random values that are produced */
 			idx, /* the sequence number is only important with multiple cores */
 			0,/* the offset is how much extra we advance in the sequence for each call, can be 0 */
 			&states[idx]);
+		}
 }
 
 
@@ -554,7 +560,7 @@ bool generateRandomStatesArray(curandState* d_randomStates,
 	if(size%dimBlock != 0){
 		ammountOfBlocks++;
 	}
-	randIntArrayInit<<<ammountOfBlocks,dimBlock>>>(d_randomStates ,seed);
+	randIntArrayInit<<<ammountOfBlocks,dimBlock>>>(d_randomStates ,seed, size);
 
 	return true;
 }
