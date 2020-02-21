@@ -506,9 +506,6 @@ TEST(testFindClusterGPU, testScore2){
 
 
 TEST(testFindClusterGPU, testScore3){
-
-
-
 	int n = 10;
 	int len = n*n;
 	unsigned int* cluster_sizes = (unsigned int*) malloc(len*sizeof(unsigned int));

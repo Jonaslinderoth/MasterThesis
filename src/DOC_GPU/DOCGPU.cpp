@@ -23,17 +23,6 @@ DOCGPU::DOCGPU(std::vector<std::vector<float>*>* input, float alpha, float beta,
 	this->beta = beta;
 }
 
-unsigned int* DOCGPU::cudaRandomNumberArray(const size_t lenght ,const curandGenerator_t* gen, unsigned int* array) {
-	//if the array was not given
-	if(array == nullptr){
-		/*allocate that array.*/
-		cudaMalloc(( void **) & array , lenght * sizeof ( unsigned int )) ;
-	}
-
-	/* Generate n floats on device */
-	curandGenerate( *gen , array , lenght);
-	return array;
-}
 
 DOCGPU::~DOCGPU() {
 	// TODO Auto-generated destructor stub
