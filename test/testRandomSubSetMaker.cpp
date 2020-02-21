@@ -5,7 +5,7 @@
 #include "../src/randomCudaScripts/DeleteFromArray.h"
 
 
-TEST(testRandomSubSetMaker, testOne){
+TEST(testRandomSubSetMaker, _SLOW_testOne){
 	bool print = false;
 	//test size
 	const unsigned int size = 1000;

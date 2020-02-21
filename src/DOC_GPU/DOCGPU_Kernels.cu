@@ -13,9 +13,6 @@ __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, fl
 	int pNo = entry/m;
 
 	if(entry < no_of_samples){
-		//if(pNo >= no_of_ps){
-		//	printf("entry %i, looks for centorid %i, but there is only %i centroids. m : %i\n", entry, pNo, no_of_ps, m);
-		//}
 		assert(pNo < no_of_ps);
 		unsigned int Dsum = 0;
 		// for each dimension
@@ -123,7 +120,6 @@ __global__ void argMaxDevice(float* scores, unsigned int* scores_index, unsigned
 		for(unsigned int s=(blockDim.x/2); s > 0; s/=2) {
 			if(tid < s){
 				assert(tid+s < blockDim.x);
-				//assert(tid+s < (input_size-blockDim.x*blockIdx.x));
 				if(scoreData[tid] < scoreData[tid+s]){
 					scoreData[tid] = scoreData[tid+s];
 					argData[tid] = argData[tid+s];
@@ -191,17 +187,6 @@ void scoreKernel(unsigned int dimGrid, unsigned int dimBlock,
 	score<<<dimGrid, dimBlock>>>(cluster_size, dim_count, score_output,
 								 len, alpha, beta, num_points);
 
-	/*
-	  unsigned int* out = (unsigned int*) malloc(sizeof(unsigned int)*len);
-
-	  cudaMemcpy(out, cluster_size, sizeof(unsigned int)*len, cudaMemcpyDeviceToHost);
-	  std::cout << "cluster_size: " << std::endl;
-	  for(int i = 0; i < len; i++){
-	  std::cout << out[i] << ", ";
-	  }
-	  std::cout << std::endl;
-	  std::cout << num_points << std::endl;
-	*/
 	
 
 	
@@ -222,39 +207,13 @@ void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int shar
 	
 	unsigned int out_size = input_size;
 	while(out_size > 1){
-		/*argMaxDevice<<<dimGrid, dimBlock, sharedMemorySize>>>(scores, scores_index, out_size);
-		cudaMemcpy(out, scores_index, sizeof(unsigned int)*input_size, cudaMemcpyDeviceToHost);
-		cudaMemcpy(outScores, scores, sizeof(float)*input_size, cudaMemcpyDeviceToHost);
-		std::cout << "indecies: " << std::endl;
-		for(int i = 0; i < out_size; i++){
-			std::cout << out[i] << ", ";
-		}
-		std::cout << std::endl;
-		std::cout << "Scores: " << std::endl;
-		for(int i = 0; i < out_size; i++){
-			std::cout << outScores[i] << ", ";
-		}
-		std::cout << std::endl;*/
-		
+	   
 		argMaxDevice<<<dimGrid, dimBlock, sharedMemorySize>>>(scores, scores_index, out_size);
 		out_size = dimGrid;
 		dimGrid = ceil((float)out_size/(float)dimBlock);
 	}
 	
-
-
-	
 };
-
-
-
-
-
-
-
-
-
-
 
 
 std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsContained(std::vector<std::vector<bool>*>* dims,
@@ -406,8 +365,6 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimme
 		centroids_h[i] = centroids->at(i);
 	}
 
-	
-
 	unsigned int size_of_count = (no_of_samples)*sizeof(unsigned int);
 	
 	int outputDim = no_of_samples*point_dim;		
@@ -433,7 +390,11 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimme
 	cudaMemcpy( data_d, data_h, sizeOfData, cudaMemcpyHostToDevice);
 
 
-	findDimmensionsDevice<<<ceil((no_of_samples)/256.0), 256>>>(samples_d, centroids_d, data_d, result_d, count_d, point_dim, no_of_samples, no_in_sample, no_of_centroids, m, width);
+	findDimmensionsDevice<<<ceil((no_of_samples)/256.0), 256>>>(samples_d, centroids_d,
+																data_d, result_d, count_d,
+																point_dim, no_of_samples,
+																no_in_sample, no_of_centroids,
+																m, width);
 
    
 	cudaMemcpy(result_h, result_d, outputSize, cudaMemcpyDeviceToHost);

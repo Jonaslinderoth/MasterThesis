@@ -337,7 +337,7 @@ TEST(testFindDimensionsGPU, testFindDimmensions5){
 */
 
 
-TEST(testFindDimensionsGPU, testFindDimmensionsRandom){
+TEST(testFindDimensionsGPU, _SLOW_testFindDimmensionsRandom){
 
 	int amount_of_ps = 100;
 	int number_of_samples = 2000;

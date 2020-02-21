@@ -446,7 +446,7 @@ TEST_F(testPointsContainedGPU, testWithSimpleData11){
 }
 */
 
-TEST_F(testPointsContainedGPU, testRandomCompCPU){
+TEST_F(testPointsContainedGPU, _SLOW_testRandomCompCPU){
 	unsigned int point_dim = 100;
 	unsigned int no_data = 2000;
 	unsigned int no_centroids = 20;

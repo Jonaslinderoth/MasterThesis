@@ -196,7 +196,7 @@ TEST(testFindClusterGPU, testLarge){
 }
 
 
-TEST(testFindClusterGPU, testLarge3){
+TEST(testFindClusterGPU, _SLOW_testLarge3){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	std::default_random_engine generator;
 	generator.seed(100);
@@ -234,7 +234,7 @@ TEST(testFindClusterGPU, testLarge3){
 }
 
 
-TEST(testFindClusterGPU, testLarge4){
+TEST(testFindClusterGPU, _SLOW_testLarge4){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	std::default_random_engine generator;
 	generator.seed(100);
@@ -274,7 +274,7 @@ TEST(testFindClusterGPU, testLarge4){
 		}*/
 }
 
-TEST(testFindClusterGPU, testLarge5){
+TEST(testFindClusterGPU, _SLOW_testLarge5){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	std::default_random_engine generator;
 	generator.seed(100);
@@ -324,7 +324,7 @@ TEST(testFindClusterGPU, testLarge5){
 
 
 
-TEST(testFindClusterGPU, testLarge5_1){
+TEST(testFindClusterGPU, _SLOW_testLarge5_1){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	std::default_random_engine generator;
 	generator.seed(100);
@@ -372,7 +372,7 @@ TEST(testFindClusterGPU, testLarge5_1){
 
 
 
-TEST(testFindClusterGPU, testLarge6){
+TEST(testFindClusterGPU, _SLOW_testLarge6){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	std::default_random_engine generator;
 	generator.seed(100);
@@ -424,7 +424,7 @@ TEST(testFindClusterGPU, testLarge6){
 }
 
 
-TEST(testFindClusterGPU, testLarge7){
+TEST(testFindClusterGPU, _SLOW_testLarge7){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	std::default_random_engine generator;
 	generator.seed(100);

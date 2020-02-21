@@ -440,7 +440,7 @@ TEST_F(testDOC, testFindKClusters5){
 	equal(res1.at(0).first, res3.at(0).first);
 }
 
-TEST_F(testDOC, testLarge5){
+TEST_F(testDOC, _SLOW_testLarge5){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	std::default_random_engine generator;
 	generator.seed(100);
