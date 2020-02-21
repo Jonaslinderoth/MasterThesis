@@ -15,6 +15,7 @@
 # include <curand.h>
 #include "../dataReader/DataReader.h"
 #include "../Clustering.h"
+#include "DOCGPU_Kernels.h"
 
 
 class DOCGPU : public Clustering{
@@ -31,13 +32,20 @@ public:
 	void setAlpha(float value){this->alpha = value;};
 	void setBeta(float value){this->beta = value;};
 	void setWidth(float value){this->width = value;};
+	unsigned int getSize(){return this->size;};
+	unsigned int dimension(){return this->dim;};
 
  private:
 	float alpha;
 	float beta;
 	float width;
+	float* data_d = NULL;
+	unsigned int size;
+	unsigned int dim;
 	std::vector<std::vector<float>*>* data;
 	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
+
+	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findClusterInner(float* data, curandState* randState);
 	
 };
 

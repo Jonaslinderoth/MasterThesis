@@ -22,6 +22,8 @@ DOCGPU::DOCGPU(std::vector<std::vector<float>*>* input, float alpha, float beta,
 	this->alpha = alpha;
 	this->width = width;
 	this->beta = beta;
+	this->size = data->size();
+	this->dim = data->at(0)->size();
 }
 
 
@@ -42,14 +44,12 @@ std::vector<std::vector<float>*>* DOCGPU::initDataReader(DataReader* dr){
 	return data;
 	};
 
-
-std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findCluster(){
-	auto data = this->data;
+std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClusterInner(float* data_d, curandState* randomStates_d){
 	auto alpha = this->alpha;
 	auto beta = this->beta;
 	auto width = this->width;
 	
-	unsigned int d = data->at(0)->size();
+	unsigned int d = this->dim;
 	unsigned int r = log2(2*d)/log2(1/(2*beta));
 	if(r == 0) r = 1;
 	unsigned int m = pow((2/alpha),r) * log(4);
@@ -58,7 +58,7 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	unsigned int number_of_samples = number_of_ps*m;
 	
 	unsigned int sample_size = r;
-	unsigned int number_of_points = data->size();
+	unsigned int number_of_points = this->getSize();
 	unsigned int point_dim = d;
 	
 	unsigned int floats_in_data_array = point_dim*number_of_points;
@@ -71,44 +71,19 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	unsigned int size_of_output_cluster = number_of_points*sizeof(bool);
 
 
-
-	
-	float* data_h;
-	cudaMallocHost((void**) &data_h, size_of_data);
-
-	
-	for(int i = 0; i < number_of_points; i++){
-		for(int j = 0; j < point_dim; j++){
-			data_h[i*point_dim+j] = data->at(i)->at(j);
-		}
-	}
-
-	
-
-	float* data_d;
 	unsigned int* ps_d;
 	unsigned int* xs_d;
 	
 
-	cudaMalloc((void **) &data_d, size_of_data);
+
 	cudaMalloc((void **) &ps_d, size_of_ps);
 	cudaMalloc((void **) &xs_d, size_of_xs);
 
-	cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice);
-
-
-	
-	curandState* randomStates_d;
-	cudaMalloc((void**)&randomStates_d, sizeof(curandState) * numbers_in_Xs_array);
-	generateRandomStatesArray(randomStates_d,numbers_in_Xs_array);
-	
 	generateRandomIntArrayDevice(xs_d, randomStates_d , numbers_in_Xs_array , this->data->size()-1 , 0);
 	generateRandomIntArrayDevice(ps_d, randomStates_d , number_of_ps , this->data->size()-1 , 0);
 
 	assert(numbers_in_Xs_array >= number_of_ps);
-	
 
-	cudaFreeHost(data_h);
 	
 	unsigned int findDim_bools = number_of_samples*point_dim;
 	unsigned int number_of_points_contained = number_of_samples*number_of_points;
@@ -164,7 +139,7 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 
 
 	cudaFree(ps_d);
-	cudaFree(data_d);
+
 	
 	scoreKernel(dimGrid, dimBlock,
 				pointsContained_count_d,
@@ -238,8 +213,54 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	free(scores_out_h);
 	free(output_dims_h);
 	free(output_cluster_h);
-	
 	return result;
+	
+	
+};
+
+std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findCluster(){
+	auto data = this->data;
+	unsigned int number_of_points = this->getSize();
+	unsigned int floats_in_data_array = this->dim*this->size;
+	unsigned int size_of_data = floats_in_data_array*sizeof(float);
+
+	unsigned int d = this->dim;
+	unsigned int r = log2(2*d)/log2(1/(2*beta));
+	if(r == 0) r = 1;
+	unsigned int m = pow((2/alpha),r) * log(4);
+
+	unsigned int sample_size = r;
+	unsigned int number_of_ps = 2.0/alpha;
+	unsigned int number_of_samples = number_of_ps*m;
+	unsigned int numbers_in_Xs_array = number_of_samples*sample_size;	
+
+
+
+	float* data_h;
+	cudaMallocHost((void**) &data_h, size_of_data);
+	
+	for(int i = 0; i < number_of_points; i++){
+		for(int j = 0; j < this->dim; j++){
+			data_h[i*this->dim+j] = data->at(i)->at(j);
+		}
+	}
+	
+	curandState* randomStates_d;
+	cudaMalloc((void**)&randomStates_d, sizeof(curandState) * numbers_in_Xs_array);
+	generateRandomStatesArray(randomStates_d,numbers_in_Xs_array);
+
+
+	float* data_d;
+	cudaMalloc((void **) &data_d, size_of_data);
+	cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice);
+
+	cudaFreeHost(data_h);
+
+	auto res = this->findClusterInner(data_d, randomStates_d);
+
+	cudaFree(data_d);
+	
+	return res;
 };
 
 std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DOCGPU::findKClusters(int k){
