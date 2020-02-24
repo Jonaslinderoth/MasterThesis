@@ -4,6 +4,7 @@
 #include "../src/DOC_GPU/DOCGPU_Kernels.h"
 #include <vector>
 #include <math.h>
+/*
 TEST(testFindClusterGPU, testSimple){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	{
@@ -34,7 +35,7 @@ TEST(testFindClusterGPU, testSimple){
 	EXPECT_TRUE(res.second->at(0));
 	EXPECT_TRUE(res.second->at(1));
 }
-
+*/
 
 TEST(testFindClusterGPU, testSimple1){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
