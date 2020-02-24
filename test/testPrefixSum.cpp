@@ -551,3 +551,134 @@ TEST(testPrefixSum, testThree){
 
 
 }
+
+
+TEST(testPrefixSum, testDeleteSimple){
+	float a_h[4] = {1.0, 2.0, 3.0, 4.0};
+	bool b_h[5] = {true, false, true, false, false};
+	float* a_d;
+	bool* b_d;
+	float* out_d;
+	cudaMalloc((void **) &a_d, 4*sizeof(float));
+	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &out_d, 2*sizeof(float));
+
+	cudaMemcpy(a_d, a_h, 4*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(b_d, b_h, 4*sizeof(bool), cudaMemcpyHostToDevice);
+
+	deleteFromArray(out_d, b_d, a_d, 4, 1);
+
+	float* out_h = (float*) malloc(2*sizeof(float));
+	cudaMemcpy(out_h, out_d, 2*sizeof(float), cudaMemcpyDeviceToHost);
+
+	EXPECT_EQ(out_h[0], 2.0);
+	EXPECT_EQ(out_h[1], 4.0);
+}
+
+
+TEST(testPrefixSum, testDeleteSimple2){
+	float a_h[4] = {1.0, 2.0, 3.0, 4.0};
+	bool b_h[5] = {true, true, true, false, false};
+	float* a_d;
+	bool* b_d;
+	float* out_d;
+	cudaMalloc((void **) &a_d, 4*sizeof(float));
+	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &out_d, 1*sizeof(float));
+
+	cudaMemcpy(a_d, a_h, 4*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(b_d, b_h, 4*sizeof(bool), cudaMemcpyHostToDevice);
+
+	deleteFromArray(out_d, b_d, a_d, 4, 1);
+
+	float* out_h = (float*) malloc(1*sizeof(float));
+	cudaMemcpy(out_h, out_d, 1*sizeof(float), cudaMemcpyDeviceToHost);
+
+	EXPECT_EQ(out_h[0], 4.0);
+}
+
+
+TEST(testPrefixSum, testDeleteSimple3){
+	float a_h[4] = {1.0, 2.0, 3.0, 4.0};
+	bool b_h[5] = {true, true, true, true, false};
+	float* a_d;
+	bool* b_d;
+	float* out_d;
+	cudaMalloc((void **) &a_d, 4*sizeof(float));
+	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &out_d, 1*sizeof(float));
+
+	cudaMemcpy(a_d, a_h, 4*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(b_d, b_h, 4*sizeof(bool), cudaMemcpyHostToDevice);
+
+	deleteFromArray(out_d, b_d, a_d, 4, 1);
+
+	float* out_h = (float*) malloc(1*sizeof(float));
+	cudaMemcpy(out_h, out_d, 1*sizeof(float), cudaMemcpyDeviceToHost);
+
+	EXPECT_NE(out_h[0], 4.0);
+}
+
+
+
+TEST(testPrefixSum, testDeleteSimple4){
+	float a_h[8] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+	bool b_h[5] = {true, false, true, false, false};
+	float* a_d;
+	bool* b_d;
+	float* out_d;
+	cudaMalloc((void **) &a_d, 8*sizeof(float));
+	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &out_d, 4*sizeof(float));
+
+	cudaMemcpy(a_d, a_h, 8*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(b_d, b_h, 4*sizeof(bool), cudaMemcpyHostToDevice);
+
+	deleteFromArray(out_d, b_d, a_d, 4, 2);
+
+	float* out_h = (float*) malloc(4*sizeof(float));
+	cudaMemcpy(out_h, out_d, 4*sizeof(float), cudaMemcpyDeviceToHost);
+
+	EXPECT_EQ(out_h[0], 3.0);
+	EXPECT_EQ(out_h[1], 4.0);
+
+	EXPECT_EQ(out_h[2], 7.0);
+	EXPECT_EQ(out_h[3], 8.0);
+}
+
+
+TEST(testPrefixSum, testDeleteSimple5){
+	float a_h[8] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+	bool b_h[5] = {true, false, true, false, false};
+	float* a_d;
+	bool* b_d;
+	float* out_d;
+	cudaMalloc((void **) &a_d, 8*sizeof(float));
+	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &out_d, 4*sizeof(float));
+
+	cudaMemcpy(a_d, a_h, 8*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(b_d, b_h, 4*sizeof(bool), cudaMemcpyHostToDevice);
+
+	deleteFromArray(out_d, b_d, a_d, 4, 2);
+
+	float* out_h = (float*) malloc(4*sizeof(float));
+	cudaMemcpy(out_h, out_d, 4*sizeof(float), cudaMemcpyDeviceToHost);
+
+	EXPECT_EQ(out_h[0], 3.0);
+	EXPECT_EQ(out_h[1], 4.0);
+
+	EXPECT_EQ(out_h[2], 7.0);
+	EXPECT_EQ(out_h[3], 8.0);
+
+	float* out2_h = (float*) malloc(8*sizeof(float));
+	cudaMemcpy(out2_h, a_d, 8*sizeof(float), cudaMemcpyDeviceToHost);
+	EXPECT_EQ(out2_h[0], 1.0);
+	EXPECT_EQ(out2_h[1], 2.0);
+	EXPECT_EQ(out2_h[2], 3.0);
+	EXPECT_EQ(out2_h[3], 4.0);
+	EXPECT_EQ(out2_h[4], 5.0);
+	EXPECT_EQ(out2_h[5], 6.0);
+	EXPECT_EQ(out2_h[6], 7.0);
+	EXPECT_EQ(out2_h[7], 8.0);
+}
