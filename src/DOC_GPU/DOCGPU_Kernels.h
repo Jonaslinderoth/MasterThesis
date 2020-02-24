@@ -67,12 +67,14 @@ bool generateRandomStatesArray(curandState* d_randomStates,
  * and the states.
  * to get the states generate random states array call generateRandomStatesArray.
  */
-bool generateRandomIntArrayDevice(unsigned int* d_randomIndexes,
-		curandState* d_randomStates,
-		const size_t size,
-		const unsigned int max = 100,
-		const unsigned int min = 0,
-		unsigned int dimBlock = 1024);
+bool generateRandomIntArrayDevice(
+								  unsigned int* d_randomIndexes,
+								  curandState* d_randomStates,
+								  const size_t size_of_randomStates,
+								  const size_t size,
+								  const unsigned int max = 100,
+								  const unsigned int min = 0,
+								  unsigned int dimBlock = 1024);
 
 
 #endif

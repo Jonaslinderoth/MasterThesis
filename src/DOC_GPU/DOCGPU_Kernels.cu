@@ -147,13 +147,25 @@ __global__ void randIntArrayInit(curandState_t* states , unsigned int seed, unsi
 }
 
 
-__global__ void randIntArray(unsigned int *result , curandState_t* states , const unsigned int size , const unsigned int max, const unsigned min){
+/**
+   Number of threads hsould be the same as the number of random states
+ */
+__global__ void randIntArray(unsigned int *result , curandState_t* states , size_t number_of_states,
+							 const unsigned int size , const unsigned int max, const unsigned min){
 	unsigned int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	if(idx < size){
-		float myrandf = curand_uniform(&states[idx]);
-		myrandf *= (max - min + 0.999999);
-		myrandf += min;
-		result[idx] = (int)truncf(myrandf);
+	unsigned int numThreads = blockDim.x*gridDim.x;
+	unsigned int numberPrThread = (size/numThreads)+1; // rounded down
+
+
+	if(idx < number_of_states){
+		for(int i = 0; i < numberPrThread; i++){
+			if(numberPrThread*i+idx < size){
+				float myrandf = curand_uniform(&states[idx]);
+				myrandf *= (max - min + 0.999999);
+				myrandf += min;
+				result[number_of_states*i+idx] = (int)truncf(myrandf);
+			}
+		}		
 	}
 
 }
@@ -531,26 +543,32 @@ bool generateRandomStatesArray(curandState* d_randomStates,
  * and the states.
  * to get the states generate random states array call generateRandomStatesArray.
  */
-bool generateRandomIntArrayDevice(unsigned int* d_randomIndexes,
-		curandState* d_randomStates,
-		const size_t size,
-		const unsigned int max,
-		const unsigned int min,
-		unsigned int dimBlock){
+bool generateRandomIntArrayDevice(unsigned int* randomIndexes_d,
+								  curandState* randomStates_d,
+								  const size_t size_of_randomStates,
+								  const size_t size,
+								  const unsigned int max,
+								  const unsigned int min,
+								  unsigned int dimBlock){
 	if(max<min){
 		return false;
 	}
 
+	// if there is more random states than what we need, dont spawn too many threads
+	size_t accual_size = size_of_randomStates;
+	if(accual_size > size) accual_size = size;
+	
 
 	//calculate the ammount of blocks
-	int ammountOfBlocks = size/dimBlock;
-	if(size%dimBlock != 0){
+	int ammountOfBlocks = accual_size/dimBlock;
+	if(accual_size%dimBlock != 0){
 		ammountOfBlocks++;
 	}
+	//std::cout << "number of blocks: " << ammountOfBlocks << " number of threads: " << dimBlock << " size: " << size << " number of states: " << size_of_randomStates <<std::endl; 
 
 	//std::cout << "max: " << max << std::endl;
 	//call the generation of random numbers
-	randIntArray<<<ammountOfBlocks,dimBlock>>>(d_randomIndexes, d_randomStates , size , max , min);
+	randIntArray<<<ammountOfBlocks,dimBlock>>>(randomIndexes_d, randomStates_d, size_of_randomStates, size , max , min);
 
 	return true;
 }

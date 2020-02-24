@@ -39,14 +39,10 @@ public:
 	float alpha;
 	float beta;
 	float width;
-	float* data_d = NULL;
 	unsigned int size;
 	unsigned int dim;
 	std::vector<std::vector<float>*>* data;
-	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
-
-	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findClusterInner(float* data, curandState* randState);
-	
+	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);	
 };
 
 #endif /* DOCGPU_H_ */

@@ -19,6 +19,7 @@ int main ()
 	
 	std::cout << res.first->size() << ", " << res.second->size()  << std::endl;}
 
+	for(int i = 0; i < 10; i++)
 		{std::vector<std::vector<float>*>* data = data_4dim2cluster();
 
 	Clustering* c = new DOCGPU(data);
