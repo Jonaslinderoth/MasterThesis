@@ -26,8 +26,7 @@ public:
 	DOCGPU(std::vector<std::vector<float>*>* input, float alpha, float beta, float width);
 	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster();
 	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> findKClusters(int k);
-	
-	unsigned int* cudaRandomNumberArray(const size_t lenght ,const curandGenerator_t* gen, unsigned int* array = nullptr);
+
 	virtual ~DOCGPU();
 	void setAlpha(float value){this->alpha = value;};
 	void setBeta(float value){this->beta = value;};

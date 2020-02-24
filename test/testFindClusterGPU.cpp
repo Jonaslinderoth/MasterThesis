@@ -159,13 +159,17 @@ TEST(testFindClusterGPU, testSimple4){
 		data->push_back(point);
 	}
 	{
+		auto point = new std::vector<float>{-1,-10000};
+		data->push_back(point);
+	}
+	{
 		auto point = new std::vector<float>{1000,-10000};
 		data->push_back(point);
 	}
 	DOCGPU d = DOCGPU(data);
-	d.setSeed(1);
+	d.setSeed(10);
 	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = d.findCluster();
-	EXPECT_EQ(res.first->size(),4);
+	EXPECT_EQ(res.first->size(),5);
 
 	
 	EXPECT_EQ(res.second->size(),2);
@@ -507,9 +511,6 @@ TEST(testFindClusterGPU, testScore2){
 
 
 TEST(testFindClusterGPU, testScore3){
-
-
-
 	int n = 10;
 	int len = n*n;
 	unsigned int* cluster_sizes = (unsigned int*) malloc(len*sizeof(unsigned int));

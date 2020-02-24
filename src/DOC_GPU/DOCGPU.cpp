@@ -7,6 +7,7 @@
 
 #include "DOCGPU.h"
 #include "DOCGPU_Kernels.h"
+#include <assert.h>
 
 # define CUDA_CALL ( x) do { if (( x) != cudaSuccess ) { \
 	printf (" Error at % s :% d\ n" , __FILE__ , __LINE__ ) ;\
@@ -23,17 +24,6 @@ DOCGPU::DOCGPU(std::vector<std::vector<float>*>* input, float alpha, float beta,
 	this->beta = beta;
 }
 
-unsigned int* DOCGPU::cudaRandomNumberArray(const size_t lenght ,const curandGenerator_t* gen, unsigned int* array) {
-	//if the array was not given
-	if(array == nullptr){
-		/*allocate that array.*/
-		cudaMalloc(( void **) & array , lenght * sizeof ( unsigned int )) ;
-	}
-
-	/* Generate n floats on device */
-	curandGenerate( *gen , array , lenght);
-	return array;
-}
 
 DOCGPU::~DOCGPU() {
 	// TODO Auto-generated destructor stub
@@ -61,6 +51,7 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	
 	unsigned int d = data->at(0)->size();
 	unsigned int r = log2(2*d)/log2(1/(2*beta));
+	if(r == 0) r = 1;
 	unsigned int m = pow((2/alpha),r) * log(4);
 	
 	unsigned int number_of_ps = 2.0/alpha;
@@ -110,13 +101,12 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	curandState* randomStates_d;
 	cudaMalloc((void**)&randomStates_d, sizeof(curandState) * numbers_in_Xs_array);
 	generateRandomStatesArray(randomStates_d,numbers_in_Xs_array);
+	
 	generateRandomIntArrayDevice(xs_d, randomStates_d , numbers_in_Xs_array , this->data->size()-1 , 0);
+	generateRandomIntArrayDevice(ps_d, randomStates_d , number_of_ps , this->data->size()-1 , 0);
 
-	curandState* randomStates2_d; ////// TODO!!!! Fix that it will not need to run this twice
-	cudaMalloc((void**)&randomStates2_d, sizeof(curandState) * number_of_ps);
-	generateRandomStatesArray(randomStates2_d,number_of_ps);
-	generateRandomIntArrayDevice(ps_d, randomStates2_d , number_of_ps , this->data->size()-1 , 0);
-
+	assert(numbers_in_Xs_array >= number_of_ps);
+	
 
 	cudaFreeHost(data_h);
 	

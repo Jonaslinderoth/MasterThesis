@@ -597,7 +597,7 @@ TEST_F(testDOC, _SLOW_testWithDataReader3){
 	Cluster small;
 	small.setAmmount(20);
 	small.addDimension(uniformDistribution, {-10000,10000});
-	small.addDimension(normalDistribution, {-10000,10000}, {50,2,1});	
+	small.addDimension(normalDistribution, {-10000,10000}, {50,1,1});	
 	dgb.addCluster(small);
 	
 	Cluster small2;
@@ -613,9 +613,9 @@ TEST_F(testDOC, _SLOW_testWithDataReader3){
 	DataReader* dr = new DataReader("test/testData/test3");
 
 	DOC d(dr);
-	d.setSeed(1);
+	d.setSeed(10000);
 	d.setBeta(0.3);
-	d.setWidth(8);
+	d.setWidth(10);
 	EXPECT_EQ(d.size(), 1020);
 	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = d.findKClusters(2);
 	EXPECT_EQ(res.size(), 2);
