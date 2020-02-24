@@ -560,3 +560,36 @@ TEST(testFindClusterGPU, testScore3){
 
 }
 
+TEST(testFindClusterGPU, DISABLED_testFindKclustersSimple){
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	{
+		auto point = new std::vector<float>{10,10};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{0,10};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{10,0};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{0,0};
+		data->push_back(point);
+	}
+	DOCGPU d = DOCGPU(data);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> res2 = d.findKClusters(1);
+	EXPECT_EQ(res2.size(), 1);
+	auto res = res2.at(0);
+	EXPECT_EQ(res.first->size(),4);
+	EXPECT_TRUE(res.first->at(0));
+	EXPECT_TRUE(res.first->at(1));
+	EXPECT_TRUE(res.first->at(2));
+	EXPECT_TRUE(res.first->at(3));
+	
+	EXPECT_EQ(res.second->size(),2);
+	EXPECT_TRUE(res.second->at(0));
+	EXPECT_TRUE(res.second->at(1));
+}
+

@@ -42,7 +42,8 @@ public:
 	unsigned int size;
 	unsigned int dim;
 	std::vector<std::vector<float>*>* data;
-	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);	
+	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
+	float* transformData();
 };
 
 #endif /* DOCGPU_H_ */
