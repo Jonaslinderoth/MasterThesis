@@ -44,6 +44,10 @@ void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
 						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
 									  float width, unsigned int point_dim, unsigned int no_data, unsigned int no_dims, unsigned int m);
 
+void pointsContainedKernelWIP(unsigned int dimGrid, unsigned int dimBlock,
+						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
+									  float width, unsigned int point_dim, unsigned int no_data, unsigned int no_dims, unsigned int ammountOfSamplesThatUseSameCentroid , const unsigned int numberOfCentroids);
+
 void scoreKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output,
 					  unsigned int len, float alpha, float beta, unsigned int num_points);
 

@@ -175,9 +175,9 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	cudaFree(xs_d);
 
 
-	pointsContainedKernel(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
+	pointsContainedKernelWIP(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
 						  pointsContained_output_d, pointsContained_count_d,
-						  width, point_dim, number_of_points, number_of_samples, m);
+						  width, point_dim, number_of_points, number_of_samples, m , number_of_ps);
 
 
 	cudaFree(ps_d);
@@ -386,9 +386,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 							  m, width);
 		
 		// Find points contained
-		pointsContainedKernel(dimGrid, dimBlock, data_d, centroids_d, findDim_d,
+		pointsContainedKernelWIP(dimGrid, dimBlock, data_d, centroids_d, findDim_d,
 							  pointsContained_d, pointsContained_count_d,
-							  width, dim, number_of_points, number_of_samples, m);
+							  width, dim, number_of_points, number_of_samples, m , number_of_centroids);
 		
 		// Calculate scores
 		scoreKernel(dimGrid, dimBlock,
