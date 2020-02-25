@@ -260,6 +260,7 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 };
 
 std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DOCGPU::findKClusters(int k){
+	auto result = std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>>();
 	float* data_h = this->transformData();
 	uint dim = this->data->at(0)->size();
 	auto alpha = this->alpha;
@@ -280,21 +281,21 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	unsigned int number_of_samples = number_of_centroids*m;
 	unsigned int sample_size = r;
 	unsigned int number_of_values_in_samples = number_of_samples*sample_size;
-	unsigned int size_of_samples = number_of_values_in_samples*sizeof(unsigned int);
+	unsigned int size_of_samples = number_of_values_in_samples*sizeof(unsigned int); 
 	unsigned int size_of_centroids = number_of_centroids*sizeof(unsigned int);
 
 	// calculating the sizes for findDim 
 	unsigned int number_of_bools_for_findDim = number_of_samples*dim;
-	// the +1 is to allocate one more for delete, the value do not matter,
-	// but is used to avoid reading outside the memory space
-	unsigned int size_of_findDim = (number_of_bools_for_findDim+1)*sizeof(bool); 
+	unsigned int size_of_findDim = number_of_bools_for_findDim*sizeof(bool); 
 	unsigned int number_of_values_find_dim_count_output = number_of_samples;
 	unsigned int size_of_findDim_count = number_of_values_find_dim_count_output* sizeof(unsigned int);
 
 
 	// calculating sizes for pointsContained
 	unsigned int number_of_values_in_pointsContained = number_of_samples*number_of_points;
-	unsigned int size_of_pointsContained = number_of_values_in_pointsContained*sizeof(bool);
+	// the +1 is to allocate one more for delete, the value do not matter,
+	// but is used to avoid reading outside the memory space
+	unsigned int size_of_pointsContained = (number_of_values_in_pointsContained+1)*sizeof(bool);
 	unsigned int number_of_values_in_pointsContained_count = number_of_samples;
 	unsigned int size_of_pointsContained_count = number_of_values_in_pointsContained_count*sizeof(unsigned int);
 
@@ -328,51 +329,49 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	// allocating memory for random samples
 	unsigned int* centroids_d;
 	unsigned int* samples_d;	
-	cudaMalloc((void **) &samples_d, size_of_samples);
-	cudaMalloc((void **) &centroids_d, size_of_centroids);
+	checkCudaErrors(cudaMalloc((void **) &samples_d, size_of_samples));
+	checkCudaErrors(cudaMalloc((void **) &centroids_d, size_of_centroids));
 
 	curandState* randomStates_d;
 	size_t numberOfRandomStates = 1024*10;// this parameter could be nice to test to find "optimal one"...
 	
-	cudaMalloc((void**)&randomStates_d, sizeof(curandState) * numberOfRandomStates);
+	checkCudaErrors(cudaMalloc((void**)&randomStates_d, sizeof(curandState) * numberOfRandomStates));
 	generateRandomStatesArray(randomStates_d,numberOfRandomStates);
 
 	float* data_d;
-	cudaMalloc((void **) &data_d, size_of_data);
+	checkCudaErrors(cudaMalloc((void **) &data_d, size_of_data));
 	
-	cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice);
+	checkCudaErrors(cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice));
 	
-	cudaFreeHost(data_h); // the data is not used on the host side any more
+	checkCudaErrors(cudaFreeHost(data_h)); // the data is not used on the host side any more
 
 
 	// allocating memory for findDim
 	bool* findDim_d;
 	unsigned int* findDim_count_d;
-	cudaMalloc((void **) &findDim_d, size_of_findDim);
-	cudaMalloc((void **) &findDim_count_d, size_of_findDim_count);
+	checkCudaErrors(cudaMalloc((void **) &findDim_d, size_of_findDim));
+	checkCudaErrors(cudaMalloc((void **) &findDim_count_d, size_of_findDim_count));
 
 	// allocating memory for pointsContained
 	bool* pointsContained_d;
 	unsigned int* pointsContained_count_d;
-	cudaMalloc((void **) &pointsContained_d, size_of_pointsContained);
-	cudaMalloc((void **) &pointsContained_count_d, size_of_pointsContained_count);
+	checkCudaErrors(cudaMalloc((void **) &pointsContained_d, size_of_pointsContained));
+	checkCudaErrors(cudaMalloc((void **) &pointsContained_count_d, size_of_pointsContained_count));
 
 	//allocating memory for score
 	float* score_d;
-	cudaMalloc((void **) &score_d, size_of_score);
+	checkCudaErrors(cudaMalloc((void **) &score_d, size_of_score));
 
 	//allocating memory for index
 	unsigned int* index_d;
-	cudaMalloc((void **) &index_d, size_of_index);
-	std::cout << "size_of_index: " << size_of_index << std::endl;
-
-
+	checkCudaErrors(cudaMalloc((void **) &index_d, size_of_index));
 	
 	
-	for(int i = 0; i < k; k++){ // for each of the clusters
-		
+	for(int i = 0; i < k; i++){ // for each of the clusters
+
+		// generate random indices for samples
 		generateRandomIntArrayDevice(samples_d, randomStates_d , numberOfRandomStates,
-									 number_of_values_in_samples , number_of_points-1, 0);
+									 number_of_values_in_samples, number_of_points-1, 0);
 		
 		generateRandomIntArrayDevice(centroids_d, randomStates_d , numberOfRandomStates,
 									 number_of_centroids , number_of_points-1 , 0);
@@ -380,7 +379,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 		assert(number_of_values_in_samples >= number_of_centroids);
 
 
-		// Find dimmnsions
+		// Find dimensions
 		findDimmensionsKernel(dimGrid, dimBlock, samples_d, centroids_d, data_d,  findDim_d,
 							  findDim_count_d, dim, number_of_samples, sample_size, number_of_centroids,
 							  m, width);
@@ -405,44 +404,94 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 		
 		// Output Points in that cluster, along with the dimensions and centroid
 		unsigned int* best_index_h = (unsigned int*) malloc(sizeof(unsigned int));
-		cudaMemcpy(best_index_h, index_d, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+		checkCudaErrors(cudaMemcpy(best_index_h, index_d, sizeof(unsigned int), cudaMemcpyDeviceToHost));
 
 		unsigned int* cluster_size_h = (unsigned int*) malloc(sizeof(unsigned int));
-		cudaMemcpy(cluster_size_h, pointsContained_count_d+(best_index_h[0]*number_of_points),
-				   sizeof(unsigned int), cudaMemcpyDeviceToHost);
+		checkCudaErrors(cudaMemcpy(cluster_size_h, pointsContained_count_d+(best_index_h[0]),
+								   sizeof(unsigned int), cudaMemcpyDeviceToHost));
 
 		unsigned int size_of_cluster = cluster_size_h[0]*dim*sizeof(float);
 		float* cluster_d;
-		cudaMalloc((void **) &cluster_d, size_of_cluster);
+		checkCudaErrors(cudaMalloc((void **) &cluster_d, size_of_cluster));
 
-		std::cout<< "best_index: " << best_index_h[0] << ", size_of_best_cluster: " << cluster_size_h[0] << std::endl;
+		// create output cluster 
+		notDevice(dimGrid, dimBlock,pointsContained_d+(best_index_h[0]*number_of_points), number_of_points);
 		
-		deleteFromArray(cluster_d, findDim_d+(best_index_h[0]*dim), data_d, number_of_points, dim);
-
-		
-		float* cluster_h;
-		cudaMallocHost((void**) &cluster_h, size_of_cluster);
-		cudaMemcpy(cluster_h, cluster_d, size_of_cluster, cudaMemcpyDeviceToHost);
-		cudaFree(cluster_d);
+		deleteFromArray(cluster_d, pointsContained_d+(best_index_h[0]*number_of_points), data_d, number_of_points, dim);
 
 
-	
-		for(int a = 0; a < cluster_size_h[0]; a++){
-			for(int b = 0; b < dim; b++){
-				std::cout << cluster_h[a*dim+b] << ", ";
-			}
-			std::cout << std::endl;
-		}
-		
 		// Delete the points from the original dataset
+		notDevice(dimGrid, dimBlock,pointsContained_d+(best_index_h[0]*number_of_points), number_of_points);
+
+		deleteFromArray(data_d, pointsContained_d+(best_index_h[0]*number_of_points), data_d, number_of_points, dim);
 
 
-		// set number of points to the new data size.
+		auto cluster = new std::vector<std::vector<float>*>;
+		auto dims = new std::vector<bool>;
+		if(cluster_size_h[0] < this->alpha*number_of_points){
+			// cluster is too small, return empty clusters, and try again....
+			// this might cause it to loop for the rest of the iterations and do nothing, maybe break here? 
+		}else{
 
-		break;
+			// set number of points to the new data size.
+			number_of_points -= cluster_size_h[0];
+
+			float* cluster_h;
+			checkCudaErrors(cudaMallocHost((void**) &cluster_h, size_of_cluster));
+			checkCudaErrors(cudaMemcpy(cluster_h, cluster_d, size_of_cluster, cudaMemcpyDeviceToHost));
+
+			bool* output_dims_h = (bool*) malloc(dim*sizeof(bool));
+			checkCudaErrors(cudaMemcpy(output_dims_h, findDim_d+(best_index_h[0]*dim),
+									   dim, cudaMemcpyDeviceToHost));
+
+			for(int a = 0; a < cluster_size_h[0]; a++){ 
+				auto point = new std::vector<float>;
+				for(int b = 0; b < dim; b++){
+					point->push_back(cluster_h[a*dim+b]);
+				}
+				cluster->push_back(point);
+			}
+
+			for(int a = 0; a < dim; a++){
+				dims->push_back(output_dims_h[a]);
+			}
+
+
+			checkCudaErrors(cudaFreeHost(cluster_h));
+			checkCudaErrors(cudaFreeHost(output_dims_h));
+			checkCudaErrors(cudaFree(cluster_d));
+		} 
+
+		// build result
+		auto res = std::make_pair(cluster, dims);
+		result.push_back(res);
+
+
+		// clean up
+		free(best_index_h);
+		free(cluster_size_h);
+
+
+		//break if there is no more points
+		if(number_of_points <= 0){
+			break;
+		}
+
 	}
 
+	// clean up on device
+	checkCudaErrors(cudaFree(samples_d));
+	checkCudaErrors(cudaFree(centroids_d));
+	checkCudaErrors(cudaFree(randomStates_d));
+	checkCudaErrors(cudaFree(data_d));
+	checkCudaErrors(cudaFree(findDim_d));
+	checkCudaErrors(cudaFree(findDim_count_d));
+	checkCudaErrors(cudaFree(pointsContained_d));
+	checkCudaErrors(cudaFree(pointsContained_count_d));
+	checkCudaErrors(cudaFree(score_d));
+	checkCudaErrors(cudaFree(index_d));
 	
-	throw std::runtime_error("Not implemented yet");	
+
+	return result;
 };
 

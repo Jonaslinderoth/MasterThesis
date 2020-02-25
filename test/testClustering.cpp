@@ -8,7 +8,7 @@
 #include "testData.h"
 
 
-TEST(testCLusteringSetup, testSetup){
+TEST(testClusteringSetup, testSetup){
 std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	int a = 0;
 	for(float i = 9; i <= 12; i++){

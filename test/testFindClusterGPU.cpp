@@ -4,7 +4,6 @@
 #include "../src/DOC_GPU/DOCGPU_Kernels.h"
 #include <vector>
 #include <math.h>
-/*
 TEST(testFindClusterGPU, testSimple){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	{
@@ -35,7 +34,7 @@ TEST(testFindClusterGPU, testSimple){
 	EXPECT_TRUE(res.second->at(0));
 	EXPECT_TRUE(res.second->at(1));
 }
-*/
+
 
 TEST(testFindClusterGPU, testSimple1){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
@@ -561,7 +560,7 @@ TEST(testFindClusterGPU, testScore3){
 
 }
 
-TEST(testFindClusterGPU, DISABLED_testFindKclustersSimple){
+TEST(testFindClusterGPU, testFindKclustersSimple){
 	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 	{
 		auto point = new std::vector<float>{10,10};
@@ -584,13 +583,189 @@ TEST(testFindClusterGPU, DISABLED_testFindKclustersSimple){
 	EXPECT_EQ(res2.size(), 1);
 	auto res = res2.at(0);
 	EXPECT_EQ(res.first->size(),4);
-	EXPECT_TRUE(res.first->at(0));
-	EXPECT_TRUE(res.first->at(1));
-	EXPECT_TRUE(res.first->at(2));
-	EXPECT_TRUE(res.first->at(3));
+	
+	/*for(int i = 0; i < res.first->size(); i++){
+		for(int j = 0; j < res.first->at(i)->size();j++){
+			std::cout << res.first->at(i)->at(j) << ", ";			
+		}
+		std::cout << std::endl;
+		}*/
 	
 	EXPECT_EQ(res.second->size(),2);
 	EXPECT_TRUE(res.second->at(0));
 	EXPECT_TRUE(res.second->at(1));
 }
 
+TEST(testFindClusterGPU, testFindKclustersSimple2){
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	{
+		auto point = new std::vector<float>{10,10};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{0,1000};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{10,0};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{0,1};
+		data->push_back(point);
+	}
+	DOCGPU d = DOCGPU(data);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> res2 = d.findKClusters(1);
+	EXPECT_EQ(res2.size(), 1);
+	auto res = res2.at(0);
+	EXPECT_EQ(res.first->size(),3);
+
+	/*for(int i = 0; i < res.first->size(); i++){
+		for(int j = 0; j < res.first->at(i)->size();j++){
+			std::cout << res.first->at(i)->at(j) << ", ";			
+		}
+		std::cout << std::endl;
+		}*/
+
+
+	
+	EXPECT_EQ(res.second->size(),2);
+	EXPECT_TRUE(res.second->at(0));
+	EXPECT_TRUE(res.second->at(1));
+}
+
+
+TEST(testFindClusterGPU, testFindKclustersSimple3){
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	{
+		auto point = new std::vector<float>{10,10000};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{0,1000};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{10,0};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{0,1000000};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{0,10000000};
+		data->push_back(point);
+	}
+	DOCGPU d = DOCGPU(data);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> res2 = d.findKClusters(1);
+	EXPECT_EQ(res2.size(), 1);
+	auto res = res2.at(0);
+	EXPECT_EQ(res.first->size(),5);
+
+	/*for(int i = 0; i < res.first->size(); i++){
+		for(int j = 0; j < res.first->at(i)->size();j++){
+			std::cout << res.first->at(i)->at(j) << ", ";			
+		}
+		std::cout << std::endl;
+		}*/
+
+
+	
+	EXPECT_EQ(res.second->size(),2);
+	EXPECT_TRUE(res.second->at(0));
+	EXPECT_FALSE(res.second->at(1));
+}
+
+
+TEST(testFindClusterGPU, testKclustersLarge){
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	for(float i = 0; i < 200; i++){
+		for(float j = 9; j < 15; j++){
+			std::vector<float>* point1 = new std::vector<float>{j,i};
+			data->push_back(point1);
+
+		}
+	}
+	DOCGPU d = DOCGPU(data);
+	d.setSeed(1);
+	d.setAlpha(0.1);
+	d.setBeta(0.25);
+	d.setWidth(5);
+	auto res = d.findKClusters(1).at(0);
+	
+	SUCCEED();
+	EXPECT_TRUE(res.second->at(0));
+	EXPECT_FALSE(res.second->at(1));
+
+	EXPECT_EQ(res.first->size(), 1200);
+}
+
+
+TEST(testFindClusterGPU, testKclustersLarge2){
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	std::default_random_engine generator;
+	generator.seed(100);
+	std::uniform_real_distribution<double> distribution(50000.0,500000.0);
+	std::uniform_real_distribution<double> distribution2(5.0,15.0);
+	std::uniform_real_distribution<double> distribution3(110.0,120.0);
+
+
+
+	// creating a cluster in dim 0,1,2
+	for(float i = 0; i < 100; i++){
+		std::vector<float>* point1 = new std::vector<float>;
+		point1->push_back(distribution2(generator));
+		point1->push_back(distribution2(generator));
+		point1->push_back(distribution2(generator));
+		for(int j = 0; j < 3; j++){
+			point1->push_back(distribution(generator));
+		}
+		data->push_back(point1);
+	}
+
+
+	for(float i = 0; i < 50; i++){
+		std::vector<float>* point1 = new std::vector<float>;
+		for(int j = 0; j < 3; j++){
+			point1->push_back(distribution(generator));
+		}
+		point1->push_back(distribution3(generator));
+		point1->push_back(distribution3(generator));
+		point1->push_back(distribution3(generator));
+		data->push_back(point1);
+	}
+
+	DOCGPU c = DOCGPU(data);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	c.setWidth(10);
+	auto d = c.findKClusters(2);
+
+	EXPECT_EQ(d.size(), 2);
+	EXPECT_EQ(d.at(0).first->size(), 100);
+	EXPECT_EQ(d.at(1).first->size(), 50);
+
+	EXPECT_EQ(d.at(0).second->size(), 6);
+	EXPECT_EQ(d.at(1).second->size(), 6);
+
+
+	EXPECT_TRUE(d.at(0).second->at(0));
+	EXPECT_TRUE(d.at(0).second->at(1));
+	EXPECT_TRUE(d.at(0).second->at(2));
+	EXPECT_FALSE(d.at(0).second->at(3));
+	EXPECT_FALSE(d.at(0).second->at(4));
+	EXPECT_FALSE(d.at(0).second->at(5));
+
+
+	EXPECT_FALSE(d.at(1).second->at(0));
+	EXPECT_FALSE(d.at(1).second->at(1));
+	EXPECT_FALSE(d.at(1).second->at(2));
+	EXPECT_TRUE(d.at(1).second->at(3));
+	EXPECT_TRUE(d.at(1).second->at(4));
+	EXPECT_TRUE(d.at(1).second->at(5));
+
+
+	
+}

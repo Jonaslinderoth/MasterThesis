@@ -354,10 +354,10 @@ void sum_scan_blelloch(unsigned int* const d_out,
 
 //this is mikkel and jonas work.
 __global__ void gpuDeleteFromArray(float* d_outData,
-		const unsigned int* d_delete_array,
-		const float* d_data,
-		const size_t numElements,
-		const unsigned int dimensions){
+								   const unsigned int* d_delete_array,
+								   const float* d_data,
+								   const size_t numElements,
+								   const unsigned int dimensions){
 	unsigned int i = blockIdx.x*blockDim.x+threadIdx.x;
 
 	if(i < numElements){

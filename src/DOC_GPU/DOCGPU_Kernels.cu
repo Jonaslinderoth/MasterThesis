@@ -247,27 +247,48 @@ __global__ void randIntArrayInit(curandState_t* states , unsigned int seed, unsi
 }
 
 
+
 /**
    Number of threads hsould be the same as the number of random states
  */
-__global__ void randIntArray(unsigned int *result , curandState_t* states , size_t number_of_states,
+__global__ void randIntArray(unsigned int *result , curandState_t* states , const unsigned int number_of_states,
 							 const unsigned int size , const unsigned int max, const unsigned min){
 	unsigned int idx = blockIdx.x*blockDim.x+threadIdx.x;
-	unsigned int numThreads = blockDim.x*gridDim.x;
-	unsigned int numberPrThread = (size/numThreads)+1; // rounded down
+	unsigned int numberPrThread = ceilf((float)size/(float)number_of_states); // rounded down
 
-
+	/*if(idx == 0){
+		printf("number pr thread %u \n", numberPrThread);
+		printf("size of number of states %u \n", number_of_states);
+		printf("size of array %u \n", size);
+		}*/
+	
 	if(idx < number_of_states){
 		for(int i = 0; i < numberPrThread; i++){
-			if(numberPrThread*i+idx < size){
+			if(i*number_of_states+idx < size){
 				float myrandf = curand_uniform(&states[idx]);
 				myrandf *= (max - min + 0.999999);
 				myrandf += min;
-				result[number_of_states*i+idx] = (int)truncf(myrandf);
+				result[i*number_of_states+idx] = (int)truncf(myrandf);
 			}
 		}		
 	}
 
+}
+
+
+__global__ void notKernel(bool* array, unsigned int length){
+	unsigned int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int numThreads = blockDim.x*gridDim.x;
+	unsigned int numberPrThread = ceilf((float)length/(float)numThreads); // rounded down
+	for(int i = 0; i < numberPrThread; i++){
+		if(numberPrThread*i+idx < length){
+			array[numberPrThread*i+idx] = not array[numberPrThread*i+idx];
+		}
+	}	
+}
+
+void notDevice(unsigned int dimGrid, unsigned int dimBlock,bool* array, unsigned int length){
+	notKernel<<<dimGrid, dimBlock>>>(array, length);
 }
 
 void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d,

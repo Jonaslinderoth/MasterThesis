@@ -56,6 +56,9 @@ void createIndicesKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned i
 void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int sharedMemorySize,
 				  float* scores, unsigned int* scores_index, unsigned int input_size);
 
+
+void notDevice(unsigned int dimGrid, unsigned int dimBlock,bool* array, unsigned int length);
+	
 /*
  * generates a random unsigned integer array on the gpu.
  * if the randomSeed seen is true it takes a random seed from the device. else it uses seed.
