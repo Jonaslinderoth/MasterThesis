@@ -682,3 +682,171 @@ TEST(testPrefixSum, testDeleteSimple5){
 	EXPECT_EQ(out2_h[6], 7.0);
 	EXPECT_EQ(out2_h[7], 8.0);
 }
+
+
+TEST(testPrefixSum, testDeleteInputOutput){
+	float a_h[8] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+	bool b_h[5] = {true,      false,    true,     false,   false};
+	float* a_d;
+	bool* b_d;
+	float* out_d;
+	cudaMalloc((void **) &a_d, 8*sizeof(float));
+	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &out_d, 4*sizeof(float));
+
+	cudaMemcpy(a_d, a_h, 8*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(b_d, b_h, 4*sizeof(bool), cudaMemcpyHostToDevice);
+
+	deleteFromArray(a_d, b_d, a_d, 4, 2);
+
+	float* out_h = (float*) malloc(4*sizeof(float));
+	cudaMemcpy(out_h, a_d, 4*sizeof(float), cudaMemcpyDeviceToHost);
+
+	EXPECT_EQ(out_h[0], 3.0);
+	EXPECT_EQ(out_h[1], 4.0);
+
+	EXPECT_EQ(out_h[2], 7.0);
+	EXPECT_EQ(out_h[3], 8.0);
+}
+
+
+
+TEST(testPrefixSum, _SLOW_testDeleteInputOutput2){
+	unsigned int dim = 301;
+	unsigned int n = 51200*dim;
+	float* data_h = (float*) malloc(n*sizeof(float));
+	float* data_out_h = (float*) malloc(n*sizeof(float));
+	bool* mask_h = (bool*) malloc(((n/dim)+1)*sizeof(bool));
+	for(int i = 0; i < n; i++){
+		data_h[i] = i;
+	}
+
+	unsigned int output_points = 0;
+	for(int i = 0; i < (n/dim)+1; i++){
+		mask_h[i] = (i%2)==0;
+		if((not mask_h[i]) && i < (n/dim)){
+			output_points++;
+		}
+	}
+
+	unsigned int output_numbers = output_points*dim;
+
+	float* out_d;
+	bool* mask_d;
+	float* data_d;
+	float* data_out_d;
+
+	
+	cudaMalloc((void **) &data_d, n*sizeof(float));
+	cudaMalloc((void **) &data_out_d, n*sizeof(float));
+	cudaMalloc((void **) &mask_d, ((n/dim)+1)*sizeof(bool));
+
+  
+	cudaMemcpy(mask_d, mask_h, ((n/dim)+1)*sizeof(bool), cudaMemcpyHostToDevice);
+	cudaMemcpy(data_d, data_h, n*sizeof(float), cudaMemcpyHostToDevice);
+
+	
+	deleteFromArray(data_d, mask_d, data_d, n/dim, dim);
+
+	cudaMemcpy(data_out_h, data_d, output_numbers*sizeof(float), cudaMemcpyDeviceToHost);
+
+	int a = 0;
+	for(int i = 0; i < n/dim; i++){
+		if(not mask_h[i]){
+			for(int j = 0; j < dim; j++){
+				//std::cout << data_out_h[a*dim+j] << ", ";
+				EXPECT_EQ(data_h[i*dim+j], data_out_h[a*dim+j])  << "i: " << i << ", j: " << j << ",a " << a;
+			}
+			a++;
+		}else{
+			for(int j = 0; j < dim; j++){
+				EXPECT_NE(data_h[i*dim+j], data_out_h[a*dim+j]);
+				EXPECT_NE(data_h[a*dim+j], data_out_h[a*dim+j]);
+				//std::cout << data_h[i*dim+j] << ", ";
+			}
+			//std::cout << " was deleted";
+			
+		}
+		//std::cout << std::endl;
+	}
+
+	
+
+	/*	for(int i = 0; i < output_points; i++){
+		for(int j = 0; j < dim; j++){
+			std::cout << data_out_h[i*dim+j] << ", " ;
+		}
+		std::cout << std::endl;
+		}*/
+	
+	/*for(int i = 0; i < output_points; i++){
+		for(int j = 0; j < dim; j++){
+			std::cout << data_out_h[i*dim+j] << ", ";
+		}
+		std::cout << std::endl;
+		}*/
+
+
+}
+
+
+TEST(testPrefixSum, testDeleteInputOutput3){
+	unsigned int dim = 31;
+	unsigned int n = 513*dim;
+	float* data_h = (float*) malloc(n*sizeof(float));
+	float* data_out_h = (float*) malloc(n*sizeof(float));
+	bool* mask_h = (bool*) malloc(((n/dim)+1)*sizeof(bool));
+	for(int i = 0; i < n; i++){
+		data_h[i] = i;
+	}
+
+	unsigned int output_points = 0;
+	for(int i = 0; i < (n/dim)+1; i++){
+		mask_h[i] = (i%2)==0;
+		if((not mask_h[i]) && i < (n/dim)){
+			output_points++;
+		}
+	}
+
+	unsigned int output_numbers = output_points*dim;
+
+	float* out_d;
+	bool* mask_d;
+	float* data_d;
+	float* data_out_d;
+
+	
+	cudaMalloc((void **) &data_d, n*sizeof(float));
+	cudaMalloc((void **) &data_out_d, n*sizeof(float));
+	cudaMalloc((void **) &mask_d, ((n/dim)+1)*sizeof(bool));
+
+  
+	cudaMemcpy(mask_d, mask_h, ((n/dim)+1)*sizeof(bool), cudaMemcpyHostToDevice);
+	cudaMemcpy(data_d, data_h, n*sizeof(float), cudaMemcpyHostToDevice);
+
+	
+	deleteFromArray(data_d, mask_d, data_d, n/dim, dim);
+
+	cudaMemcpy(data_out_h, data_d, output_numbers*sizeof(float), cudaMemcpyDeviceToHost);
+
+	int a = 0;
+	for(int i = 0; i < n/dim; i++){
+		if(not mask_h[i]){
+			for(int j = 0; j < dim; j++){
+				//std::cout << data_out_h[a*dim+j] << ", ";
+				EXPECT_EQ(data_h[i*dim+j], data_out_h[a*dim+j])  << "i: " << i << ", j: " << j << ",a " << a;
+			}
+			a++;
+		}else{
+			for(int j = 0; j < dim; j++){
+				EXPECT_NE(data_h[i*dim+j], data_out_h[a*dim+j]);
+				EXPECT_NE(data_h[a*dim+j], data_out_h[a*dim+j]);
+				//std::cout << data_h[i*dim+j] << ", ";
+			}
+			//std::cout << " was deleted";
+			
+		}
+		//std::cout << std::endl;
+	}
+
+}

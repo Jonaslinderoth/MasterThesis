@@ -6,7 +6,7 @@ CXX = g++
 CXXFLAGS=-I. -nocudalib  -O2  #-g -G
 else
 CXX = nvcc
-CXXFLAGS=-I. -arch=sm_37  -O2 # 
+CXXFLAGS=-I. -arch=sm_37  -O2 #-g -G
 endif
 
 # -g -G for instrumntation for debugger, these might cause curand to not generate random numbers properly...

@@ -161,7 +161,7 @@ __global__ void gpu_prescan(unsigned int* const d_out,
 // Modified version of Mark Harris' implementation of the Blelloch scan
 //  according to https://www.mimuw.edu.pl/~ps209291/kgkp/slides/scan.pdf
 __global__ void gpu_prescan(unsigned int* const d_out,
-	const bool* const d_in,
+	bool*  d_in,
 	unsigned int* const d_block_sums,
 	const unsigned int len,
 	const unsigned int shmem_sz,
@@ -169,7 +169,6 @@ __global__ void gpu_prescan(unsigned int* const d_out,
 {
 	// Allocated on invocation
 	extern __shared__ unsigned int s_out[];
-
 	int thid = threadIdx.x;
 	int ai = thid;
 	int bi = thid + blockDim.x;
@@ -192,7 +191,8 @@ __global__ void gpu_prescan(unsigned int* const d_out,
 	unsigned int cpy_idx = max_elems_per_block * blockIdx.x + threadIdx.x;
 	if (cpy_idx < len)
 	{
-		s_out[ai + CONFLICT_FREE_OFFSET(ai)] = d_in[cpy_idx];
+		bool a = d_in[cpy_idx];
+		s_out[ai + CONFLICT_FREE_OFFSET(ai)] = a;
 		if (cpy_idx + blockDim.x < len)
 			s_out[bi + CONFLICT_FREE_OFFSET(bi)] = d_in[cpy_idx + blockDim.x];
 	}
@@ -353,7 +353,8 @@ void sum_scan_blelloch(unsigned int* const d_out,
 }
 
 //this is mikkel and jonas work.
-__global__ void gpuDeleteFromArray(float* d_outData,
+
+/*__global__ void gpuDeleteFromArray(float* d_outData,
 								   const unsigned int* d_delete_array,
 								   const float* d_data,
 								   const size_t numElements,
@@ -369,6 +370,51 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 			unsigned int iWithDim = i*dimensions;
 			for(int dimIndex = 0 ; dimIndex < dimensions ; ++dimIndex){
 				d_outData[offsetWithDim+dimIndex] = d_data[iWithDim+dimIndex];
+				printf("%u ", iWithDim+dimIndex);
+			}
+		}
+
+	}
+	}*/
+
+
+__global__ void gpuDeleteFromArray(float* d_outData,
+								   const unsigned int* d_delete_array,
+								   const float* d_data,
+								   const size_t numElements,
+								   const unsigned int dimensions,
+								   const unsigned int numberOfThreadsPrPoint){
+	extern __shared__ float temp[];
+	unsigned int i = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int point = i/numberOfThreadsPrPoint;
+	unsigned int pointOffset = i%numberOfThreadsPrPoint;
+	unsigned int dim = ceilf((float)dimensions/(float)numberOfThreadsPrPoint); // the amount of dims i am responsible for
+	unsigned int dimOffset = pointOffset*dim;
+	unsigned int dim2 = dim;
+	if(dimensions-dimOffset < dim){
+		dim2 = dimensions-dimOffset;
+	}
+	
+ 
+
+	/*if(i < 12){
+		printf("i %u, pointNr; %u, pointOffset %u, dim %u, dimOffset %u, dim2 %u \n", i, point, pointOffset, dim, dimOffset, dim2);
+		}*/
+
+	
+	if(point < numElements){
+		unsigned int offset = d_delete_array[point];
+		unsigned int nextPrefix = d_delete_array[point+1];
+		for(int j = 0; j < dim2; j++){
+			assert(threadIdx.x*dim+j < 48000/4);
+			temp[threadIdx.x*dim+j] = d_data[point*dimensions+dimOffset+j];
+		}
+		__syncthreads();
+
+		if(offset == nextPrefix){
+			offset = point-offset;
+			for(int j = 0; j < dim2; j++){
+				d_outData[offset*dimensions+dimOffset+j] = temp[threadIdx.x*dim+j];
 			}
 		}
 
@@ -377,7 +423,7 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 
 
 void sum_scan_blelloch(unsigned int* const d_out,
-	const bool* d_in,
+	bool* d_in,
 	const size_t numElems)
 {
 	// Zero out d_out
@@ -387,6 +433,7 @@ void sum_scan_blelloch(unsigned int* const d_out,
 
 	unsigned int block_sz = MAX_BLOCK_SZ / 2;
 	unsigned int max_elems_per_block = 2 * block_sz; // due to binary tree nature of algorithm
+
 
 	// If input size is not power of two, the remainder will still need a whole block
 	// Thus, number of blocks must be the ceiling of input size / max elems that a block can handle
@@ -515,7 +562,7 @@ void cpuDeleteFromArray(float* const h_outData,
  * but it does not resize the indexs , meaning that some if the indexs array can be garbage.
  */
 void deleteFromArray(float* d_outData,
-		const bool* d_delete_array,
+		bool* d_delete_array,
 		const float* d_data,
 		const unsigned long numElements,
 		const unsigned int dimension){
@@ -524,29 +571,37 @@ void deleteFromArray(float* d_outData,
 	unsigned int* d_out_blelloch;
 	checkCudaErrors(cudaMalloc(&d_out_blelloch, sizeof(unsigned int) * (numElements+1)));
 
-
-
 	sum_scan_blelloch(d_out_blelloch,d_delete_array,(numElements+1));
+
 
 	/*
 	unsigned int* h_prefixSum = new unsigned int[numElements+1];
-	std::cout << "prefix sum: ";
+
 	checkCudaErrors(cudaMemcpy(h_prefixSum, d_out_blelloch, sizeof(unsigned int) * (numElements+1), cudaMemcpyDeviceToHost));
 
 	for(unsigned int i = 0 ; i < (numElements+1) ; ++i){
 		std::cout << h_prefixSum[i] << " " ;
 	}
 	std::cout << std::endl;
-	*/
+		std::cout << std::endl;
+		std::cout << std::endl;*/
+	
 
 
 	//unsigned int* const d_outData, const unsigned int* delete_array, const float* data,unsigned int* indexes , const size_t numElements
 	const unsigned int threadsUsed = 1024;
-	unsigned int blocksNeccesary = numElements/threadsUsed;
-	if(numElements%1024 != 0){
+	unsigned int numberOfvaluesPrThread = 10; // hardcoded, could be up to 11,... it is bounded by the size of shared memory
+	unsigned int numberOfThreadsPrPoint = ceilf((float)dimension/(float)numberOfvaluesPrThread);
+
+	
+	unsigned int smem = threadsUsed*sizeof(float)*numberOfvaluesPrThread;
+
+	unsigned int blocksNeccesary = (numElements*numberOfThreadsPrPoint)/threadsUsed;
+	if((numElements*numberOfThreadsPrPoint)%1024 != 0){
 		blocksNeccesary++;
 	}
-	gpuDeleteFromArray<<<blocksNeccesary,threadsUsed>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
+   
+	gpuDeleteFromArray<<<blocksNeccesary,threadsUsed,smem>>>(d_outData,d_out_blelloch,d_data,numElements,dimension,numberOfThreadsPrPoint);
 
 	cudaFree(d_out_blelloch);
 

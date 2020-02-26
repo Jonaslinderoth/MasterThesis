@@ -25,7 +25,7 @@
 #endif
 
 void sum_scan_blelloch(unsigned int* const d_out,const unsigned int* const d_in,const size_t numElems);
-void sum_scan_blelloch(unsigned int* const d_out,const bool* const d_in,const size_t numElems);
+void sum_scan_blelloch(unsigned int* const d_out, bool* d_in,const size_t numElems);
 void cpu_sum_scan(unsigned int* const h_out,
 	const bool* const h_in,
 	const size_t numElems);
@@ -33,6 +33,6 @@ void cpu_sum_scan(unsigned int* const h_out,
 	const unsigned int* const h_in,
 	const size_t numElems);
 void cpuDeleteFromArray(float* const d_outData, const bool* delete_array, const float* data, const size_t numElements, unsigned int dimension = 1);
-void deleteFromArray(float* d_outData, const bool* delete_array, const float* data, const unsigned long numElements, unsigned int dimension = 1);
+void deleteFromArray(float* d_outData, bool* delete_array, const float* data, const unsigned long numElements, unsigned int dimension = 1);
 
 #endif /* DELETEFROMARRAY_H_ */

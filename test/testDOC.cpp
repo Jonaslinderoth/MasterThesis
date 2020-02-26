@@ -551,6 +551,7 @@ TEST_F(testDOC, testFindKClusters6){
 
 TEST_F(testDOC, testWithDataReader){
 	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
 	Cluster small;
 	small.setAmmount(10);
 	small.addDimension(uniformDistribution, {-10000,10000});
@@ -571,6 +572,7 @@ TEST_F(testDOC, testWithDataReader){
 
 TEST_F(testDOC, testWithDataReader2){
 	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
 	Cluster small;
 	small.setAmmount(1000);
 	small.addDimension(uniformDistribution, {-10000,10000});
@@ -637,6 +639,7 @@ TEST_F(testDOC, _SLOW_testWithDataReader3){
 
 TEST_F(testDOC, _SLOW_testWithDataReader4){
 	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
 	Cluster small;
 	small.setAmmount(1000);
 	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
@@ -683,7 +686,7 @@ TEST_F(testDOC, _SLOW_testWithDataReader4){
 TEST_F(testDOC, _SLOW_testWithDataReader5){
 	
 	DataGeneratorBuilder dgb;
-	dgb.setSeed(0);
+	dgb.setSeed(1);
 	Cluster small;
 	small.setAmmount(100);
 	small.addDimension(normalDistribution, {-10000,10000}, {50,2});

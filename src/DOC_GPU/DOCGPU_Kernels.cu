@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d, unsigned int* Dsum_out,
-									  unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps, unsigned int m, float width){
+									  unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps, unsigned int m, float width, unsigned int no_data){
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
 	int pNo = entry/m;
 
@@ -21,9 +21,14 @@ __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, fl
 			//assert(ps_d[pNo]*point_dim+i < 100*6);
 			float p_tmp = data[ps_d[pNo]*point_dim+i];
 			// for each point in sample
-			for(int j = 0; j < no_in_sample; j++){
+			for(unsigned j = 0; j < no_in_sample; j++){
 				assert(entry*no_in_sample+j < no_of_samples*no_in_sample);
 				unsigned int sampleNo = Xs_d[entry*no_in_sample+j];
+				assert(entry*no_in_sample+j < no_of_samples*no_in_sample);
+				if(!(sampleNo < no_data)){
+					//	printf("entry %u, no_in_sample %u, j %u, sampleNo %u, entry*no_in_sample+j %u \n", entry, no_in_sample, j, sampleNo, entry*no_in_sample+j);
+				}
+				assert(sampleNo < no_data);
 				float point = data[sampleNo*point_dim+i];
 				d &= abs(p_tmp-point) < width;
 			}
@@ -38,25 +43,29 @@ __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, fl
 __global__ void pointsContainedDevice(float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
 									  float width, unsigned int point_dim, unsigned int no_data, unsigned int no_dims, unsigned int m){
 	// one kernel for each hypercube
-	int entry = blockIdx.x*blockDim.x+threadIdx.x;
-	int currentCentroid = entry/m;
+	unsigned int entry = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int currentCentroid = entry/m;
 	if(entry < no_dims){
 		//assert(currentCentroid < no_of_ps);
 		// for each data point
 		unsigned int Csum = 0;
-		for(int j = 0; j < no_data; j++){
+		for(unsigned int j = 0; j < no_data; j++){
 			// for all dimmensions in each hypercube / point
 			bool d = true;
-			for(int i = 0; i < point_dim; i++){
+			for(unsigned int i = 0; i < point_dim; i++){
 				//(not (dims[entry*point_dim+i])) ||
 				unsigned int centroid_index = centroids[currentCentroid];
-				assert(centroid_index < no_data);
-				assert(entry*point_dim+i < no_dims*point_dim);
-				assert(centroid_index*point_dim+i < no_data*point_dim);
-				assert(j*point_dim+i < no_data*point_dim);
 				d &= (not (dims[entry*point_dim+i])) || (abs(data[centroid_index*point_dim+i] - data[j*point_dim+i]) < width);
 			}
-			output[entry*no_data+j] = d;
+
+			if(!((size_t)entry*(size_t)no_data+(size_t)j < 2026532205)){
+				//printf("entry %u, no_data %u, j %u, no_dims %u \n", entry, no_data, j, no_dims);
+			}
+			assert(entry < no_dims);
+			assert((size_t)entry*(size_t)no_data+(size_t)j < (size_t)no_dims*(size_t)no_data+(size_t)j);
+			//assert((size_t)entry*(size_t)no_data+(size_t)j < 2026532205);
+			
+			output[(size_t)entry*(size_t)no_data+(size_t)j] = d;
 			Csum += d;
 		}
 		Csum_out[entry] = Csum;
@@ -166,9 +175,12 @@ __global__ void randIntArray(unsigned int *result , curandState_t* states , cons
 		for(int i = 0; i < numberPrThread; i++){
 			if(i*number_of_states+idx < size){
 				float myrandf = curand_uniform(&states[idx]);
-				myrandf *= (max - min + 0.999999);
+				myrandf *= (max - min + 0.9999);
 				myrandf += min;
-				result[i*number_of_states+idx] = (int)truncf(myrandf);
+				unsigned int res = (unsigned int)truncf(myrandf);
+				assert(res >= min);
+				assert(res <= max);
+				result[i*number_of_states+idx] = res;
 			}
 		}		
 	}
@@ -193,11 +205,11 @@ void notDevice(unsigned int dimGrid, unsigned int dimBlock,bool* array, unsigned
 
 void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d,
 						   unsigned int* Dsum_out, unsigned int point_dim, unsigned int no_of_samples, unsigned int sample_size, unsigned int no_of_ps,
-						   unsigned int m, float width){
+						   unsigned int m, float width, unsigned int no_data){
 
     findDimmensionsDevice<<<dimGrid, dimBlock>>>(Xs_d, ps_d, data, res_d, Dsum_out,
 												 point_dim, no_of_samples, sample_size,
-												 no_of_ps, m, width);
+												 no_of_ps, m, width, no_data);
 	
 };
 
@@ -427,7 +439,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimme
 																data_d, result_d, count_d,
 																point_dim, no_of_samples,
 																no_in_sample, no_of_centroids,
-																m, width);
+																m, width,no_of_points );
 
    
 	cudaMemcpy(result_h, result_d, outputSize, cudaMemcpyDeviceToHost);
@@ -549,6 +561,13 @@ bool generateRandomStatesArray(curandState* d_randomStates,
 		seed = rd();
 		//std::cout << "seed: " << seed << std::endl;
 	}
+
+#ifdef NDEBUG
+	// nondebug
+#else
+	// debug code
+	dimBlock = 512;
+#endif
 	//calculate the ammount of blocks
 	int ammountOfBlocks = size/dimBlock;
 	if(size%dimBlock != 0){
@@ -571,14 +590,16 @@ bool generateRandomIntArrayDevice(unsigned int* randomIndexes_d,
 								  const unsigned int max,
 								  const unsigned int min,
 								  unsigned int dimBlock){
+
 	if(max<min){
 		return false;
 	}
-
+	
 	// if there is more random states than what we need, dont spawn too many threads
 	size_t accual_size = size_of_randomStates;
 	if(accual_size > size) accual_size = size;
-	
+
+
 
 	//calculate the ammount of blocks
 	int ammountOfBlocks = accual_size/dimBlock;
