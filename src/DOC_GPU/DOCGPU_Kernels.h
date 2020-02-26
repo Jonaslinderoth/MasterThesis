@@ -44,6 +44,21 @@ void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
 						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
 									  float width, unsigned int point_dim, unsigned int no_data, unsigned int no_dims, unsigned int m);
 
+
+void pointsContainedKernelWIP(unsigned int dimGrid,
+		unsigned int dimBlock,
+		float* data,
+		unsigned int* centroids,
+		bool* dims,
+		bool* output,
+		unsigned int* Csum_out,
+		float width,
+		unsigned int point_dim,
+		unsigned int no_data,
+		unsigned int no_dims,
+		unsigned int m,
+		unsigned int numberOfCentroids);
+
 void scoreKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output,
 					  unsigned int len, float alpha, float beta, unsigned int num_points);
 
@@ -64,7 +79,7 @@ bool generateRandomStatesArray(curandState* d_randomStates,
 		const size_t size,
 		const bool randomSeed = true,
 		unsigned int seed = 0,
-		unsigned int dimBlock = 1024);
+		unsigned int dimBlock = 128);
 
 /* This fuction makes an array of random numbers between min and max in the gpu , given the allocation
  * and the states.

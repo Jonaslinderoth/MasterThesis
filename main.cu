@@ -9,23 +9,30 @@
 #include <vector>
 int main ()
 {
-	
-	{std::vector<std::vector<float>*>* data = data_4dim2cluster();
 
-	Clustering* c = new DOCGPU(data);
-	c->setWidth(6);
-	c->setSeed(100);
-	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = c->findCluster();
-	
-	std::cout << res.first->size() << ", " << res.second->size()  << std::endl;}
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+		{
+			auto point = new std::vector<float>{1,1000};
+			data->push_back(point);
+		}
+		{
+			auto point = new std::vector<float>{0,100};
+			data->push_back(point);
+		}
+		{
+			auto point = new std::vector<float>{1,-100};
+			data->push_back(point);
+		}
+		{
+			auto point = new std::vector<float>{0,-1000};
+			data->push_back(point);
+		}
+		DOCGPU d = DOCGPU(data);
+		d.setSeed(2);
+		std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = d.findCluster();
+		std::cout << "is 4: " << res.first->size() << std::endl;
 
-	for(int i = 0; i < 10; i++)
-		{std::vector<std::vector<float>*>* data = data_4dim2cluster();
+		std::cout << "is 2: " << res.second->size() << std::endl;;
 
-	Clustering* c = new DOCGPU(data);
-	c->setWidth(6);
-	c->setSeed(100);
-	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res = c->findCluster();
-	
-	std::cout << res.first->size() << ", " << res.second->size()  << std::endl;}
+
 }

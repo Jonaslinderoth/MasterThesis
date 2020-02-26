@@ -10,6 +10,16 @@
 #include <assert.h>
 #include "../randomCudaScripts/DeleteFromArray.h"
 
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess)
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
 # define CUDA_CALL ( x) do { if (( x) != cudaSuccess ) { \
 	printf (" Error at % s :% d\ n" , __FILE__ , __LINE__ ) ;\
 return EXIT_FAILURE ;}} while (0)
@@ -104,18 +114,18 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	unsigned int* xs_d;
 	
 
-	cudaMalloc((void **) &data_d, size_of_data);
-	cudaMalloc((void **) &ps_d, size_of_ps);
-	cudaMalloc((void **) &xs_d, size_of_xs);
+	gpuErrchk(cudaMalloc((void **) &data_d, size_of_data));
+	gpuErrchk(cudaMalloc((void **) &ps_d, size_of_ps));
+	gpuErrchk(cudaMalloc((void **) &xs_d, size_of_xs));
 
-	cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice);
+	gpuErrchk(cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice));
 
 
 	
 	curandState* randomStates_d;
 	size_t numberOfRandomStates = 1024*10;// this parameter could be nice to test to find "optimal one"...
 	
-	cudaMalloc((void**)&randomStates_d, sizeof(curandState) * numberOfRandomStates);
+	gpuErrchk(cudaMalloc((void**)&randomStates_d, sizeof(curandState) * numberOfRandomStates));
 	generateRandomStatesArray(randomStates_d,numberOfRandomStates);
 	
 	generateRandomIntArrayDevice(xs_d, randomStates_d , numberOfRandomStates,
@@ -125,7 +135,7 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	assert(numbers_in_Xs_array >= number_of_ps);
 	
 
-	cudaFreeHost(data_h);
+	gpuErrchk(cudaFreeHost(data_h));
 	
 	unsigned int findDim_bools = number_of_samples*point_dim;
 	unsigned int number_of_points_contained = number_of_samples*number_of_points;
@@ -147,12 +157,12 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	unsigned int* scores_index_d;
 	
 	
-	cudaMalloc((void **) &findDim_output_d, size_of_findDim);
-	cudaMalloc((void **) &pointsContained_output_d, size_of_pointsContained);
-	cudaMalloc((void **) &findDim_count_d, size_of_findDim_count);
-	cudaMalloc((void **) &pointsContained_count_d, size_of_pointsContained_count);
-	cudaMalloc((void **) &scores_d, size_of_scores);
-	cudaMalloc((void **) &scores_index_d, size_of_scores_index );
+	gpuErrchk(cudaMalloc((void **) &findDim_output_d, size_of_findDim));
+	gpuErrchk(cudaMalloc((void **) &pointsContained_output_d, size_of_pointsContained));
+	gpuErrchk(cudaMalloc((void **) &findDim_count_d, size_of_findDim_count));
+	gpuErrchk(cudaMalloc((void **) &pointsContained_count_d, size_of_pointsContained_count));
+	gpuErrchk(cudaMalloc((void **) &scores_d, size_of_scores));
+	gpuErrchk(cudaMalloc((void **) &scores_index_d, size_of_scores_index ));
 	
 
 	int smemSize, maxBlock;
@@ -163,6 +173,10 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 
 	// caluclate the maximum thread size based on shared mem requirements and maximum threads
 	int dimBlock = smemSize/(sizeof(int)+sizeof(float));
+
+	//for testing delete this
+	dimBlock = 128;
+
 	if(dimBlock > maxBlock) dimBlock = maxBlock;
 	int dimGrid = ceil((float)number_of_samples/(float)dimBlock);
 	int sharedMemSize = (dimBlock*sizeof(unsigned int) + dimBlock*sizeof(float));
@@ -172,17 +186,18 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	findDimmensionsKernel(dimGrid, dimBlock, xs_d, ps_d, data_d,  findDim_output_d,
 						   findDim_count_d, point_dim, number_of_samples, sample_size, number_of_ps,
 						  m, width);
-	cudaFree(xs_d);
+	gpuErrchk(cudaFree(xs_d));
 
-
-	pointsContainedKernel(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
+	//std::cout << "dimGrid: " << dimGrid << std::endl << "dimBlock: " << dimBlock << std::endl << "width " << width << std::endl << "point_dim: " << point_dim << std::endl << "number_of_points: " << number_of_points << std::endl << "number_of_samples: " << number_of_samples << std::endl << "m: " << m << std::endl << "number_of_ps " << number_of_ps << std::endl;
+	pointsContainedKernelWIP(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
 						  pointsContained_output_d, pointsContained_count_d,
-						  width, point_dim, number_of_points, number_of_samples, m);
+						  width, point_dim, number_of_points, number_of_samples, m,number_of_ps);
 
 
-	cudaFree(ps_d);
-	cudaFree(data_d);
+	gpuErrchk(cudaFree(data_d));
+	gpuErrchk(cudaFree(ps_d));
 	
+
 	scoreKernel(dimGrid, dimBlock,
 				pointsContained_count_d,
 				findDim_count_d, scores_d,
@@ -190,8 +205,8 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 				alpha, beta, number_of_points);
 	
 
-	cudaFree(findDim_count_d);
-	cudaFree(pointsContained_count_d);
+	gpuErrchk(cudaFree(findDim_count_d));
+	gpuErrchk(cudaFree(pointsContained_count_d));
 
 
 
@@ -383,19 +398,19 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 		findDimmensionsKernel(dimGrid, dimBlock, samples_d, centroids_d, data_d,  findDim_d,
 							  findDim_count_d, dim, number_of_samples, sample_size, number_of_centroids,
 							  m, width);
-		
+
 		// Find points contained
 		pointsContainedKernel(dimGrid, dimBlock, data_d, centroids_d, findDim_d,
 							  pointsContained_d, pointsContained_count_d,
 							  width, dim, number_of_points, number_of_samples, m);
-		
+
 		// Calculate scores
 		scoreKernel(dimGrid, dimBlock,
 					pointsContained_count_d,
 					findDim_count_d, score_d,
 					number_of_samples,
 					alpha, beta, number_of_points);
-	
+
 		// Create indices for the scores
 		createIndicesKernel(dimGrid, dimBlock, index_d, number_of_samples);
 		
@@ -414,7 +429,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 		float* cluster_d;
 		checkCudaErrors(cudaMalloc((void **) &cluster_d, size_of_cluster));
 
-		// create output cluster 
+		// create output cluster
 		notDevice(dimGrid, dimBlock,pointsContained_d+(best_index_h[0]*number_of_points), number_of_points);
 		
 		deleteFromArray(cluster_d, pointsContained_d+(best_index_h[0]*number_of_points), data_d, number_of_points, dim);
@@ -440,7 +455,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 			checkCudaErrors(cudaMallocHost((void**) &cluster_h, size_of_cluster));
 			checkCudaErrors(cudaMemcpy(cluster_h, cluster_d, size_of_cluster, cudaMemcpyDeviceToHost));
 
-			bool* output_dims_h = (bool*) malloc(dim*sizeof(bool));
+			bool* output_dims_h;
+			cudaMallocHost((void**)&output_dims_h,dim*sizeof(bool));
 			checkCudaErrors(cudaMemcpy(output_dims_h, findDim_d+(best_index_h[0]*dim),
 									   dim, cudaMemcpyDeviceToHost));
 

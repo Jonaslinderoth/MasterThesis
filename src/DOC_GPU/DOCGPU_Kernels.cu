@@ -63,6 +63,110 @@ __global__ void pointsContainedDevice(float* data, unsigned int* centroids, bool
 	}
 }
 
+
+__global__ void pointsContainedDeviceWIP(float* data,
+		unsigned int* centroids,
+		bool* dims,
+		bool* output,
+		unsigned int* Csum_out,
+		float width,
+		unsigned int point_dim,
+		unsigned int no_data,
+		unsigned int no_dims,
+		unsigned int ammountOfSamplesThatUseSameCentroid,
+		unsigned int numberOfCentroids,
+		unsigned int sharedMemorySize){
+	extern __shared__ float sharedMemory[];
+
+	//idx
+	const unsigned int entry = blockIdx.x*blockDim.x+threadIdx.x;
+	const unsigned int entryInSharedArray = (threadIdx.x%ammountOfSamplesThatUseSameCentroid)*point_dim + threadIdx.x%point_dim;
+	const unsigned int indexOfCentroidToCentroids = entry/ammountOfSamplesThatUseSameCentroid;
+
+	if(entryInSharedArray < sharedMemorySize and indexOfCentroidToCentroids < numberOfCentroids){
+
+		unsigned int indexOfCentroidToData = centroids[indexOfCentroidToCentroids]+(threadIdx.x%point_dim);
+		float partOfACentroid = data[indexOfCentroidToData];
+
+		if(false){
+			printf("entryInSharedArray %u \n sharedMemorySize %u \n" , entryInSharedArray, sharedMemorySize);
+		}
+		assert(entryInSharedArray < sharedMemorySize);
+		sharedMemory[entryInSharedArray] = partOfACentroid;
+	}
+	/*
+	//need to load data to shared memory
+	//each thread loads a single dimension of a single point into shared memory
+	//but we dont want all the centroids only the one used.
+	//min centroid:
+	unsigned int indexOfCentroidInSharedmemory = threadIdx.x*point_dim;
+	assert(indexOfCentroidInSharedmemory < sharedMemorySize);
+	const unsigned int indexOfCentroidInCentroids = (entry)/ammountOfSamplesThatUseSameCentroid;
+	if(indexOfCentroidInCentroids < numberOfCentroids){
+		const unsigned int indexOfCentroidInData = centroids[indexOfCentroidInCentroids]*point_dim;
+		assert(indexOfCentroidInData<no_data*point_dim);
+
+
+		for(unsigned int i = 0 ; i < point_dim ; i++){
+    		float centroidPartFromData = data[indexOfCentroidInData+i];
+			sharedMemory[indexOfCentroidInSharedmemory+i] = centroidPartFromData;
+		}
+	}*/
+
+	__syncthreads();
+
+	unsigned int indexOfCentroidInSharedMemory = ( entry/ammountOfSamplesThatUseSameCentroid-(blockIdx.x*blockDim.x)/ammountOfSamplesThatUseSameCentroid )*point_dim;
+	if(entry < no_dims){
+		//assert(currentCentroid < no_of_ps);
+		// for each data point
+		unsigned int Csum = 0;
+		for(int j = 0; j < no_data; j++){
+			// for all dimmensions in each hypercube / point
+			bool d = true;
+			for(int dimensionIndex = 0; dimensionIndex < point_dim; dimensionIndex++){
+				//(not (dims[entry*point_dim+i])) ||
+				//unsigned int centroid_index = centroids[currentCentroid];
+				//assert(centroid_index < no_data);
+				assert(entry*point_dim+dimensionIndex < no_dims*point_dim);
+				//assert(centroid_index*point_dim+dimensionIndex < no_data*point_dim);
+				assert(j*point_dim+dimensionIndex < no_data*point_dim);
+				d &= (not (dims[entry*point_dim+dimensionIndex])) || (abs(sharedMemory[indexOfCentroidInSharedMemory+dimensionIndex] - data[j*point_dim+dimensionIndex]) < width);
+			}
+			output[entry*no_data+j] = d;
+			Csum += d;
+		}
+		Csum_out[entry] = Csum;
+	}
+
+	/*
+	// one kernel for each hypercube
+	int entry = blockIdx.x*blockDim.x+threadIdx.x;
+	int currentCentroid = entry/ammountOfSamplesThatUseSameCentroid;
+	if(entry < no_dims){
+		//assert(currentCentroid < no_of_ps);
+		// for each data point
+		unsigned int Csum = 0;
+		for(int j = 0; j < no_data; j++){
+			// for all dimmensions in each hypercube / point
+			bool d = true;
+			for(int i = 0; i < point_dim; i++){
+				//(not (dims[entry*point_dim+i])) ||
+				unsigned int centroid_index = centroids[currentCentroid];
+				assert(centroid_index < no_data);
+				assert(entry*point_dim+i < no_dims*point_dim);
+				assert(centroid_index*point_dim+i < no_data*point_dim);
+				assert(j*point_dim+i < no_data*point_dim);
+				d &= (not (dims[entry*point_dim+i])) || (abs(data[centroid_index*point_dim+i] - data[j*point_dim+i]) < width);
+			}
+			output[entry*no_data+j] = d;
+			Csum += d;
+		}
+		Csum_out[entry] = Csum;
+	}
+	*/
+}
+
+
 __global__ void score(unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output, unsigned int len, float alpha, float beta, unsigned int num_points){
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
 	if(entry < len){
@@ -210,6 +314,19 @@ void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
 												 output, Csum_out,
 												 width, point_dim, no_data, number_of_samples, m);
 	
+};
+
+void pointsContainedKernelWIP(unsigned int dimGrid, unsigned int dimBlock,
+						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
+						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
+						   unsigned int m, unsigned int numberOfCentroids){
+
+	unsigned long long sharedMemorySize = (dimBlock/m +2)*point_dim;
+	//std::cout << "sharedMemorySize " << sharedMemorySize  << std::endl;
+	pointsContainedDeviceWIP<<<dimGrid, dimBlock, sharedMemorySize*sizeof(float)>>>(data, centroids, dims,
+												 output, Csum_out,
+												 width, point_dim, no_data, number_of_samples, m, numberOfCentroids,sharedMemorySize);
+
 };
 
 
@@ -580,6 +697,7 @@ bool generateRandomIntArrayDevice(unsigned int* randomIndexes_d,
 	if(accual_size > size) accual_size = size;
 	
 
+	dimBlock = 128;
 	//calculate the ammount of blocks
 	int ammountOfBlocks = accual_size/dimBlock;
 	if(accual_size%dimBlock != 0){
