@@ -15,10 +15,10 @@ int main ()
 {
 	DataGeneratorBuilder dgb;
 	dgb.setSeed(1);
-	for(int i = 0; i < 2; i++){
+	for(int i = 0; i < 3; i++){
 		Cluster small;
-		small.setAmmount(1000);
-		for(int j = 0; j < 10; j++){
+		small.setAmmount(10000);
+		for(int j = 0; j < 5; j++){
 			if((i) == j%3){
 				small.addDimension(uniformDistribution, {10000,10002});
 			}else{
@@ -29,10 +29,8 @@ int main ()
 		dgb.addCluster(small);		
 	}
 
-	
 	dgb.setFileName("test/testData/benchmark1");
 	dgb.build(true);
-
 
 	
 	DataReader* dr2 = new DataReader("test/testData/benchmark1");
