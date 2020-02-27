@@ -71,6 +71,81 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	return result;
 };
 
+
+
+unsigned int DOCGPU::computeNumberOfSampleRuns(unsigned int dim, unsigned int number_of_points, unsigned int number_of_centroids, unsigned int m, unsigned int sample_size, size_t freeMem){
+	// TODO::: Needs fine tuning
+
+	unsigned int numberOfRuns = 0;
+	size_t usedMemory = freeMem+100;
+
+	float current_number_of_centroids = number_of_centroids;
+	size_t current_m = m;
+	
+	while(usedMemory > freeMem){
+		if(numberOfRuns > 1000){
+			throw std::runtime_error("Not enough free memory");	
+		}
+		numberOfRuns++;
+		current_number_of_centroids = ((float)number_of_centroids/(float)numberOfRuns);
+		current_m = ceilf((float)m/(float)numberOfRuns);
+
+		size_t number_of_samples = current_number_of_centroids*current_m;
+		size_t size_of_data = number_of_points*dim*sizeof(float);
+	
+		size_t number_of_values_in_samples = number_of_samples*sample_size;
+		size_t size_of_samples = number_of_values_in_samples*sizeof(unsigned int); 
+		size_t size_of_centroids = ceilf(current_number_of_centroids)*sizeof(unsigned int);
+
+		// calculating the sizes for findDim 
+		size_t number_of_bools_for_findDim = number_of_samples*dim;
+		size_t size_of_findDim = number_of_bools_for_findDim*sizeof(bool); 
+		size_t number_of_values_find_dim_count_output = number_of_samples;
+		size_t size_of_findDim_count = number_of_values_find_dim_count_output* sizeof(unsigned int);
+
+
+		// calculating sizes for pointsContained
+		size_t number_of_values_in_pointsContained = (size_t)number_of_samples*(size_t)number_of_points;
+		// the +1 is to allocate one more for delete, the value do not matter,
+		// but is used to avoid reading outside the memory space
+		size_t size_of_pointsContained = (number_of_values_in_pointsContained+1)*sizeof(bool);
+		size_t number_of_values_in_pointsContained_count = number_of_samples;
+		size_t size_of_pointsContained_count = number_of_values_in_pointsContained_count*sizeof(unsigned int);
+
+		//calculating sizes for score
+		size_t number_of_score = number_of_samples;
+		size_t size_of_score = number_of_score*sizeof(float);
+
+		//calculating sizes for indecies
+		size_t number_of_indecies = number_of_samples;
+		size_t size_of_index = number_of_indecies*sizeof(unsigned int);
+
+		//sizes for random states
+		size_t numberOfRandomStates = 1024*10;// this parameter could be nice to test to find "optimal one"...
+		size_t size_of_randomStates = sizeof(curandState) * numberOfRandomStates;
+
+		usedMemory = size_of_samples + size_of_centroids + size_of_randomStates + 2*size_of_data +
+			size_of_findDim + size_of_findDim_count + size_of_pointsContained_count +
+			size_of_score + size_of_index + size_of_pointsContained;
+
+
+
+		/*std::cout << "current_m: " << current_m << " current_number_of_centroids: " << current_number_of_centroids << std::endl; 
+		
+		std::cout << size_of_samples << ", " << size_of_centroids << ", " << size_of_randomStates << ", " << 2*size_of_data +
+			size_of_findDim << ", " << size_of_findDim_count  << ", " << size_of_pointsContained  << ", " << size_of_pointsContained_count << ", " << size_of_score << ", " << size_of_index << std::endl;
+			std::cout << "used memory: " << usedMemory << std::endl;*/
+	};
+
+	
+	return numberOfRuns;
+
+	
+}
+
+
+
+
 std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DOCGPU::findKClusters(int k){
 	auto result = std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>>();
 	float* data_h = this->transformData();
@@ -84,14 +159,24 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	unsigned int r = log2(2*d)/log2(1/(2*beta));
 	if(r == 0) r = 1;
 	unsigned int m = pow((2/alpha),r) * log(4);
+	
 	unsigned int number_of_points = this->data->size();
 	size_t size_of_data = number_of_points*dim*sizeof(float);
-
+	
 
 	// Calculating the sizes of the random samples
 	unsigned int number_of_centroids = 2.0/alpha;
-	unsigned int number_of_samples = number_of_centroids*m;
 	unsigned int sample_size = r;
+
+
+	/*	// Calculate how many iterations for having all the samples
+	size_t freeMem, totalMem;
+	checkCudaErrors(cudaMemGetInfo(&freeMem, &totalMem));
+	unsigned int numberOfRuns = this->computeNumberOfSampleRuns(d, number_of_points, number_of_centroids, m, sample_size, freeMem);
+	*/
+	
+
+	unsigned int number_of_samples = number_of_centroids*m;
 	size_t number_of_values_in_samples = number_of_samples*sample_size;
 	size_t size_of_samples = number_of_values_in_samples*sizeof(unsigned int); 
 	size_t size_of_centroids = number_of_centroids*sizeof(unsigned int);
@@ -119,6 +204,12 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	size_t number_of_indecies = number_of_samples;
 	size_t size_of_index = number_of_indecies*sizeof(unsigned int);
 
+	//sizes for random states
+	curandState* randomStates_d;
+	size_t numberOfRandomStates = 1024*10;// this parameter could be nice to test to find "optimal one"...
+	size_t size_of_randomStates = sizeof(curandState) * numberOfRandomStates;
+
+	
 
 	//calculating dimensions for threads
 	int smemSize, maxBlock;
@@ -146,10 +237,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	checkCudaErrors(cudaMalloc((void **) &samples_d, size_of_samples));
 	checkCudaErrors(cudaMalloc((void **) &centroids_d, size_of_centroids));
 
-	curandState* randomStates_d;
-	size_t numberOfRandomStates = 1024*10;// this parameter could be nice to test to find "optimal one"...
+
 	
-	checkCudaErrors(cudaMalloc((void**)&randomStates_d, sizeof(curandState) * numberOfRandomStates));
+	checkCudaErrors(cudaMalloc((void**)&randomStates_d, size_of_randomStates));
 	int randomSeed = this->randInt(0,100000, 1).at(0);
 	generateRandomStatesArray(stream1, randomStates_d,numberOfRandomStates,false, randomSeed);
 
@@ -180,7 +270,10 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	//allocating memory for index
 	unsigned int* index_d;
 	checkCudaErrors(cudaMalloc((void **) &index_d, size_of_index));
-	bool stream2Deleted = false;
+
+
+	
+
 	
 	
 	for(int i = 0; i < k; i++){ // for each of the clusters

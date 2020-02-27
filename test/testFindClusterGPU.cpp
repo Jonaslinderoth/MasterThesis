@@ -766,6 +766,17 @@ TEST(testFindClusterGPU, testKclustersLarge2){
 	EXPECT_TRUE(d.at(1).second->at(4));
 	EXPECT_TRUE(d.at(1).second->at(5));
 
+}
 
-	
+
+TEST(testDOCGPUmemoryCalcuations, testSimple){
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	{
+		auto point = new std::vector<float>{10,10};
+		data->push_back(point);
+	}
+	DOCGPU c = DOCGPU(data);
+
+	auto res = c.computeNumberOfSampleRuns(20,1000, 20, 1000, 20, 100000000);
+	EXPECT_EQ(res,1);
 }

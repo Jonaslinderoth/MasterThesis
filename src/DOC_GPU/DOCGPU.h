@@ -34,6 +34,12 @@ public:
 	void setWidth(float value){this->width = value;};
 	unsigned int getSize(){return this->size;};
 	unsigned int dimension(){return this->dim;};
+	unsigned int computeNumberOfSampleRuns(unsigned int dim,
+								  unsigned int number_of_points,
+								  unsigned int number_of_centroids,
+								  unsigned int m,
+								  unsigned int sample_size,
+								  size_t freeMem);
 
  private:
 	float alpha;
