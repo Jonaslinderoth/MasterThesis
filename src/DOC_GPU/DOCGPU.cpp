@@ -187,11 +187,16 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 						   findDim_count_d, point_dim, number_of_samples, sample_size, number_of_ps,
 						  m, width);
 	gpuErrchk(cudaFree(xs_d));
-
+	/*
 	//std::cout << "dimGrid: " << dimGrid << std::endl << "dimBlock: " << dimBlock << std::endl << "width " << width << std::endl << "point_dim: " << point_dim << std::endl << "number_of_points: " << number_of_points << std::endl << "number_of_samples: " << number_of_samples << std::endl << "m: " << m << std::endl << "number_of_ps " << number_of_ps << std::endl;
 	pointsContainedKernelWIP(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
 						  pointsContained_output_d, pointsContained_count_d,
 						  width, point_dim, number_of_points, number_of_samples, m,number_of_ps);
+
+	*/
+	pointsContainedKernel(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
+							  pointsContained_output_d, pointsContained_count_d,
+							  width, point_dim, number_of_points, number_of_samples, m);
 
 
 	gpuErrchk(cudaFree(data_d));
