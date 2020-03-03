@@ -10,16 +10,19 @@
 __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d, unsigned int* Dsum_out,
 									  unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps, unsigned int m, float width, unsigned int no_data){
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
-	int pNo = entry/m;
-
+	unsigned int pNo = entry/m;
 	if(entry < no_of_samples){
+		if(!(pNo < no_of_ps)){
+			printf("%u ", no_of_ps);
+		}
 		assert(pNo < no_of_ps);
 		unsigned int Dsum = 0;
 		// for each dimension
 		for(int i = 0; i < point_dim; i++){
 			bool d = true;
-			//assert(ps_d[pNo]*point_dim+i < 100*6);
-			float p_tmp = data[ps_d[pNo]*point_dim+i];
+			unsigned int tmp = ps_d[pNo];
+			assert(tmp < no_data);
+			float p_tmp = data[tmp*point_dim+i];
 			// for each point in sample
 			for(unsigned j = 0; j < no_in_sample; j++){
 				assert(entry*no_in_sample+j < no_of_samples*no_in_sample);
@@ -178,6 +181,7 @@ __global__ void randIntArray(unsigned int *result , curandState_t* states , cons
 				myrandf *= (max - min + 0.9999);
 				myrandf += min;
 				unsigned int res = (unsigned int)truncf(myrandf);
+				res %= max;
 				assert(res >= min);
 				assert(res <= max);
 				result[i*number_of_states+idx] = res;
