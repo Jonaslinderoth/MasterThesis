@@ -39,13 +39,35 @@ float* scoreHost(unsigned int* Cluster_size,
 void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* Xs_d, unsigned int* ps_d, float* data_d, bool* res_d,
 						   unsigned int* Dsum_out, unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps,
 						   unsigned int m, float width);
-
+/*
+ * this does not have data in shared memory
+ */
 void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
 						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
 									  float width, unsigned int point_dim, unsigned int no_data, unsigned int no_dims, unsigned int m);
 
-
-void pointsContainedKernelWIP(unsigned int dimGrid,
+/*
+ * this fuction has the data and the centroids in Shared Memory
+ * the centroid and at least one data points need to be able to fit into shared memory to being able to work
+ */
+void pointsContainedKernelSM(unsigned int dimGrid,
+		unsigned int dimBlock,
+		float* data,
+		unsigned int* centroids,
+		bool* dims,
+		bool* output,
+		unsigned int* Csum_out,
+		float width,
+		unsigned int point_dim,
+		unsigned int no_data,
+		unsigned int no_dims,
+		unsigned int m,
+		unsigned int numberOfCentroids);
+/*
+ * This fuction has the data and the centroids in Shared Memory and no bank conflicts
+ * the centroid and at least dimBlock/32 data points need to be able to fit into shared memory to being able to work
+ */
+void pointsContainedKernelSMNB(unsigned int dimGrid,
 		unsigned int dimBlock,
 		float* data,
 		unsigned int* centroids,
