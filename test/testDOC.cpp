@@ -591,7 +591,7 @@ TEST_F(testDOC, testWithDataReader2){
 }
 	
 
-TEST_F(testDOC, _SLOW_testWithDataReader3){
+TEST_F(testDOC, DISABLED_SLOW_testWithDataReader3){
 	DataGeneratorBuilder dgb;
 	dgb.setSeed(10);
 	Cluster small;
@@ -635,7 +635,7 @@ TEST_F(testDOC, _SLOW_testWithDataReader3){
 }
 	
 
-TEST_F(testDOC, _SLOW_testWithDataReader4){
+TEST_F(testDOC, DISABLED_SLOW_testWithDataReader4){
 	DataGeneratorBuilder dgb;
 	Cluster small;
 	small.setAmmount(1000);
@@ -680,7 +680,7 @@ TEST_F(testDOC, _SLOW_testWithDataReader4){
 }
 
 
-TEST_F(testDOC, _SLOW_testWithDataReader5){
+TEST_F(testDOC, DISABLED_SLOW_testWithDataReader5){
 	
 	DataGeneratorBuilder dgb;
 	dgb.setSeed(0);

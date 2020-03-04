@@ -18,6 +18,11 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
 					std::vector<unsigned int>* centroids,
 					int m,  float width = 10.0);
 
+std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
+	pointsContainedSMNB(std::vector<std::vector<bool>*>* dims,
+					    std::vector<std::vector<float>*>* data,
+					    std::vector<unsigned int>* centroids,
+					    int m,  float width = 10.0);
 
 int argMax(std::vector<float>* scores);
 

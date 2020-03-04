@@ -202,6 +202,11 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 						  pointsContained_output_d, pointsContained_count_d,
 						  width, point_dim, number_of_points, number_of_samples, m,number_of_ps);
 
+	/*
+	pointsContainedKernel(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
+							  pointsContained_output_d, pointsContained_count_d,
+							  width, point_dim, number_of_points, number_of_samples, m);
+	*/
 	//testing if the are equal:
 	if(false){
 		bool* pointsContained_output2_d;

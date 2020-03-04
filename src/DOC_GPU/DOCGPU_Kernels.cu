@@ -135,11 +135,11 @@ __global__ void pointsContainedDeviceSM(float* data,
 
 }
 
-__global__ void pointsContainedDeviceSMNB(float* data,
-		unsigned int* centroids,
-		bool* dims,
-		bool* output,
-		unsigned int* Csum_out,
+__global__ void pointsContainedDeviceSMNB(float* __restrict__ data,
+		unsigned int* __restrict__ centroids,
+		bool* __restrict__ dims,
+		bool* __restrict__ output,
+		unsigned int* __restrict__ Csum_out,
 		float width,
 		const unsigned long point_dim,
 		const unsigned long no_data_p,
@@ -176,7 +176,7 @@ __global__ void pointsContainedDeviceSMNB(float* data,
 	// times the threads will need to copy data from global to shared memory.
 	const unsigned long no_data_f = no_data_p*point_dim;
 	const unsigned long dataSharedMemorySize_p = dataSharedMemorySize_f/point_dim;
-	assert(dataSharedMemorySize_f%point_dim == 0);
+	//assert(dataSharedMemorySize_f%point_dim == 0);
 
 
 
@@ -197,7 +197,8 @@ __global__ void pointsContainedDeviceSMNB(float* data,
 		__syncthreads();
 
 
-		const unsigned long warpId_p = threadIdx.x/32;
+		const unsigned long warpId_p =0;//threadIdx.x/32;
+		const unsigned long warpIdToDim_p =threadIdx.x/32;
 		const unsigned long dataPointsLeft = no_data_p-i_p;
 		const unsigned long limit = min(dataPointsLeft,dataSharedMemorySize_p);
 		for(unsigned long indexDataSM_p = 0 ; indexDataSM_p < limit ; indexDataSM_p++)
@@ -218,29 +219,32 @@ __global__ void pointsContainedDeviceSMNB(float* data,
 				bool d = true;
 
 				for(unsigned long dimensionIndex_f = 0 ; dimensionIndex_f < point_dim ; dimensionIndex_f++){
-
+					/*
 					const unsigned long indexDataSM_f = indexPointDataSM_p*point_dim + dimensionIndex_f;
 					const unsigned long indexDims_f = indexDimsNoDimension_f + dimensionIndex_f;
-					assert(indexDims_f < no_dims*point_dim);
+					//assert(indexDims_f < no_dims*point_dim);
 					const bool dim = dims[indexDims_f];
 					const float cen = centroidSharedMemory[dimensionIndex_f];
-					assert(indexDataSM_f < dataSharedMemorySize_f);
+					//assert(indexDataSM_f < dataSharedMemorySize_f);
 					const float dat = dataSharedMemory[indexDataSM_f];
 					d &= (not (dim)) || (abs(cen - dat) < width);
+					*/
+
+					const unsigned long offDimensionIndex = (dimensionIndex_f+warpIdToDim_p)%point_dim;
+					const unsigned long indexDataSM_f = indexPointDataSM_p*point_dim + offDimensionIndex;
+					const unsigned long indexDims_f = indexDimsNoDimension_f + offDimensionIndex;
+					//assert(indexDims_f < no_dims*point_dim);
+					const bool dim = dims[indexDims_f];
+					const float cen = centroidSharedMemory[offDimensionIndex];
+					//assert(indexDataSM_f < dataSharedMemorySize_f);
+					const float dat = dataSharedMemory[indexDataSM_f];
+					d &= (not (dim)) || (abs(cen - dat) < width);
+
 				}
 
-				assert(indexDataSM_p < dataSharedMemorySize_p);
-				//assert(i_p+indexDataSM_p < no_data_p);
-				/*
-				if(i_p+indexDataSM_p >= no_data_p){
-					printf("i_p %lu \n indexDataSM_p %lu \n no_data_p %lu \n" , i_p , indexDataSM_p , no_data_p);
-				}*/
-				//const unsigned long indexOutput_p = offEntry_p * no_data + ( i_f / point_dim ) + offset_p;
-				/*
-				if(indexOutput_p >= ammountOfSamplesThatUseSameCentroid*numberOfCentroids*no_data){
-					printf("\n indexOutput_p: %lu \n limit: %lu \n howLongOnM_p: %lu \n ammountOfSamplesThatUseSameCentroid: %lu \n" , indexOutput_p , ammountOfSamplesThatUseSameCentroid*numberOfCentroids , howLongOnM_p , ammountOfSamplesThatUseSameCentroid);
-				}*/
-				assert(indexOutput_p < ammountOfSamplesThatUseSameCentroid*numberOfCentroids*no_data_p);
+				//assert(indexDataSM_p < dataSharedMemorySize_p);
+
+				//assert(indexOutput_p < ammountOfSamplesThatUseSameCentroid*numberOfCentroids*no_data_p);
 				output[indexOutput_p] = d;
 
 				Csum += d;
@@ -399,7 +403,8 @@ __global__ void randIntArray(unsigned int *result , curandState_t* states , cons
 				float myrandf = curand_uniform(&states[idx]);
 				myrandf *= (max - min + 0.999999);
 				myrandf += min;
-				result[i*number_of_states+idx] = (int)truncf(myrandf);
+				result[i*number_of_states+idx] = (int)truncf(myrandf)%max;
+
 			}
 		}		
 	}
@@ -486,10 +491,10 @@ void pointsContainedKernelSMNB(unsigned int dimGrid, unsigned int dimBlock,
 	unsigned long dataSharedMemorySize_f = maxSharedmemory/sizeof(float)-centroidSharedMemorySize_f;
 	dataSharedMemorySize_f = (dataSharedMemorySize_f/point_dim)/32;
 	dataSharedMemorySize_f = dataSharedMemorySize_f*point_dim*32;
-	//std::cout << "dataSharedMemorySize " << dataSharedMemorySize << std::endl;
+
 	unsigned long sharedMemorySize_f = dataSharedMemorySize_f+centroidSharedMemorySize_f;
 
-
+	//std::cout << "no_data_p " << no_data << std::endl << "point_dim " << point_dim << std::endl;
 	/*//calculate how much we are going to use
 	unsigned long long sharedMemorySize = ( centroidSharedMemorySize +dataSharedMemorySize )*sizeof(float);
 	*/
@@ -646,6 +651,132 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 	free(output_count_h);
 
 	
+	return std::make_pair(output,output_count);
+};
+
+
+std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsContainedSMNB(std::vector<std::vector<bool>*>* dims,
+																					   std::vector<std::vector<float>*>* data,
+																					   std::vector<unsigned int>* centroids,
+																					   int m, float width){
+
+	// Calculaating sizes
+	int point_dim = data->at(0)->size();
+	int no_of_points = data->size();
+	int no_of_dims = dims->size();
+	int no_of_centroids = centroids->size();
+
+	int floats_in_data = point_dim * no_of_points;
+	int bools_in_dims = no_of_dims * point_dim;
+	int bools_in_output = no_of_points * no_of_dims;
+	int ints_in_output_count = no_of_dims;
+
+	int size_of_data = floats_in_data*sizeof(float);
+	int size_of_dims = bools_in_dims*sizeof(bool);
+	int size_of_centroids = no_of_centroids*sizeof(unsigned int);
+	int size_of_output = bools_in_output*sizeof(bool);
+	int size_of_output_count = ints_in_output_count*sizeof(unsigned int);
+
+	// allocating on the host
+	float* data_h = (float*) malloc(size_of_data);
+	bool* dims_h = (bool*) malloc(size_of_dims);
+	unsigned int* centroids_h = (unsigned int*) malloc(size_of_centroids);
+	bool* output_h = (bool*) malloc(size_of_output);
+	unsigned int* output_count_h = (unsigned int*) malloc(size_of_output_count);
+
+	// filling data array
+	for(int i= 0; i < no_of_points; i++){
+		for(int j = 0; j < point_dim; j++){
+			data_h[i*point_dim+j] = data->at(i)->at(j);
+		}
+	}
+
+	// filling dims array
+	for(int i= 0; i < no_of_dims; i++){
+		for(int j = 0; j < point_dim; j++){
+			dims_h[i*point_dim+j] = dims->at(i)->at(j);
+		}
+	}
+
+	// filling centroid array
+	for(int i= 0; i < no_of_centroids; i++){
+		centroids_h[i] = centroids->at(i);
+	}
+
+	// allocating on device
+	float* data_d;
+	bool* dims_d;
+	unsigned int* centroids_d;
+	bool* output_d;
+	unsigned int* output_count_d;
+
+	cudaMalloc((void **) &data_d, size_of_data);
+	cudaMalloc((void **) &dims_d, size_of_dims);
+	cudaMalloc((void **) &centroids_d, size_of_centroids);
+	cudaMalloc((void **) &output_d, size_of_output);
+	cudaMalloc((void **) &output_count_d, size_of_output_count);
+
+	//Copy from host to device
+
+	cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice);
+	cudaMemcpy(dims_d, dims_h, size_of_dims, cudaMemcpyHostToDevice);
+	cudaMemcpy(centroids_d, centroids_h, size_of_centroids, cudaMemcpyHostToDevice);
+
+
+	pointsContainedKernelSMNB(ceil((no_of_dims)/256.0),
+			256,
+			data_d,
+			centroids_d,
+			dims_d,
+			output_d,
+			output_count_d,
+			width,
+			point_dim,
+			no_of_points,
+			no_of_dims,
+			m,
+			no_of_centroids);
+
+	/*
+	// Call kernel
+	pointsContainedDevice<<<ceil((no_of_dims)/256.0), 256>>>(data_d, centroids_d, dims_d, output_d, output_count_d,
+															 width, point_dim, no_of_points, no_of_dims, m);
+
+	*/
+	// copy from device
+	cudaMemcpy(output_h, output_d, size_of_output, cudaMemcpyDeviceToHost);
+	cudaMemcpy(output_count_h, output_count_d, size_of_output_count, cudaMemcpyDeviceToHost);
+
+	// construnct output
+	auto output =  new std::vector<std::vector<bool>*>;
+	auto output_count =  new std::vector<unsigned int>;
+
+
+	for(int i = 0; i < no_of_dims; i++){
+		auto a =  new std::vector<bool>;
+		for(int j = 0; j < no_of_points; j++){
+			a->push_back(output_h[i*no_of_points+j]);
+		}
+		output->push_back(a);
+	}
+
+	for(int i = 0; i < no_of_dims; i++){
+		output_count->push_back(output_count_h[i]);
+	}
+
+
+	cudaFree(data_d);
+	cudaFree(dims_d);
+	cudaFree(centroids_d);
+	cudaFree(output_d);
+	cudaFree(output_count_d);
+	free(data_h);
+	free(dims_h);
+	free(centroids_h);
+	free(output_h);
+	free(output_count_h);
+
+
 	return std::make_pair(output,output_count);
 };
 
