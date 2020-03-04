@@ -29,9 +29,9 @@ __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, fl
 				unsigned int sampleNo = Xs_d[entry*no_in_sample+j];
 				assert(entry*no_in_sample+j < no_of_samples*no_in_sample);
 				if(!(sampleNo < no_data)){
-					//	printf("entry %u, no_in_sample %u, j %u, sampleNo %u, entry*no_in_sample+j %u \n", entry, no_in_sample, j, sampleNo, entry*no_in_sample+j);
+					printf("entry %u, no_in_sample %u, j %u, sampleNo %u, entry*no_in_sample+j %u, no_data %u \n", entry, no_in_sample, j, sampleNo, entry*no_in_sample+j, no_data);
 				}
-				assert(sampleNo < no_data);
+				//assert(sampleNo < no_data);
 				float point = data[sampleNo*point_dim+i];
 				d &= abs(p_tmp-point) < width;
 			}

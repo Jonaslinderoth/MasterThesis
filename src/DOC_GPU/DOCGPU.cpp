@@ -83,6 +83,9 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 
 unsigned int DOCGPU::computeNumberOfSampleRuns(unsigned int dim, unsigned int number_of_points, unsigned int number_of_centroids, unsigned int m, unsigned int sample_size, size_t freeMem){
 	// TODO::: Needs fine tuning
+	// - Binary search
+	// - alreaddy allocated, constraints
+	std::cout << dim << ", " << number_of_points << ", " << number_of_centroids << ", " << m << ", " << sample_size << ", " << std::endl;
 
 	unsigned int numberOfRuns = 0;
 	size_t usedMemory = freeMem+100;
@@ -91,7 +94,8 @@ unsigned int DOCGPU::computeNumberOfSampleRuns(unsigned int dim, unsigned int nu
 	size_t current_m = m;
 	
 	while(usedMemory > freeMem){
-		if(numberOfRuns > 10000000){
+
+		if(numberOfRuns > 100){
 			throw std::runtime_error("Not enough free memory");	
 		}
 		numberOfRuns++;
@@ -99,34 +103,50 @@ unsigned int DOCGPU::computeNumberOfSampleRuns(unsigned int dim, unsigned int nu
 		current_m = m;
 
 		size_t number_of_samples = current_number_of_centroids*current_m;
+		size_t number_of_samples2 = number_of_centroids*current_m;
 		size_t size_of_data = number_of_points*dim*sizeof(float);
-	
-		size_t number_of_values_in_samples = number_of_samples*sample_size;
-		size_t size_of_samples = number_of_values_in_samples*sizeof(unsigned int); 
-		size_t size_of_centroids = ceilf(current_number_of_centroids)*sizeof(unsigned int);
+		if(this->get_size_of_data() < size_of_data){ std::cout << "data size cap" << std::endl; continue; };
 
+		size_t number_of_values_in_samples = number_of_samples2*sample_size;
+		size_t size_of_samples = number_of_values_in_samples*sizeof(unsigned int);
+		if(this->get_size_of_samples() < size_of_samples){std::cout << "sample size cap" << std::endl; continue; };
+		// always allocate enough space for all centroids.
+		size_t size_of_centroids = ceilf(number_of_centroids)*sizeof(unsigned int);
+		//std::cout << "size_of_centroids: " << size_of_centroids << "get_size_of_centroids()" << get_size_of_centroids() << std::endl;
+		if(this->get_size_of_centroids() < size_of_centroids){ std::cout << "centroid size cap" << std::endl; continue; };
 		// calculating the sizes for findDim 
 		size_t number_of_bools_for_findDim = number_of_samples*dim;
-		size_t size_of_findDim = number_of_bools_for_findDim*sizeof(bool); 
-		size_t number_of_values_find_dim_count_output = number_of_samples;
+		size_t size_of_findDim = number_of_bools_for_findDim*sizeof(bool);
+		if(this->get_size_of_findDim() < size_of_findDim){ std::cout << "findDim size cap" << std::endl;continue; };		
+
+		size_t number_of_values_find_dim_count_output = number_of_samples; /**/
 		size_t size_of_findDim_count = number_of_values_find_dim_count_output* sizeof(unsigned int);
+		if(this->get_size_of_findDim_count() < size_of_findDim_count){ std::cout << "findDim_count size cap" << std::endl; continue; };
 
-
+		
 		// calculating sizes for pointsContained
 		size_t number_of_values_in_pointsContained = (size_t)number_of_samples*(size_t)number_of_points;
 		// the +1 is to allocate one more for delete, the value do not matter,
 		// but is used to avoid reading outside the memory space
 		size_t size_of_pointsContained = (number_of_values_in_pointsContained+1)*sizeof(bool);
+		if(this->get_size_of_pointsContained() < size_of_pointsContained){std::cout << "points contained size cap" << std::endl; continue; };
 		size_t number_of_values_in_pointsContained_count = number_of_samples;
 		size_t size_of_pointsContained_count = number_of_values_in_pointsContained_count*sizeof(unsigned int);
+		if(this->get_size_of_pointsContained_count() < size_of_pointsContained_count){std::cout << "points contained size cap" << std::endl; continue; };
 
+		
 		//calculating sizes for score
 		size_t number_of_score = number_of_samples;
 		size_t size_of_score = number_of_score*sizeof(float);
+		if(this->get_size_of_score() < size_of_score){ std::cout << "score size cap" << std::endl; continue; };
 
+
+
+		
 		//calculating sizes for indecies
 		size_t number_of_indecies = number_of_samples;
 		size_t size_of_index = number_of_indecies*sizeof(unsigned int);
+		if(this->get_size_of_index() < size_of_index){ std::cout << "indecies size cap" << std::endl; continue; };
 
 		//sizes for random states
 		size_t numberOfRandomStates = 1024*10;// this parameter could be nice to test to find "optimal one"...
@@ -134,19 +154,21 @@ unsigned int DOCGPU::computeNumberOfSampleRuns(unsigned int dim, unsigned int nu
 
 
 		size_t size_of_bestDims = (number_of_points+1)*sizeof(bool);
+		if(this->get_size_of_bestDims() < size_of_bestDims){ std::cout << "bestDimsCap size cap" << std::endl; continue; };
+		std::cout << "got here" << std::endl;
 
 		usedMemory = size_of_samples + size_of_centroids + size_of_randomStates + 2*size_of_data +
 			size_of_findDim + size_of_findDim_count + size_of_pointsContained_count +
 			size_of_score + size_of_index + size_of_pointsContained + size_of_bestDims;
 
 		
-		/*
+		
 		std::cout << "current_m: " << current_m << " current_number_of_centroids: " << current_number_of_centroids << std::endl;
 		std::cout << "current number of runs " << numberOfRuns << std::endl;
 		
 		std::cout << size_of_samples << ", " << size_of_centroids << ", " << size_of_randomStates << ", " << 2*size_of_data +
 			size_of_findDim << ", " << size_of_findDim_count  << ", " << size_of_pointsContained  << ", " << size_of_pointsContained_count << ", " << size_of_score << ", " << size_of_index << std::endl;
-			std::cout << "used memory: " << usedMemory << std::endl;*/
+			std::cout << "used memory: " << usedMemory << std::endl;
 		
 		
 	};
@@ -176,54 +198,68 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	
 	unsigned int number_of_points = this->data->size();
 	size_t size_of_data = number_of_points*dim*sizeof(float);
+	this->allocated_size_of_data = size_of_data;
 	
 
 	// Calculating the sizes of the random samples
 	unsigned int number_of_centroids = 2.0/alpha;
-unsigned int sample_size = r;
+	unsigned int sample_size = r;
 
 	size_t memoryCap = (size_t)10*(size_t)1000*(size_t)1000*(size_t)1000;
 	unsigned int number_of_runs = this->computeNumberOfSampleRuns(dim, number_of_points, number_of_centroids, m, sample_size,
 																  memoryCap);
+
+	//throw std::runtime_error("Not enough free memory");	
+	
 	float number_of_centroids_sample_max = ((float)number_of_centroids/(float)number_of_runs); // the maximal number of centroids pr run;
 
 	std::cout << "number_of_centroids_sample_max: " << number_of_centroids_sample_max << std::endl;
 	float number_of_centroids_sample = number_of_centroids_sample_max;		
 	
 	unsigned int number_of_samples = number_of_centroids_sample*m; /**/
-	size_t number_of_values_in_samples = number_of_samples*sample_size; /**/
-	size_t size_of_samples = number_of_values_in_samples*sizeof(unsigned int); 
+	unsigned int number_of_samples2 = number_of_centroids*m; /**/
+	size_t number_of_values_in_samples = number_of_samples2*sample_size; /**/
+	size_t size_of_samples = number_of_values_in_samples*sizeof(unsigned int);
+	this->allocated_size_of_samples = size_of_samples;
 	size_t size_of_centroids = number_of_centroids*sizeof(unsigned int);
+	this->allocated_size_of_centroids = size_of_centroids;
 
 	// calculating the sizes for findDim 
 	size_t number_of_bools_for_findDim = number_of_samples*dim; /**/
-	size_t size_of_findDim = number_of_bools_for_findDim*sizeof(bool); 
+	size_t size_of_findDim = number_of_bools_for_findDim*sizeof(bool);
+	this->allocated_size_of_findDim = size_of_findDim;
 	size_t number_of_values_find_dim_count_output = number_of_samples; /**/
 	size_t size_of_findDim_count = number_of_values_find_dim_count_output* sizeof(unsigned int);
-
+	this->allocated_size_of_findDim_count = size_of_findDim_count;
 
 	// calculating sizes for pointsContained
 	size_t number_of_values_in_pointsContained = (size_t)number_of_samples*(size_t)number_of_points; /**/
 	// the +1 is to allocate one more for delete, the value do not matter,
 	// but is used to avoid reading outside the memory space
 	size_t size_of_pointsContained = (number_of_values_in_pointsContained+1)*sizeof(bool);
+	this->allocated_size_of_pointsContained = size_of_pointsContained;
 	size_t number_of_values_in_pointsContained_count = number_of_samples; /**/
 	size_t size_of_pointsContained_count = number_of_values_in_pointsContained_count*sizeof(unsigned int);
-
+	this->allocated_size_of_pointsContained_count = size_of_pointsContained_count;
+	
 	//calculating sizes for score
 	size_t number_of_score = number_of_samples; /**/
 	size_t size_of_score = number_of_score*sizeof(float);
+	this->allocated_size_of_score = size_of_score;
 
 	//calculating sizes for indecies
 	size_t number_of_indecies = number_of_samples; /**/
 	size_t size_of_index = number_of_indecies*sizeof(unsigned int);
+	this->allocated_size_of_index = size_of_index;
 
 	//sizes for random states
 	curandState* randomStates_d;
 	size_t numberOfRandomStates = 1024*10;// this parameter could be nice to test to find "optima one"...
 	size_t size_of_randomStates = sizeof(curandState) * numberOfRandomStates;
+	this->allocated_size_of_randomStates = size_of_randomStates;
 
 	size_t size_of_bestDims = (number_of_points+1)*sizeof(bool);
+	this->allocated_size_of_bestDims = size_of_bestDims;
 	
 	//calculating dimensions for threads
 	int smemSize, maxBlock;
@@ -287,7 +323,7 @@ unsigned int sample_size = r;
 	//allocating memory for index
 	unsigned int* index_d;
 	checkCudaErrors(cudaMalloc((void **) &index_d, size_of_index));
-
+	this->isAllocated = true;
 
 	
 	for(int i = 0; i < k; i++){ // for each of the clusters
@@ -296,9 +332,11 @@ unsigned int sample_size = r;
 		float centroids_used = 0; 
 		number_of_runs = this->computeNumberOfSampleRuns(dim, number_of_points, number_of_centroids, m, sample_size, memoryCap);
 		std::cout << number_of_runs << std::endl;
-		number_of_centroids_sample_max = ((float)number_of_centroids/(float)number_of_runs); // the maximal number of centroids pr run;
+
+		// the maximal number of centroids pr run;
+		number_of_centroids_sample_max = ((float)number_of_centroids/(float)number_of_runs); 
 		
-		//TODO: recompute number_of_centroids_sample with new data size
+
 
 		int j = 0; 
 		while(centroids_used < number_of_centroids){
@@ -321,6 +359,7 @@ unsigned int sample_size = r;
 
 			number_of_samples = number_of_centroids_sample*m;
 			number_of_values_in_samples = number_of_samples*sample_size;
+			std::cout << number_of_values_in_samples << std::endl;
 			number_of_bools_for_findDim = number_of_samples*dim;
 			number_of_values_find_dim_count_output = number_of_samples;
 			number_of_values_in_pointsContained = (size_t)number_of_samples*(size_t)number_of_points;
@@ -486,4 +525,5 @@ unsigned int sample_size = r;
 
 	return result;
 };
+
 
