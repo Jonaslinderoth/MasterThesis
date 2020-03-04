@@ -15,11 +15,11 @@ int main ()
 {
 	DataGeneratorBuilder dgb;
 	dgb.setSeed(1);
-	for(int i = 0; i < 3; i++){
+	for(int i = 0; i < 5; i++){
 		Cluster small;
-		small.setAmmount(1000);
-		for(int j = 0; j < 20; j++){
-			if((i) == j%3){
+		small.setAmmount(100);
+		for(int j = 0; j < 5; j++){
+			if((i) == j%5){
 				small.addDimension(uniformDistribution, {10000,10002});
 			}else{
 				small.addDimension(uniformDistribution, {-1000,1000});

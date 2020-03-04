@@ -6,13 +6,13 @@ CXX = g++
 CXXFLAGS=-I. -nocudalib  -O2  #-g -G
 else
 CXX = nvcc
-CXXFLAGS=-I. -arch=sm_37 -O2 # -g -G
+CXXFLAGS=-I/usr/local/include/coin -I. -arch=sm_37 -O2 # -g -G
 endif
 
 # -g -G for instrumntation for debugger, these might cause curand to not generate random numbers properly...
 # -DNDEBUG will remove assertions
 
-LIBS = -lpthread -lcurand -L /usr/local/cuda-10.2/lib64
+LIBS = -lpthread -lcurand -L/usr/local/cuda-10.2/lib64 -lCoinUtils -lClp  -lClpSolver -lrehearse -lOsiClp
 
 EXE=main
 EXEFILE = main
@@ -74,24 +74,24 @@ $(EXE_DIR)/$(EXE): $(BUILD_DIR)/$(EXEFILE).o $(BUILD_DIR)/$(EXEFILE).d $(addpref
 ${BUILD_DIR}/%.d: %.cu main.cu
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(addprefix $(BUILD_DIR)/, $(shell find $(SOURCEDIR) -type d)) 
-	$(CXX) -MT $(@:.d=.o) -M $(CXXFLAGS) $(LIBS) $^ > $@
+	$(CXX) -MT $(@:.d=.o) -M $(CXXFLAGS) $(LIBS) $^ > $@ 
 
 ${BUILD_DIR}/%.d: %.cpp
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(addprefix $(BUILD_DIR)/, $(shell find $(SOURCEDIR) -type d)) 
-	$(CXX) -MT $(@:.d=.o) -M $(CXXFLAGS) $^ > $@
+	$(CXX) -MT $(@:.d=.o) -M $(CXXFLAGS) $(LIBS) $^ > $@  
 
 ${BUILD_DIR}/%.o: %.cu
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(BUILD_DIR)/$(SOURCEDIR)
-	${CXX} $(CXXFLAGS) -c $^ -o $@
+	${CXX} $(CXXFLAGS) -c  $(LIBS) $^ -o $@ 
 
 ${BUILD_DIR}/%.o: %.cpp
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(BUILD_DIR)/$(TESTDIR)
 	mkdir -p $(BUILD_DIR)/$(SOURCEDIR)
 	mkdir -p $(BUILD_DIR)/$(BENCHMARKDIR)	
-	${CXX} $(CXXFLAGS) -c $^ -o $@	
+	${CXX} $(CXXFLAGS) -c $(LIBS)  $^ -o $@
 
 
 
@@ -113,3 +113,10 @@ clean:
 	-rm *.dat
 	-rm *.txt
 
+
+
+# to install coin-or and rehearce
+# https://github.com/coin-or/Rehearse/blob/master/INSTALL
+# global install: https://github.com/coin-or/Rehearse/issues/7
+# 
+# cannot find shared lib => sudo ldconfig
