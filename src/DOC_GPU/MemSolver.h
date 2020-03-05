@@ -29,7 +29,7 @@ class MemSolver{
  public:
 	static Memory_sizes computeForAllocations(unsigned int dim, unsigned int number_of_points, unsigned int number_of_centroids, unsigned int m, unsigned int sample_size, unsigned int k,  size_t freeMem);
 	
-	static Array_sizes computeForArrays(Memory_sizes allocations, unsigned int dim, unsigned int number_of_points, unsigned int number_of_centroids, unsigned int m, unsigned int sample_size, size_t freeMem);
+	static Array_sizes computeForArrays(Memory_sizes allocations, unsigned int dim, unsigned int number_of_points, unsigned int number_of_centroids, unsigned int m, unsigned int sample_size);
 };
 
 #endif

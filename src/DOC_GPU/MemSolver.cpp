@@ -118,6 +118,57 @@ Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int num
 	result.size_of_randomStates =          model.getSolutionValue(size_of_randomStates_max);
 	result.size_of_bestDims =              model.getSolutionValue(size_of_bestDims_max);
 
-	return result;
+	return result;	
+}
+
+
+Array_sizes MemSolver::computeForArrays(Memory_sizes allocations, unsigned int dim, unsigned int number_of_points, unsigned int number_of_centroids_max, unsigned int m, unsigned int sample_size){
 	
-} 
+	OsiClpSolverInterface solver;
+	rehearse::CelModel model(solver);
+	
+	rehearse::CelNumVar number_of_centroids;
+
+
+	model.setObjective ( number_of_centroids );
+	solver.setObjSense(-1.0); // maximize
+	
+	
+	//model.addConstraint(number_of_points * dim * sizeof(float) <= allocations.size_of_data);
+
+	model.addConstraint(number_of_centroids * m * sample_size * sizeof(float) <= allocations.size_of_samples);
+
+	model.addConstraint((number_of_centroids+1)*sizeof(unsigned int) <= allocations.size_of_centroids); // +1 for ceilf
+
+	model.addConstraint(number_of_centroids * m * dim * sizeof(bool) <= allocations.size_of_findDim);
+
+	model.addConstraint(number_of_centroids * m * dim * sizeof(bool) <= allocations.size_of_findDim_count);
+		
+	model.addConstraint((number_of_centroids * m * number_of_points +1) * sizeof(bool) <= allocations.size_of_pointsContained);
+
+	model.addConstraint(number_of_centroids * m * sizeof(unsigned int) <= allocations.size_of_pointsContained_count);
+
+	model.addConstraint(number_of_centroids * m * sizeof(float) <= allocations.size_of_score);
+				
+	model.addConstraint(number_of_centroids * m * sizeof(unsigned int) <= allocations.size_of_index);
+	
+	//model.addConstraint((number_of_points+1)*sizeof(bool) <= allocations.size_of_bestDims);
+	
+	model.addConstraint(number_of_centroids <= number_of_centroids_max);
+
+	model.builderToSolver();
+	solver.setLogLevel(0); // don't print stuff
+	solver.initialSolve(); // solve
+
+
+	Array_sizes res;
+	res.number_of_centroids_f = model.getSolutionValue(number_of_centroids);
+	res.number_of_centroids = ceilf(res.number_of_centroids_f);
+	res.number_of_samples = res.number_of_centroids*m;
+	res.number_of_values_in_samples = res.number_of_samples*sample_size;
+	res.number_of_values_in_pointsContained = (size_t)res.number_of_samples*(size_t)number_of_points;
+	
+	
+	return res;
+   
+};
