@@ -12,7 +12,7 @@ endif
 # -g -G for instrumntation for debugger, these might cause curand to not generate random numbers properly...
 # -DNDEBUG will remove assertions
 
-LIBS = -lpthread -lcurand -L/usr/local/cuda-10.2/lib64 -lCoinUtils -lClp  -lClpSolver -lrehearse -lOsiClp
+LIBS = -lpthread -lcurand -L/usr/local/cuda-10.2/lib64 -lCoinUtils -lClp  -lClpSolver -lrehearse -lOsiClp -lCbc -lOsiCbc
 
 EXE=main
 EXEFILE = main

@@ -179,9 +179,9 @@ __global__ void randIntArray(unsigned int *result , curandState_t* states , cons
 			if(i*number_of_states+idx < size){
 				float myrandf = curand_uniform(&states[idx]);
 				myrandf *= (max - min + 0.9999);
-				myrandf += min;
 				unsigned int res = (unsigned int)truncf(myrandf);
 				res %= max;
+				res += min;
 				assert(res >= min);
 				assert(res <= max);
 				result[i*number_of_states+idx] = res;
