@@ -64,7 +64,7 @@ Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int num
 
 		model.addConstraint(number_of_centroids[i] * m * dim * sizeof(bool) <= size_of_findDim_max);
 
-		model.addConstraint(number_of_centroids[i] * m * dim * sizeof(bool) <= size_of_findDim_count_max);
+		model.addConstraint(number_of_centroids[i] * m * dim * sizeof(unsigned int) <= size_of_findDim_count_max);
 		
 		model.addConstraint((number_of_centroids[i] * m * data_points.at(i) +1) * sizeof(bool) <= size_of_pointsContained_max);
 
@@ -94,7 +94,7 @@ Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int num
 						size_of_index_max +
 						size_of_randomStates_max +
 						size_of_bestDims_max
-						<= freeMem
+						<= (freeMem-11) // -1 because of the ceil below
 						);
 
 	
@@ -106,17 +106,17 @@ Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int num
 	// create the output
 	Memory_sizes result;
 
-	result.size_of_data =                  model.getSolutionValue(size_of_data_max);
-	result.size_of_samples =               model.getSolutionValue(size_of_samples_max);
-	result.size_of_centroids =             model.getSolutionValue(size_of_centroids_max);
-	result.size_of_findDim =               model.getSolutionValue(size_of_findDim_max);
-	result.size_of_findDim_count =         model.getSolutionValue(size_of_findDim_count_max);
-	result.size_of_pointsContained =       model.getSolutionValue(size_of_pointsContained_max);
-	result.size_of_pointsContained_count = model.getSolutionValue(size_of_pointsContained_count_max);
-	result.size_of_score =                 model.getSolutionValue(size_of_score_max);
-	result.size_of_index =                 model.getSolutionValue(size_of_index_max);
-	result.size_of_randomStates =          model.getSolutionValue(size_of_randomStates_max);
-	result.size_of_bestDims =              model.getSolutionValue(size_of_bestDims_max);
+	result.size_of_data =                  ceilf(model.getSolutionValue(size_of_data_max));
+	result.size_of_samples =               (model.getSolutionValue(size_of_samples_max));
+	result.size_of_centroids =             (model.getSolutionValue(size_of_centroids_max));
+	result.size_of_findDim =               (model.getSolutionValue(size_of_findDim_max));
+	result.size_of_findDim_count =         (model.getSolutionValue(size_of_findDim_count_max));
+	result.size_of_pointsContained =       (model.getSolutionValue(size_of_pointsContained_max));
+	result.size_of_pointsContained_count = (model.getSolutionValue(size_of_pointsContained_count_max));
+	result.size_of_score =                 (model.getSolutionValue(size_of_score_max));
+	result.size_of_index =                 (model.getSolutionValue(size_of_index_max));
+	result.size_of_randomStates =          (model.getSolutionValue(size_of_randomStates_max));
+	result.size_of_bestDims =              (model.getSolutionValue(size_of_bestDims_max));
 
 	return result;	
 }
@@ -164,10 +164,11 @@ Array_sizes MemSolver::computeForArrays(Memory_sizes allocations, unsigned int d
 	Array_sizes res;
 	res.number_of_centroids_f = model.getSolutionValue(number_of_centroids);
 	res.number_of_centroids = ceilf(res.number_of_centroids_f);
-	res.number_of_samples = res.number_of_centroids*m;
-	res.number_of_values_in_samples = res.number_of_samples*sample_size;
-	res.number_of_values_in_pointsContained = (size_t)res.number_of_samples*(size_t)number_of_points;
-	
+	res.number_of_samples = res.number_of_centroids_f*m;
+	res.number_of_values_in_samples = res.number_of_centroids_f*m*sample_size;
+	res.number_of_values_in_pointsContained = (size_t)(res.number_of_centroids_f*m)*(size_t)number_of_points;
+
+	//number_of_centroids * m * dim * sizeof(bool) <= allocations.size_of_findDim_count
 	
 	return res;
    

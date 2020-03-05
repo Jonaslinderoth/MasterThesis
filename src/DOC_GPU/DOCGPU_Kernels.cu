@@ -13,7 +13,7 @@ __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, fl
 	unsigned int pNo = entry/m;
 	if(entry < no_of_samples){
 		if(!(pNo < no_of_ps)){
-			printf("%u ", no_of_ps);
+			//printf("%u, %u", pNo, no_of_ps);
 		}
 		assert(pNo < no_of_ps);
 		unsigned int Dsum = 0;
@@ -58,7 +58,10 @@ __global__ void pointsContainedDevice(float* data, unsigned int* centroids, bool
 			for(unsigned int i = 0; i < point_dim; i++){
 				//(not (dims[entry*point_dim+i])) ||
 				unsigned int centroid_index = centroids[currentCentroid];
-				d &= (not (dims[entry*point_dim+i])) || (abs(data[centroid_index*point_dim+i] - data[j*point_dim+i]) < width);
+				float temp1 = data[centroid_index*point_dim+i];
+				float temp2 = data[j*point_dim+i];
+				bool temp3 = dims[entry*point_dim+i];
+				d &= (not (temp3)) || (abs(temp1 - temp2) < width);
 			}
 
 			if(!((size_t)entry*(size_t)no_data+(size_t)j < 2026532205)){

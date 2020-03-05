@@ -15,10 +15,10 @@ int main ()
 {
 	DataGeneratorBuilder dgb;
 	dgb.setSeed(1);
-	for(int i = 0; i < 5; i++){
+	for(int i = 0; i < 4; i++){
 		Cluster small;
-		small.setAmmount(100);
-		for(int j = 0; j < 5; j++){
+		small.setAmmount(25000);
+		for(int j = 0; j < 200; j++){
 			if((i) == j%5){
 				small.addDimension(uniformDistribution, {10000,10002});
 			}else{
@@ -32,34 +32,7 @@ int main ()
 	dgb.setFileName("test/testData/benchmark1");
 	dgb.build(true);
 
-	
-	DataReader* dr2 = new DataReader("test/testData/benchmark1");
-	int c = 0;
-	while(dr2->isThereANextPoint()){
-		auto a = dr2->nextPoint();
-		if((a->at(0) >= 1000 && a->at(0) <= 10002) || (a->at(1) >= 1000 && a->at(1) <= 10002) || (a->at(2) >= 1000 && a->at(2) <= 10002) || (a->at(3) >= 1000 && a->at(3) <= 10002)){
-			//std::cout << "inside" << std::endl;
-		}else{
-			for(int j = 0; j < a->size(); j++){
-				std::cout << a->at(j) << ", " ;
-				//if(j >= 2){break;}
-			}
-			std::cout << std::endl;			
-		}
-
-		/*c++;
-		if(c == 1){
-			for(int j = 0; j < a->size(); j++){
-				std::cout << a->at(j) << ", " ;
-				if(j >= 2){break;}
-			}
-			std::cout << std::endl;				
-		}
-		*/
-
-
-	}
-
+   
 
 	DataReader* dr = new DataReader("test/testData/benchmark1");	
 	DOCGPU d = DOCGPU(dr);
