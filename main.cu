@@ -17,8 +17,8 @@ int main ()
 	dgb.setSeed(1);
 	for(int i = 0; i < 4; i++){
 		Cluster small;
-		small.setAmmount(25000);
-		for(int j = 0; j < 200; j++){
+		small.setAmmount(5500);
+		for(int j = 0; j < 15; j++){
 			if((i) == j%5){
 				small.addDimension(uniformDistribution, {10000,10002});
 			}else{
@@ -28,6 +28,7 @@ int main ()
 		std::cout << small.getOutLierPercentage() << std::endl;
 		dgb.addCluster(small);		
 	}
+	
 
 	dgb.setFileName("test/testData/benchmark1");
 	dgb.build(true);

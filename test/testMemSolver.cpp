@@ -49,13 +49,13 @@ TEST(testMemSolver, testSetup2){
 	sum += res.size_of_bestDims;
 	EXPECT_LE(sum, 2000000000);
 
-	auto res2 = MemSolver::computeForArrays(res, 5, 100000, 19, 11090, 5);
-	EXPECT_FLOAT_EQ(res2.number_of_centroids_f, 1.79311);
-	EXPECT_EQ(res2.number_of_centroids, 2);
+
+	auto res3 = MemSolver::computeCentroidSizeForAllocation(res, 5, 100000, 19, 11090, 5);
+	EXPECT_FLOAT_EQ(res3, 1.7902596);
 
 
-	res2 = MemSolver::computeForArrays(res, 5, 1000, 19, 11090, 5);
-	EXPECT_EQ(res2.number_of_centroids_f, 19);
-	EXPECT_EQ(res2.number_of_centroids, 19);	
+	auto res2 = MemSolver::computeCentroidSizeForAllocation(res, 5, 1000, 19, 11090, 5);
+	EXPECT_FLOAT_EQ(res2, 19);
+		
 }
 

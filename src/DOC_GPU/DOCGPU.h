@@ -49,38 +49,6 @@ public:
 	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 	float* transformData();
 
-	bool isAllocated = false;
-	size_t allocated_size_of_data;
-	size_t allocated_size_of_samples;
-	size_t allocated_size_of_centroids;
-	size_t allocated_size_of_findDim;
-	size_t allocated_size_of_findDim_count;
-	size_t allocated_size_of_pointsContained;
-	size_t allocated_size_of_pointsContained_count;
-	size_t allocated_size_of_score;
-	size_t allocated_size_of_index;
-	size_t allocated_size_of_randomStates;
-	size_t allocated_size_of_bestDims;
-
-	size_t getAllocated(size_t value){
-		if(!isAllocated){
-			return SIZE_MAX;
-		}else{
-			return value;
-		}
-	}
-	
-	size_t get_size_of_data(){ return getAllocated(this->allocated_size_of_data);}
-	size_t get_size_of_samples(){ return getAllocated(this->allocated_size_of_samples);}
-	size_t get_size_of_centroids(){ return getAllocated(this->allocated_size_of_centroids);}
-	size_t get_size_of_findDim(){ return getAllocated(this->allocated_size_of_findDim);}
-	size_t get_size_of_pointsContained(){ return getAllocated(this->allocated_size_of_pointsContained);}
-	size_t get_size_of_pointsContained_count(){ return getAllocated(this->allocated_size_of_pointsContained_count);}
-	size_t get_size_of_score(){ return getAllocated(this->allocated_size_of_score);}
-	size_t get_size_of_index(){ return getAllocated(this->allocated_size_of_index);}
-	size_t get_size_of_randomStates(){ return getAllocated(this->allocated_size_of_randomStates);}
-	size_t get_size_of_bestDims(){ return getAllocated(this->allocated_size_of_bestDims);}
-	size_t get_size_of_findDim_count(){ return getAllocated(this->allocated_size_of_findDim_count);}
 
 
 

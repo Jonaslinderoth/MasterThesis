@@ -104,7 +104,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 
 	
 	Memory_sizes sizes = MemSolver::computeForAllocations(dim, number_of_points, number_of_centroids, m, sample_size, k, memoryCap);
-	Array_sizes arr_sizes = MemSolver::computeForArrays(sizes, dim, number_of_points, number_of_centroids, m, sample_size);
+	Array_sizes arr_sizes = MemSolver::computeArraySizes(sizes.first_number_of_centroids, number_of_points, m, sample_size);
 
 	
 	// calculating the sizes for findDim 
@@ -210,33 +210,44 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	//allocating memory for index
 	unsigned int* index_d;
 	checkCudaErrors(cudaMalloc((void **) &index_d, sizes.size_of_index));
-	this->isAllocated = true;
-	float number_of_centroids_sample;
+
+	double number_of_centroids_sample;
+	double number_of_centroids_max;
 	
 	for(int i = 0; i < k; i++){ // for each of the clusters
-		arr_sizes = MemSolver::computeForArrays(sizes, dim, number_of_points, number_of_centroids, m, sample_size);
-		float maxScore = 0;
+		number_of_centroids_max = MemSolver::computeCentroidSizeForAllocation(sizes, dim, number_of_points,
+																   number_of_centroids, m, sample_size);
 		std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> res;
+		float maxScore = 0;
 		float centroids_used = 0; 
-
-		
-		
-
 		int j = 0; 
+		
+
 		while(centroids_used < number_of_centroids){
 			// fixes the last offset
-			if(centroids_used-ceilf(centroids_used)!=0 && ceilf(centroids_used)-centroids_used < arr_sizes.number_of_centroids_f){
+			if(centroids_used-ceilf(centroids_used)!=0 &&
+			   ceilf(centroids_used)-centroids_used < number_of_centroids_max){
+			   
 				std::cout << "case 1: ";
 				number_of_centroids_sample = ceilf(centroids_used)-centroids_used;
-			}else if((centroids_used+arr_sizes.number_of_centroids_f) > number_of_centroids){
+			}else if((centroids_used+number_of_centroids_max) > number_of_centroids){
 				std::cout << "case 2: ";
 				number_of_centroids_sample = number_of_centroids-centroids_used;
 			}else{
-				std::cout << "case 3: ";
-				number_of_centroids_sample = arr_sizes.number_of_centroids_f;
+				if(number_of_centroids_max < 2){
+					std::cout << "case 3a: ";
+					number_of_centroids_sample = number_of_centroids_max;					
+				}else{
+					std::cout << "case 3b: ";
+					number_of_centroids_sample = floorf(number_of_centroids_max);
+				}
+
 			}
 			std::cout << j << " centroid_size: " << number_of_centroids_sample << std::endl;
 			centroids_used += number_of_centroids_sample;
+
+			arr_sizes = MemSolver::computeArraySizes(number_of_centroids_sample, number_of_points, m, sample_size);
+			
 
 
 			if(dimBlock > maxBlock) dimBlock = maxBlock;
