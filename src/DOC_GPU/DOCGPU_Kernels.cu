@@ -186,6 +186,9 @@ __global__ void randIntArray(unsigned int *result , curandState_t* states , cons
 				res %= max;
 				res += min;
 				assert(res >= min);
+				if(res > max){
+					printf("%u, %u \n", res, max);
+				}
 				assert(res <= max);
 				result[i*number_of_states+idx] = res;
 			}
