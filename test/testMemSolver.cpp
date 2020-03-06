@@ -51,7 +51,7 @@ TEST(testMemSolver, testSetup2){
 
 
 	auto res3 = MemSolver::computeCentroidSizeForAllocation(res, 5, 100000, 19, 11090, 5);
-	EXPECT_FLOAT_EQ(res3, 1.6081135);
+	EXPECT_FLOAT_EQ(res3, 1.6982849);
 
 
 	auto res2 = MemSolver::computeCentroidSizeForAllocation(res, 5, 1000, 19, 11090, 5);
