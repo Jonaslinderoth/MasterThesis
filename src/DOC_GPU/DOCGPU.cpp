@@ -10,6 +10,7 @@
 #include <assert.h>
 #include "../randomCudaScripts/DeleteFromArray.h"
 #include "../randomCudaScripts/arrayEqual.h"
+#include <algorithm>
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -192,32 +193,47 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	//std::cout << "dimGrid: " << dimGrid << std::endl << "dimBlock: " << dimBlock << std::endl << "width " << width << std::endl << "point_dim: " << point_dim << std::endl << "number_of_points: " << number_of_points << std::endl << "number_of_samples: " << number_of_samples << std::endl << "m: " << m << std::endl << "number_of_ps " << number_of_ps << std::endl;
 
 	//for testing setting the output vector:
-	bool* aaa_h = (bool*)malloc(size_of_pointsContained*sizeof(bool));
-	for(unsigned long i = 0 ; i < size_of_pointsContained ; i++){
+	bool* aaa_h = (bool*)malloc(size_of_pointsContained);
+	for(unsigned long i = 0 ; i < number_of_points_contained ; i++){
 		aaa_h[i] = 0;
 	}
-	gpuErrchk(cudaMemcpy(pointsContained_output_d, aaa_h, size_of_pointsContained*sizeof(bool), cudaMemcpyHostToDevice));
-
-	pointsContainedKernelSMNB(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
-						  pointsContained_output_d, pointsContained_count_d,
-						  width, point_dim, number_of_points, number_of_samples, m,number_of_ps);
-
+	gpuErrchk(cudaMemcpy(pointsContained_output_d, aaa_h, size_of_pointsContained, cudaMemcpyHostToDevice));
 	/*
-	pointsContainedKernel(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
-							  pointsContained_output_d, pointsContained_count_d,
-							  width, point_dim, number_of_points, number_of_samples, m);
+	pointsContainedKernelNaive(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
+						  pointsContained_output_d, pointsContained_count_d,
+						  width, point_dim, number_of_points, number_of_samples, m);
 	*/
+
+	pointsContainedKernelSharedMemoryFewBank(dimGrid, dimBlock,data_d,
+							  ps_d, findDim_output_d,
+							  pointsContained_output_d,
+							  pointsContained_count_d,
+							  width,
+							  point_dim,
+							  number_of_points,
+							  number_of_samples,
+							  m,
+							  number_of_ps);
+
 	//testing if the are equal:
 	if(false){
+
+		unsigned int* bbb_h = (unsigned int*)malloc(size_of_pointsContained_count);
+
+		for(unsigned int i = 0 ; i < number_of_samples ; i++){
+			bbb_h[i] = 0;
+		}
+
 		bool* pointsContained_output2_d;
 		unsigned int* pointsContained_count2_d;
 
 		gpuErrchk(cudaMalloc((void **) &pointsContained_output2_d, size_of_pointsContained));
 		gpuErrchk(cudaMalloc((void **) &pointsContained_count2_d, size_of_pointsContained_count));
 
-		gpuErrchk(cudaMemcpy(pointsContained_output2_d, aaa_h, size_of_pointsContained*sizeof(bool), cudaMemcpyHostToDevice));
+		gpuErrchk(cudaMemcpy(pointsContained_output2_d, aaa_h, size_of_pointsContained, cudaMemcpyHostToDevice));
 
-		pointsContainedKernel(dimGrid,
+		gpuErrchk(cudaMemcpy(pointsContained_count2_d, bbb_h, size_of_pointsContained_count, cudaMemcpyHostToDevice));
+		pointsContainedKernelSharedMemoryFewBank(dimGrid,
 				dimBlock,
 				data_d,
 				ps_d,
@@ -228,23 +244,33 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 				point_dim,
 				number_of_points,
 				number_of_samples,
-				m);
-		//areTheyEqual(pointsContained_output_d, pointsContained_output2_d ,size_of_pointsContained);
-		/*
+				m,
+				number_of_ps);
+		areTheyEqual_d(pointsContained_output_d, pointsContained_output2_d ,number_of_points_contained);
+		areTheyEqual_d(pointsContained_count_d, pointsContained_count2_d ,number_of_samples);
+
+		//printArray(pointsContained_count_d ,number_of_samples,30 );
+		//printArray(pointsContained_count2_d ,number_of_samples,30 );
+
 		//std::cout << "count" << std::endl;
 		//areTheyEqual(pointsContained_count2_d , pointsContained_count_d,size_of_pointsContained);
 
+		/*
 		bool* pointsContained_output3_d;
 		unsigned int* pointsContained_count3_d;
 
 		gpuErrchk(cudaMalloc((void **) &pointsContained_output3_d, size_of_pointsContained));
 		gpuErrchk(cudaMalloc((void **) &pointsContained_count3_d, size_of_pointsContained_count));
-		for(unsigned long i = 0 ; i < size_of_pointsContained ; i++){
+		for(unsigned int i = 0 ; i < number_of_points_contained ; i++){
 			aaa_h[i] = 1;
 		}
-		gpuErrchk(cudaMemcpy(pointsContained_output3_d, aaa_h, size_of_pointsContained*sizeof(bool), cudaMemcpyHostToDevice));
+		for(unsigned int i = 0 ; i < number_of_samples ; i++){
+			bbb_h[i] = 1;
+		}
+		gpuErrchk(cudaMemcpy(pointsContained_output3_d, aaa_h, size_of_pointsContained, cudaMemcpyHostToDevice));
+		gpuErrchk(cudaMemcpy(pointsContained_count3_d, bbb_h, size_of_pointsContained_count, cudaMemcpyHostToDevice));
 
-		pointsContainedKernelSMNB(dimGrid,
+		pointsContainedKernelSharedMemoryFewBank(dimGrid,
 				dimBlock,
 				data_d,
 				ps_d,
@@ -258,7 +284,10 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 				m,
 				number_of_ps);
 
-		//areTheyEqual(pointsContained_output2_d , pointsContained_output3_d,size_of_pointsContained);
+		areTheyEqual(pointsContained_count2_d , pointsContained_count3_d,number_of_samples);
+
+		printArray(pointsContained_count2_d,number_of_samples,30);
+		printArray(pointsContained_count3_d,number_of_samples,30);
 		*/
 	}
 
@@ -469,7 +498,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 							  m, width);
 
 		// Find points contained
-		pointsContainedKernel(dimGrid, dimBlock, data_d, centroids_d, findDim_d,
+		pointsContainedKernelNaive(dimGrid, dimBlock, data_d, centroids_d, findDim_d,
 							  pointsContained_d, pointsContained_count_d,
 							  width, dim, number_of_points, number_of_samples, m);
 

@@ -13,13 +13,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
 
 
 std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
-	pointsContained(std::vector<std::vector<bool>*>* dims,
-					std::vector<std::vector<float>*>* data,
-					std::vector<unsigned int>* centroids,
-					int m,  float width = 10.0);
-
-std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
-	pointsContainedSMNB(std::vector<std::vector<bool>*>* dims,
+	pointsContainedSharedMemoryFewBank(std::vector<std::vector<bool>*>* dims,
 					    std::vector<std::vector<float>*>* data,
 					    std::vector<unsigned int>* centroids,
 					    int m,  float width = 10.0);
@@ -47,15 +41,24 @@ void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned
 /*
  * this does not have data in shared memory
  */
-void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
-						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
-									  float width, unsigned int point_dim, unsigned int no_data, unsigned int no_dims, unsigned int m);
+void pointsContainedKernelNaive(unsigned int dimGrid,
+								unsigned int dimBlock,
+								float* data,
+								unsigned int* centroids,
+								bool* dims,
+								bool* output,
+								unsigned int* Csum_out,
+								float width,
+								unsigned int point_dim,
+								unsigned int no_data,
+								unsigned int no_dims,
+								unsigned int m);
 
 /*
  * this fuction has the data and the centroids in Shared Memory
  * the centroid and at least one data points need to be able to fit into shared memory to being able to work
  */
-void pointsContainedKernelSM(unsigned int dimGrid,
+void pointsContainedKernelSharedMemory(unsigned int dimGrid,
 		unsigned int dimBlock,
 		float* data,
 		unsigned int* centroids,
@@ -72,7 +75,21 @@ void pointsContainedKernelSM(unsigned int dimGrid,
  * This fuction has the data and the centroids in Shared Memory and no bank conflicts
  * the centroid and at least dimBlock/32 data points need to be able to fit into shared memory to being able to work
  */
-void pointsContainedKernelSMNB(unsigned int dimGrid,
+void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid,
+		unsigned int dimBlock,
+		float* data,
+		unsigned int* centroids,
+		bool* dims,
+		bool* output,
+		unsigned int* Csum_out,
+		float width,
+		unsigned int point_dim,
+		unsigned int no_data,
+		unsigned int no_dims,
+		unsigned int m,
+		unsigned int numberOfCentroids);
+
+void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid,
 		unsigned int dimBlock,
 		float* data,
 		unsigned int* centroids,

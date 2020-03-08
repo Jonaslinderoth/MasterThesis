@@ -38,7 +38,7 @@ public:
 	}
 
 
-	const bool getDimmension(int i) const {
+	const bool getDimmension(int i) {
 		return this->dimmensions->at(i);
 	}
 
