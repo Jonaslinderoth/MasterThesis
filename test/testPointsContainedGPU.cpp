@@ -552,14 +552,14 @@ TEST_F(testPointsContainedGPU, _SLOW_testIfDifferentPointContainedDeviceKernel){
 	auto c0 = pointsContained(dims, data, centroids,m,10,0);
 	auto c1 = pointsContained(dims, data, centroids,m,10,1);
 	auto c2 = pointsContained(dims, data, centroids,m,10,2);
-	auto c3 = pointsContained(dims, data, centroids,m,10,3);
+	//auto c3 = pointsContained(dims, data, centroids,m,10,3);
 
 
 
 
-	EXPECT_TRUE(areTheyEqual_h(c1,c0));
-	EXPECT_TRUE(areTheyEqual_h(c2,c0));
-	EXPECT_TRUE(areTheyEqual_h(c3,c0));
+	EXPECT_TRUE(areTheyEqual_h(c1,c0)) << "c1 , c0 ";
+	EXPECT_TRUE(areTheyEqual_h(c2,c0)) << "c2 , c0 ";
+	//EXPECT_TRUE(areTheyEqual_h(c3,c0)) << "c3 , c0 ";
 
 	auto c = c1.first;
 
@@ -578,5 +578,76 @@ TEST_F(testPointsContainedGPU, _SLOW_testIfDifferentPointContainedDeviceKernel){
 			EXPECT_EQ(d,c->at(i)->at(j)) << "i: " << i << " j: " <<j << " : " << data->at(j);
 		}
 	}
+}
+
+
+TEST_F(testPointsContainedGPU, _SLOW_testIfDifferentPointContainedDeviceKernelMany){
+
+
+	std::mt19937 gen{0};
+	static std::random_device rand;
+	std::uniform_int_distribution<int> distSmall(1, 20);
+	std::uniform_int_distribution<int> distBig(1, 4000);
+	unsigned long small = distSmall(rand);
+	unsigned long big = distBig(rand);
+
+
+	for(unsigned long point_dim = 10 ; point_dim < 370-small ; point_dim += small){
+		for(unsigned long no_dims = 100 ; no_dims < 10000-big; no_dims += big){
+			for(unsigned long no_data = 100 ; no_data < 10000-big ; no_data += big){
+
+
+				unsigned int no_centroids = 20;
+				unsigned int m = no_dims/no_centroids;
+				std::default_random_engine generator;
+				generator.seed(100);
+
+				std::uniform_real_distribution<double> distribution(15,20);
+				std::uniform_real_distribution<double> distribution2(9,26);
+
+
+				auto data = new std::vector<std::vector<float>*>;
+				auto centroids = new std::vector<unsigned int>;
+				auto dims = new std::vector<std::vector<bool>*>;
+
+				for(int i = 0; i < no_data; i++){
+					auto point = new std::vector<float>;
+					for(int j = 0; j < point_dim; j++){
+						point->push_back(distribution2(generator));
+					}
+					data->push_back(point);
+					centroids->push_back(i);
+				}
+				for(int i = data->size()-1; i < no_data; i++){
+					auto point = new std::vector<float>;
+					for(int j = 0; j < point_dim; j++){
+						point->push_back(distribution(generator));
+					}
+					data->push_back(point);
+				}
+				for(int i = 0; i < no_dims; i++){
+					auto dim = new std::vector<bool>;
+					for(int j = 0; j < point_dim; j++){
+						dim->push_back(distribution2(generator)< 13);
+					}
+					dims->push_back(dim);
+				}
+				auto c0 = pointsContained(dims, data, centroids,m,10,0);
+				auto c1 = pointsContained(dims, data, centroids,m,10,1);
+				auto c2 = pointsContained(dims, data, centroids,m,10,2);
+				//auto c3 = pointsContained(dims, data, centroids,m,10,3);
+
+
+
+
+				EXPECT_TRUE(areTheyEqual_h(c1,c0)) << " point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
+				EXPECT_TRUE(areTheyEqual_h(c2,c0)) << " point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
+				//EXPECT_TRUE(areTheyEqual_h(c3,c0)) << " point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
+
+
+			}
+		}
+	}
+
 }
 
