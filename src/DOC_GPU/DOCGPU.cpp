@@ -5,6 +5,7 @@
  *      Author: mikkel
  */
 
+
 #include "DOCGPU.h"
 #include "DOCGPU_Kernels.h"
 #include <assert.h>
@@ -183,7 +184,7 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	
 	findDimmensionsKernel(dimGrid, dimBlock, xs_d, ps_d, data_d,  findDim_output_d,
 						   findDim_count_d, point_dim, number_of_samples, sample_size, number_of_ps,
-						  m, width);
+						  m, width, number_of_points);
 	gpuErrchk(cudaFree(xs_d));
 
 

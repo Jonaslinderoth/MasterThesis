@@ -336,6 +336,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 
 	if(version == 0){
 		// Call kernel
+
 		pointsContainedKernelNaive(ceil((no_of_dims)/256.0),
 				  256,
 				  data_d,

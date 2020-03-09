@@ -622,20 +622,20 @@ void notDevice(unsigned int dimGrid, unsigned int dimBlock,bool* array, unsigned
 
 void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d,
 						   unsigned int* Dsum_out, unsigned int point_dim, unsigned int no_of_samples, unsigned int sample_size, unsigned int no_of_ps,
-						   unsigned int m, float width){
+						   unsigned int m, float width, unsigned int number_of_points){
 
     findDimmensionsDevice<<<dimGrid, dimBlock>>>(Xs_d, ps_d, data, res_d, Dsum_out,
 												 point_dim, no_of_samples, sample_size,
-												 no_of_ps, m, width);
+												 no_of_ps, m, width, number_of_points);
 	
 };
 
-void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
+void pointsContainedKernelNaive(unsigned int dimGrid, unsigned int dimBlock,
 						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
 						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
 						   unsigned int m){
 
-	pointsContainedDevice<<<dimGrid, dimBlock>>>(data, centroids, dims,
+	pointsContainedDeviceNaive<<<dimGrid, dimBlock>>>(data, centroids, dims,
 												 output, Csum_out,
 												 width, point_dim, no_data, number_of_samples, m);
 	
@@ -855,7 +855,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 
 
 	// Call kernel
-	pointsContainedDevice<<<ceil((no_of_dims)/256.0), 256>>>(data_d, centroids_d, dims_d, output_d, output_count_d, 
+	pointsContainedDeviceNaive<<<ceil((no_of_dims)/256.0), 256>>>(data_d, centroids_d, dims_d, output_d, output_count_d,
 															 width, point_dim, no_of_points, no_of_dims, m);
 
 	
