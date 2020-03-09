@@ -142,7 +142,7 @@ bool areTheyEqual_h(std::pair<std::vector<std::vector<bool>*>*,std::vector<unsig
 			}
 		}
 	}
-	if(print or true){
+	if(print){
 		std::cout << "count " << count << " countEqual " << countEqual << std::endl;
 	}
 	count = 0;
@@ -179,7 +179,7 @@ bool areTheyEqual_h(std::pair<std::vector<std::vector<bool>*>*,std::vector<unsig
 		}
     }
 
-    if(print or true){
+    if(print){
 		std::cout << "count " << count << " countEqual " << countEqual << std::endl;
 	}
 	return ret;
