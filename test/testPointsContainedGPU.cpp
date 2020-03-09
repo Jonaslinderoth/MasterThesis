@@ -581,24 +581,26 @@ TEST_F(testPointsContainedGPU, _SLOW_testIfDifferentPointContainedDeviceKernel){
 }
 
 
-TEST_F(testPointsContainedGPU, _SLOW_testIfDifferentPointContainedDeviceKernelMany){
+TEST_F(testPointsContainedGPU, _SUPER_SLOW_testIfDifferentPointContainedDeviceKernelMany){
 
 
 	std::mt19937 gen{0};
+	gen.seed(1);
 	static std::random_device rand;
-	std::uniform_int_distribution<int> distSmall(1, 20);
-	std::uniform_int_distribution<int> distBig(1, 4000);
+	std::uniform_int_distribution<int> distSmall(6, 20);
+	std::uniform_int_distribution<int> distBig(400, 4000);
 	unsigned long small = distSmall(rand);
 	unsigned long big = distBig(rand);
 
 
-	for(unsigned long point_dim = 10 ; point_dim < 370-small ; point_dim += small){
-		for(unsigned long no_dims = 100 ; no_dims < 10000-big; no_dims += big){
-			for(unsigned long no_data = 100 ; no_data < 10000-big ; no_data += big){
+	for(unsigned long point_dim = 10 ; point_dim < 400-small ; point_dim += small){
+	    for(unsigned long no_data = 100 ; no_data < 10000-big ; no_data += big){
+		    for(unsigned long no_dims = 100 ; no_dims < 10000-big; no_dims += big){
+
 
 
 				unsigned int no_centroids = 20;
-				unsigned int m = no_dims/no_centroids;
+				unsigned int m = ceilf((float)no_dims/(float)no_centroids);
 				std::default_random_engine generator;
 				generator.seed(100);
 
@@ -610,21 +612,28 @@ TEST_F(testPointsContainedGPU, _SLOW_testIfDifferentPointContainedDeviceKernelMa
 				auto centroids = new std::vector<unsigned int>;
 				auto dims = new std::vector<std::vector<bool>*>;
 
-				for(int i = 0; i < no_data; i++){
+				for(int i = 0; i < no_data/2; i++){
 					auto point = new std::vector<float>;
 					for(int j = 0; j < point_dim; j++){
 						point->push_back(distribution2(generator));
 					}
 					data->push_back(point);
-					centroids->push_back(i);
 				}
-				for(int i = data->size()-1; i < no_data; i++){
-					auto point = new std::vector<float>;
-					for(int j = 0; j < point_dim; j++){
-						point->push_back(distribution(generator));
-					}
-					data->push_back(point);
+
+                for(int i = data->size()-1; i < no_data; i++){
+                auto point = new std::vector<float>;
+                for(int j = 0; j < point_dim; j++){
+                point->push_back(distribution(generator));
+                }
+                data->push_back(point);
+                }
+
+				for(unsigned int i = 0; i < no_centroids; i++){
+                    centroids->push_back(i);
 				}
+
+
+
 				for(int i = 0; i < no_dims; i++){
 					auto dim = new std::vector<bool>;
 					for(int j = 0; j < point_dim; j++){
@@ -640,8 +649,34 @@ TEST_F(testPointsContainedGPU, _SLOW_testIfDifferentPointContainedDeviceKernelMa
 
 
 
-				EXPECT_TRUE(areTheyEqual_h(c1,c0)) << " point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
-				EXPECT_TRUE(areTheyEqual_h(c2,c0)) << " point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
+				EXPECT_TRUE(areTheyEqual_h(c1,c0)) << "c1 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
+				EXPECT_TRUE(areTheyEqual_h(c2,c0)) << "c2 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
+
+
+                for(int i = 0; i < c1.first->size(); i++){
+                    delete c1.first->at(i);
+                }
+				delete c1.first;
+				delete c1.second;
+                for(int i = 0; i < c2.first->size(); i++){
+                    delete c2.first->at(i);
+                }
+				delete c2.first;
+				delete c2.second;
+				//delete c3.first;
+				//delete c3.second;
+
+				for(int i = 0; i < data->size(); i++){
+				    delete data->at(i);
+				}
+				delete data;
+
+				delete centroids;
+                for(int i = 0; i < dims->size(); i++){
+                    delete dims->at(i);
+                }
+				delete dims;
+
 				//EXPECT_TRUE(areTheyEqual_h(c3,c0)) << " point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
 
 

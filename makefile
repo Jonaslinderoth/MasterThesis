@@ -55,7 +55,7 @@ b:
 	echo $(OBJECTS)	
 
 test: $(EXE_DIR)/${TEST}
-	./$(EXE_DIR)/${TEST}
+	./$(EXE_DIR)/${TEST} --gtest_filter=-*_SUPER_SLOW_*:**
 
 
 benchmark: $(EXE_DIR)/$(BENCHMARK)

@@ -52,6 +52,9 @@ __global__ void pointsContainedDeviceNaive(float* data, unsigned int* centroids,
 			for(unsigned int i = 0; i < point_dim; i++){
 				//(not (dims[entry*point_dim+i])) ||
 				unsigned int centroid_index = centroids[currentCentroid];
+				//if(!(centroid_index < no_data)){
+				//    printf("num_data: %u, centroid_index: %u, currentCentroid: %u \n", no_data, centroid_index, currentCentroid);
+				//}
 				assert(centroid_index < no_data);
 				assert(entry*point_dim+i < no_dims*point_dim);
 				assert(centroid_index*point_dim+i < no_data*point_dim);
@@ -644,6 +647,7 @@ void pointsContainedKernelNaive(unsigned int dimGrid, unsigned int dimBlock, cud
 	pointsContainedDeviceNaive<<<dimGrid, dimBlock, 0, stream>>>(data, centroids, dims,
 												 output, Csum_out,
 												 width, point_dim, no_data, number_of_samples, m);
+
 	
 };
 
@@ -652,7 +656,7 @@ void pointsContainedKernelSharedMemory(unsigned int dimGrid, unsigned int dimBlo
 						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
 						   unsigned int m, unsigned int numberOfCentroids){
 
-	unsigned long maxSharedmemory = 40000; //48kb can probably go up to more but...
+	unsigned long maxSharedmemory = 48000; //48kb can probably go up to more but...
 	//we block takes care of only on centroid. a centroid is made of point_dim floats
 	unsigned long centroidSharedMemorySize_f = point_dim;
 	//how many blocks needed to cover m.
@@ -662,8 +666,8 @@ void pointsContainedKernelSharedMemory(unsigned int dimGrid, unsigned int dimBlo
 
 	//need to know how much shared memory we are going to use.
 	unsigned long dataSharedMemorySize_f = maxSharedmemory/sizeof(float)-centroidSharedMemorySize_f;
-	dataSharedMemorySize_f = (dataSharedMemorySize_f/point_dim)/32;
-	dataSharedMemorySize_f = dataSharedMemorySize_f*point_dim*32;
+	dataSharedMemorySize_f = (dataSharedMemorySize_f/point_dim);
+	dataSharedMemorySize_f = dataSharedMemorySize_f*point_dim;
 
 	unsigned long sharedMemorySize_f = dataSharedMemorySize_f+centroidSharedMemorySize_f;
 
@@ -693,7 +697,7 @@ void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid, unsigned int
 						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
 						   unsigned int m, unsigned int numberOfCentroids){
 
-	unsigned long maxSharedmemory = 40000; //48kb can probably go up to more but...
+	unsigned long maxSharedmemory = 48000; //48kb can probably go up to more but...
 	//we block takes care of only on centroid. a centroid is made of point_dim floats
 	unsigned long centroidSharedMemorySize_f = point_dim;
 	//how many blocks needed to cover m.
@@ -703,8 +707,8 @@ void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid, unsigned int
 
 	//need to know how much shared memory we are going to use.
 	unsigned long dataSharedMemorySize_f = maxSharedmemory/sizeof(float)-centroidSharedMemorySize_f;
-	dataSharedMemorySize_f = (dataSharedMemorySize_f/point_dim)/32;
-	dataSharedMemorySize_f = dataSharedMemorySize_f*point_dim*32;
+	dataSharedMemorySize_f = (dataSharedMemorySize_f/point_dim);
+	dataSharedMemorySize_f = dataSharedMemorySize_f*point_dim;
 
 	unsigned long sharedMemorySize_f = dataSharedMemorySize_f+centroidSharedMemorySize_f;
 
@@ -726,7 +730,7 @@ void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid, unsigned i
 						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
 						   unsigned int m, unsigned int numberOfCentroids){
 
-	unsigned long maxSharedmemory = 40000; //48kb can probably go up to more but...
+	unsigned long maxSharedmemory = 48000; //48kb can probably go up to more but...
 	//we block takes care of only on centroid. a centroid is made of point_dim floats
 	unsigned long centroidSharedMemorySize_f = point_dim;
 	//how many blocks needed to cover m.
@@ -736,8 +740,8 @@ void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid, unsigned i
 
 	//need to know how much shared memory we are going to use.
 	unsigned long dataSharedMemorySize_f = maxSharedmemory/sizeof(float)-centroidSharedMemorySize_f;
-	dataSharedMemorySize_f = (dataSharedMemorySize_f/point_dim)/32;
-	dataSharedMemorySize_f = dataSharedMemorySize_f*point_dim*32;
+	dataSharedMemorySize_f = (dataSharedMemorySize_f/point_dim);
+	dataSharedMemorySize_f = dataSharedMemorySize_f*point_dim;
 
 	unsigned long sharedMemorySize_f = dataSharedMemorySize_f+centroidSharedMemorySize_f;
 

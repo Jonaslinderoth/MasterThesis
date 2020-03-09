@@ -254,7 +254,10 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 																					   unsigned long version,
 																					   unsigned long garbage){
 
-	// Calculaating sizes
+
+    int block_size = 1024;
+
+    // Calculaating sizes
 	int point_dim = data->at(0)->size();
 	int no_of_points = data->size();
 	int no_of_dims = dims->size();
@@ -340,8 +343,8 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 	if(version == 0){
 		// Call kernel
 
-		pointsContainedKernelNaive(ceil((no_of_dims)/256.0),
-				  256,
+		pointsContainedKernelNaive(ceil((no_of_dims)/(float)block_size),
+		          block_size,
 				  stream,
 				  data_d,
 				  centroids_d,
@@ -356,8 +359,8 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 
 
 	}else if(version == 1){
-		pointsContainedKernelSharedMemory(ceil((no_of_dims)/256.0),
-								  256,
+		pointsContainedKernelSharedMemory(ceil((no_of_dims)/(float)block_size),
+		                        block_size,
 								  stream,
 								  data_d,
 								  centroids_d,
@@ -371,8 +374,8 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 								  m,
 								  no_of_centroids);
 	}else if(version == 2){
-		pointsContainedKernelSharedMemoryFewBank(ceil((no_of_dims)/256.0),
-										  256,
+		pointsContainedKernelSharedMemoryFewBank(ceil((no_of_dims)/(float)block_size),
+                                            block_size,
 										  stream,
 										  data_d,
 										  centroids_d,
@@ -386,8 +389,8 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 										  m,
 										  no_of_centroids);
 	}else if(version == 3){
-		pointsContainedKernelSharedMemoryFewerBank(ceil((no_of_dims)/256.0),
-												 256,
+		pointsContainedKernelSharedMemoryFewerBank(ceil((no_of_dims)/(float)block_size),
+                                                block_size,
 												 stream,
 												 data_d,
 												 centroids_d,
@@ -436,6 +439,8 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 	free(centroids_h);
 	free(output_h);
 	free(output_count_h);
+	free(garbageCleaner_h);
+	free(garbageCleanerCount_h);
 
 
 	return std::make_pair(output,output_count);
