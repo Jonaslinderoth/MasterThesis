@@ -334,11 +334,15 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 	cudaMemcpy(dims_d, dims_h, size_of_dims, cudaMemcpyHostToDevice);
 	cudaMemcpy(centroids_d, centroids_h, size_of_centroids, cudaMemcpyHostToDevice);
 
+    cudaStream_t stream;
+    (cudaStreamCreate(&stream));
+
 	if(version == 0){
 		// Call kernel
 
 		pointsContainedKernelNaive(ceil((no_of_dims)/256.0),
 				  256,
+				  stream,
 				  data_d,
 				  centroids_d,
 				  dims_d,
@@ -350,9 +354,11 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 				  no_of_dims,
 				  m);
 
+
 	}else if(version == 1){
 		pointsContainedKernelSharedMemory(ceil((no_of_dims)/256.0),
 								  256,
+								  stream,
 								  data_d,
 								  centroids_d,
 								  dims_d,
@@ -367,6 +373,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 	}else if(version == 2){
 		pointsContainedKernelSharedMemoryFewBank(ceil((no_of_dims)/256.0),
 										  256,
+										  stream,
 										  data_d,
 										  centroids_d,
 										  dims_d,
@@ -381,6 +388,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 	}else if(version == 3){
 		pointsContainedKernelSharedMemoryFewerBank(ceil((no_of_dims)/256.0),
 												 256,
+												 stream,
 												 data_d,
 												 centroids_d,
 												 dims_d,
@@ -394,7 +402,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 												 no_of_centroids);
 	}
 
-
+    (cudaStreamDestroy(stream));
 
 	// copy from device
 	cudaMemcpy(output_h, output_d, size_of_output, cudaMemcpyDeviceToHost);

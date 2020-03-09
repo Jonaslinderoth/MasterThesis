@@ -636,18 +636,18 @@ void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, cudaStre
 	
 };
 
-void pointsContainedKernelNaive(unsigned int dimGrid, unsigned int dimBlock,
+void pointsContainedKernelNaive(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
 						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
 						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
 						   unsigned int m){
 
-	pointsContainedDeviceNaive<<<dimGrid, dimBlock>>>(data, centroids, dims,
+	pointsContainedDeviceNaive<<<dimGrid, dimBlock, 0, stream>>>(data, centroids, dims,
 												 output, Csum_out,
 												 width, point_dim, no_data, number_of_samples, m);
 	
 };
 
-void pointsContainedKernelSharedMemory(unsigned int dimGrid, unsigned int dimBlock,
+void pointsContainedKernelSharedMemory(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
 						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
 						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
 						   unsigned int m, unsigned int numberOfCentroids){
@@ -668,7 +668,7 @@ void pointsContainedKernelSharedMemory(unsigned int dimGrid, unsigned int dimBlo
 	unsigned long sharedMemorySize_f = dataSharedMemorySize_f+centroidSharedMemorySize_f;
 
 
-	pointsContainedDeviceSharedMemory<<<dimGridv2, dimBlock, sharedMemorySize_f*sizeof(float)>>>(data,
+	pointsContainedDeviceSharedMemory<<<dimGridv2, dimBlock, sharedMemorySize_f*sizeof(float), stream>>>(data,
 																								 centroids,
 																								 dims,
 																								 output,
@@ -688,7 +688,7 @@ void pointsContainedKernelSharedMemory(unsigned int dimGrid, unsigned int dimBlo
  * dimBlock needs to be multiple of 32.
  * dimBlock needs to be >= then point_dim
  */
-void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid, unsigned int dimBlock,
+void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
 						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
 						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
 						   unsigned int m, unsigned int numberOfCentroids){
@@ -715,13 +715,13 @@ void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid, unsigned int
 	//std::cout << "sharedMemorySize " << dataSharedMemorySize << std::endl;
 
 	//std::cout << "dimGridv2*dimBlock*20: " << dimGridv2*dimBlock*20 << std::endl;
-	pointsContainedDeviceSharedMemoryFewBank<<<dimGridv2, dimBlock, sharedMemorySize_f*sizeof(float)>>>(data, centroids, dims,
+	pointsContainedDeviceSharedMemoryFewBank<<<dimGridv2, dimBlock, sharedMemorySize_f*sizeof(float), stream>>>(data, centroids, dims,
 												 output, Csum_out,
 												 width, point_dim, no_data, number_of_samples, m, numberOfCentroids,centroidSharedMemorySize_f,dataSharedMemorySize_f,blocksWithSameCentroid);
 	//std::cout << "done with kernel call" << std::endl;
 };
 
-void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid, unsigned int dimBlock,
+void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
 						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
 						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
 						   unsigned int m, unsigned int numberOfCentroids){
@@ -1131,7 +1131,6 @@ bool generateRandomIntArrayDevice(cudaStream_t stream,
 	// if there is more random states than what we need, dont spawn too many threads
 	size_t accual_size = size_of_randomStates;
 	if(accual_size > size) accual_size = size;
-
 
 	//calculate the ammount of blocks
 	int ammountOfBlocks = accual_size/dimBlock;

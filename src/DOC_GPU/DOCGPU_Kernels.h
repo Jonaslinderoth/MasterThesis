@@ -62,8 +62,9 @@ void pointsContainedKernelNaive(unsigned int dimGrid,
  * this fuction has the data and the centroids in Shared Memory
  * the centroid and at least one data points need to be able to fit into shared memory to being able to work
  */
-void pointsContainedKernelSharedMemory(unsigned int dimGrid, cudaStream_t stream,
+void pointsContainedKernelSharedMemory(unsigned int dimGrid,
 		unsigned int dimBlock,
+        cudaStream_t stream,
 		float* data,
 		unsigned int* centroids,
 		bool* dims,
@@ -79,8 +80,9 @@ void pointsContainedKernelSharedMemory(unsigned int dimGrid, cudaStream_t stream
  * This fuction has the data and the centroids in Shared Memory and no bank conflicts
  * the centroid and at least dimBlock/32 data points need to be able to fit into shared memory to being able to work
  */
-void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid, cudaStream_t stream,
+void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid,
 		unsigned int dimBlock,
+        cudaStream_t stream,
 		float* data,
 		unsigned int* centroids,
 		bool* dims,
@@ -93,8 +95,9 @@ void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid, cudaStream_t
 		unsigned int m,
 		unsigned int numberOfCentroids);
 
-void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid, cudaStream_t stream,
+void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid,
 		unsigned int dimBlock,
+        cudaStream_t stream,
 		float* data,
 		unsigned int* centroids,
 		bool* dims,

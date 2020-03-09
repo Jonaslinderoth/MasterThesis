@@ -244,7 +244,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 											 arr_sizes.number_of_centroids, number_of_points-1 , 0);
 			}
 
-		assert(number_of_values_in_samples >= number_of_centroids);
 
 
 
