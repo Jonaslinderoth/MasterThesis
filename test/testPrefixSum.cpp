@@ -827,10 +827,11 @@ TEST(testPrefixSum, testDeleteInputOutput3){
 	cudaMemcpy(mask_d, mask_h, ((n/dim)+1)*sizeof(bool), cudaMemcpyHostToDevice);
 	cudaMemcpy(data_d, data_h, n*sizeof(float), cudaMemcpyHostToDevice);
 
-	
-	deleteFromArray(data_d, mask_d, data_d, n/dim, dim);
+    cudaStream_t stream1;
+    checkCudaErrors(cudaStreamCreate(&stream1));
+	deleteFromArray(stream1, data_d, mask_d, data_d, n/dim, dim);
 
-	cudaMemcpy(data_out_h, data_d, output_numbers*sizeof(float), cudaMemcpyDeviceToHost);
+	cudaMemcpyAsync(data_out_h, data_d, output_numbers*sizeof(float), cudaMemcpyDeviceToHost, stream1);
 
 	int a = 0;
 	for(int i = 0; i < n/dim; i++){

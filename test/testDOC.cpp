@@ -593,7 +593,7 @@ TEST_F(testDOC, testWithDataReader2){
 }
 	
 
-TEST_F(testDOC, DISABLED_SLOW_testWithDataReader3){
+TEST_F(testDOC, SLOW_testWithDataReader3){
 	DataGeneratorBuilder dgb;
 	dgb.setSeed(10);
 	Cluster small;
@@ -637,7 +637,7 @@ TEST_F(testDOC, DISABLED_SLOW_testWithDataReader3){
 }
 	
 
-TEST_F(testDOC, DISABLED_SLOW_testWithDataReader4){
+TEST_F(testDOC, SLOW_testWithDataReader4){
 	DataGeneratorBuilder dgb;
 	dgb.setSeed(1);
 	Cluster small;
@@ -683,10 +683,10 @@ TEST_F(testDOC, DISABLED_SLOW_testWithDataReader4){
 }
 
 
-TEST_F(testDOC, DISABLED_SLOW_testWithDataReader5){
+TEST_F(testDOC, SLOW_testWithDataReader5){
 	
 	DataGeneratorBuilder dgb;
-	dgb.setSeed(1);
+	dgb.setSeed(2);
 	Cluster small;
 	small.setAmmount(100);
 	small.addDimension(normalDistribution, {-10000,10000}, {50,2});
@@ -705,6 +705,8 @@ TEST_F(testDOC, DISABLED_SLOW_testWithDataReader5){
 	small2.addDimension(uniformDistribution, {-10000,10000});
 	small2.addDimension(uniformDistribution, {-10000,10000});
 	small2.addDimension(uniformDistribution, {-10000,10000});
+    small2.addDimension(uniformDistribution, {-10000,10000});
+
 	dgb.addCluster(small2);
 
 	
@@ -714,7 +716,7 @@ TEST_F(testDOC, DISABLED_SLOW_testWithDataReader5){
 	DataReader* dr = new DataReader("test/testData/test5");
 
 	DOC d(dr);
-	d.setSeed(1);
+	d.setSeed(2);
 	d.setWidth(8);
 
 
