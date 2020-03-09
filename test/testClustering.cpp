@@ -28,7 +28,6 @@ std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
 		}
 	}
 
-
 	{
 		DOCGPU* d = new DOCGPU(data, 0.1, 0.25, 5);
 		d->setSeed(1);	

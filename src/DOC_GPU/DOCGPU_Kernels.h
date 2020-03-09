@@ -13,10 +13,10 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
 
 
 std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
-	pointsContained(std::vector<std::vector<bool>*>* dims,
-					std::vector<std::vector<float>*>* data,
-					std::vector<unsigned int>* centroids,
-					int m,  float width = 10.0);
+	pointsContainedSharedMemoryFewBank(std::vector<std::vector<bool>*>* dims,
+					    std::vector<std::vector<float>*>* data,
+					    std::vector<unsigned int>* centroids,
+					    int m,  float width = 10.0);
 
 
 int argMax(std::vector<float>* scores);
@@ -38,11 +38,71 @@ float* scoreHost(unsigned int* Cluster_size,
 
 void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* Xs_d, unsigned int* ps_d, float* data_d, bool* res_d,
 						   unsigned int* Dsum_out, unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps,
-						   unsigned int m, float width, unsigned int no_data);
+						   unsigned int m, float width);
+/*
+ * this does not have data in shared memory
+ */
+void pointsContainedKernelNaive(unsigned int dimGrid,
+								unsigned int dimBlock,
+								float* data,
+								unsigned int* centroids,
+								bool* dims,
+								bool* output,
+								unsigned int* Csum_out,
+								float width,
+								unsigned int point_dim,
+								unsigned int no_data,
+								unsigned int no_dims,
+								unsigned int m);
 
-void pointsContainedKernel(unsigned int dimGrid, unsigned int dimBlock,
-						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
-									  float width, unsigned int point_dim, unsigned int no_data, unsigned int no_dims, unsigned int m);
+/*
+ * this fuction has the data and the centroids in Shared Memory
+ * the centroid and at least one data points need to be able to fit into shared memory to being able to work
+ */
+void pointsContainedKernelSharedMemory(unsigned int dimGrid,
+		unsigned int dimBlock,
+		float* data,
+		unsigned int* centroids,
+		bool* dims,
+		bool* output,
+		unsigned int* Csum_out,
+		float width,
+		unsigned int point_dim,
+		unsigned int no_data,
+		unsigned int no_dims,
+		unsigned int m,
+		unsigned int numberOfCentroids);
+/*
+ * This fuction has the data and the centroids in Shared Memory and no bank conflicts
+ * the centroid and at least dimBlock/32 data points need to be able to fit into shared memory to being able to work
+ */
+void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid,
+		unsigned int dimBlock,
+		float* data,
+		unsigned int* centroids,
+		bool* dims,
+		bool* output,
+		unsigned int* Csum_out,
+		float width,
+		unsigned int point_dim,
+		unsigned int no_data,
+		unsigned int no_dims,
+		unsigned int m,
+		unsigned int numberOfCentroids);
+
+void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid,
+		unsigned int dimBlock,
+		float* data,
+		unsigned int* centroids,
+		bool* dims,
+		bool* output,
+		unsigned int* Csum_out,
+		float width,
+		unsigned int point_dim,
+		unsigned int no_data,
+		unsigned int no_dims,
+		unsigned int m,
+		unsigned int numberOfCentroids);
 
 void scoreKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output,
 					  unsigned int len, float alpha, float beta, unsigned int num_points);

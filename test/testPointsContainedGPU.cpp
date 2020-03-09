@@ -2,6 +2,7 @@
 #include <iostream>
 #include "../src/DOC_GPU/DOCGPU_Kernels.h"
 #include "../src/DOC/HyperCube.h"
+#include "../src/randomCudaScripts/arrayEqual.h"
 #include <random>
 
 
@@ -506,3 +507,76 @@ TEST_F(testPointsContainedGPU, _SLOW_testRandomCompCPU){
 	}
 
 }
+
+
+
+TEST_F(testPointsContainedGPU, _SLOW_testIfDifferentPointContainedDeviceKernel){
+	unsigned int point_dim = 100;
+	unsigned int no_data = 4000;
+	unsigned int no_centroids = 20;
+	unsigned int no_dims = 1000;
+	unsigned int m = no_dims/no_centroids;
+	std::default_random_engine generator;
+	generator.seed(100);
+
+	std::uniform_real_distribution<double> distribution(15,20);
+	std::uniform_real_distribution<double> distribution2(9,26);
+
+
+	auto data = new std::vector<std::vector<float>*>;
+	auto centroids = new std::vector<unsigned int>;
+	auto dims = new std::vector<std::vector<bool>*>;
+
+	for(int i = 0; i < no_data; i++){
+		auto point = new std::vector<float>;
+		for(int j = 0; j < point_dim; j++){
+			point->push_back(distribution2(generator));
+		}
+		data->push_back(point);
+		centroids->push_back(i);
+	}
+	for(int i = data->size()-1; i < no_data; i++){
+		auto point = new std::vector<float>;
+		for(int j = 0; j < point_dim; j++){
+			point->push_back(distribution(generator));
+		}
+		data->push_back(point);
+	}
+	for(int i = 0; i < no_dims; i++){
+		auto dim = new std::vector<bool>;
+		for(int j = 0; j < point_dim; j++){
+			dim->push_back(distribution2(generator)< 13);
+		}
+		dims->push_back(dim);
+	}
+	auto c0 = pointsContained(dims, data, centroids,m,10,0);
+	auto c1 = pointsContained(dims, data, centroids,m,10,1);
+	auto c2 = pointsContained(dims, data, centroids,m,10,2);
+	auto c3 = pointsContained(dims, data, centroids,m,10,3);
+
+
+
+
+	EXPECT_TRUE(areTheyEqual_h(c1,c0));
+	EXPECT_TRUE(areTheyEqual_h(c2,c0));
+	EXPECT_TRUE(areTheyEqual_h(c3,c0));
+
+	auto c = c1.first;
+
+	int t = 0, f = 0;
+	for(int i = 0; i < dims->size(); i++){
+
+		auto centroid = data->at(centroids->at(i/m));
+		auto cpu = HyperCube(centroid, 10, dims->at(i));
+		for(int j = 0; j < data->size(); j++){
+			auto d = cpu.pointContained(data->at(j));
+			if(d){
+				t++;
+			}else{
+				f++;
+			}
+			EXPECT_EQ(d,c->at(i)->at(j)) << "i: " << i << " j: " <<j << " : " << data->at(j);
+		}
+	}
+}
+

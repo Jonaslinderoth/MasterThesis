@@ -9,6 +9,18 @@
 #include "DOCGPU_Kernels.h"
 #include <assert.h>
 #include "../randomCudaScripts/DeleteFromArray.h"
+#include "../randomCudaScripts/arrayEqual.h"
+#include <algorithm>
+
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess)
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
 
 # define CUDA_CALL ( x) do { if (( x) != cudaSuccess ) { \
 	printf (" Error at % s :% d\ n" , __FILE__ , __LINE__ ) ;\
@@ -147,12 +159,12 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	unsigned int* scores_index_d;
 	
 	
-	cudaMalloc((void **) &findDim_output_d, size_of_findDim);
-	cudaMalloc((void **) &pointsContained_output_d, size_of_pointsContained);
-	cudaMalloc((void **) &findDim_count_d, size_of_findDim_count);
-	cudaMalloc((void **) &pointsContained_count_d, size_of_pointsContained_count);
-	cudaMalloc((void **) &scores_d, size_of_scores);
-	cudaMalloc((void **) &scores_index_d, size_of_scores_index );
+	gpuErrchk(cudaMalloc((void **) &findDim_output_d, size_of_findDim));
+	gpuErrchk(cudaMalloc((void **) &pointsContained_output_d, size_of_pointsContained));
+	gpuErrchk(cudaMalloc((void **) &findDim_count_d, size_of_findDim_count));
+	gpuErrchk(cudaMalloc((void **) &pointsContained_count_d, size_of_pointsContained_count));
+	gpuErrchk(cudaMalloc((void **) &scores_d, size_of_scores));
+	gpuErrchk(cudaMalloc((void **) &scores_index_d, size_of_scores_index ));
 	
 
 	int smemSize, maxBlock;
@@ -171,18 +183,28 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 	
 	findDimmensionsKernel(dimGrid, dimBlock, xs_d, ps_d, data_d,  findDim_output_d,
 						   findDim_count_d, point_dim, number_of_samples, sample_size, number_of_ps,
-						  m, width, data->size());
-	cudaFree(xs_d);
+						  m, width);
+	gpuErrchk(cudaFree(xs_d));
 
 
-	pointsContainedKernel(dimGrid, dimBlock,data_d, ps_d, findDim_output_d,
-						  pointsContained_output_d, pointsContained_count_d,
-						  width, point_dim, number_of_points, number_of_samples, m);
+	pointsContainedKernelSharedMemoryFewBank(dimGrid, dimBlock,data_d,
+							  ps_d, findDim_output_d,
+							  pointsContained_output_d,
+							  pointsContained_count_d,
+							  width,
+							  point_dim,
+							  number_of_points,
+							  number_of_samples,
+							  m,
+							  number_of_ps);
 
 
-	cudaFree(ps_d);
-	cudaFree(data_d);
+
+
+	gpuErrchk(cudaFree(data_d));
+	gpuErrchk(cudaFree(ps_d));
 	
+
 	scoreKernel(dimGrid, dimBlock,
 				pointsContained_count_d,
 				findDim_count_d, scores_d,
@@ -190,8 +212,8 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOCGPU::findClu
 				alpha, beta, number_of_points);
 	
 
-	cudaFree(findDim_count_d);
-	cudaFree(pointsContained_count_d);
+	gpuErrchk(cudaFree(findDim_count_d));
+	gpuErrchk(cudaFree(pointsContained_count_d));
 
 
 
@@ -281,12 +303,12 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	unsigned int number_of_samples = number_of_centroids*m;
 	unsigned int sample_size = r;
 	size_t number_of_values_in_samples = number_of_samples*sample_size;
-	size_t size_of_samples = number_of_values_in_samples*sizeof(unsigned int); 
+	size_t size_of_samples = number_of_values_in_samples*sizeof(unsigned int);
 	size_t size_of_centroids = number_of_centroids*sizeof(unsigned int);
 
 	// calculating the sizes for findDim 
 	size_t number_of_bools_for_findDim = number_of_samples*dim;
-	size_t size_of_findDim = number_of_bools_for_findDim*sizeof(bool); 
+	size_t size_of_findDim = number_of_bools_for_findDim*sizeof(bool);
 	size_t number_of_values_find_dim_count_output = number_of_samples;
 	size_t size_of_findDim_count = number_of_values_find_dim_count_output* sizeof(unsigned int);
 
@@ -321,6 +343,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	unsigned int dimGrid = ceil((float)number_of_samples/(float)dimBlock);
 	unsigned int sharedMemSize = (dimBlock*sizeof(unsigned int) + dimBlock*sizeof(float));
 
+
+
+	
 	
 	
 	// allocating memory for random samples
@@ -366,7 +391,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	
 	
 	for(int i = 0; i < k; i++){ // for each of the clusters
-		
+
 		// generate random indices for samples
 		generateRandomIntArrayDevice(samples_d, randomStates_d , numberOfRandomStates,
 									 number_of_values_in_samples, number_of_points-1, 0);
@@ -383,7 +408,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 							  m, width, number_of_points);
 		
 		// Find points contained
-		pointsContainedKernel(dimGrid, dimBlock, data_d, centroids_d, findDim_d,
+		pointsContainedKernelNaive(dimGrid, dimBlock, data_d, centroids_d, findDim_d,
 							  pointsContained_d, pointsContained_count_d,
 							  width, dim, number_of_points, number_of_samples, m);
 		
@@ -420,7 +445,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 
 		// Delete the points from the original dataset
 		notDevice(dimGrid, dimBlock,pointsContained_d+(best_index_h[0]*number_of_points), number_of_points);
-		
+
 		deleteFromArray(data_d, pointsContained_d+(best_index_h[0]*number_of_points), data_d, number_of_points, dim);
 
 
@@ -475,7 +500,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 		if(number_of_points <= 0){
 			break;
 		}
-		
+
 
 	}
 
