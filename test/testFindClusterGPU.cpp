@@ -766,6 +766,5 @@ TEST(testFindClusterGPU, testKclustersLarge2){
 	EXPECT_TRUE(d.at(1).second->at(4));
 	EXPECT_TRUE(d.at(1).second->at(5));
 
-
-	
 }
+

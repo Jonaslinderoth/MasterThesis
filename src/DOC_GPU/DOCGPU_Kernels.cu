@@ -9,17 +9,17 @@
 
 __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d, unsigned int* Dsum_out,
 									  unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps, unsigned int m, float width, unsigned int no_data){
-	int entry = blockIdx.x*blockDim.x+threadIdx.x;
-	int pNo = entry/m;
-
+	unsigned int entry = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int pNo = entry/m;
 	if(entry < no_of_samples){
 		assert(pNo < no_of_ps);
 		unsigned int Dsum = 0;
 		// for each dimension
 		for(int i = 0; i < point_dim; i++){
 			bool d = true;
-			//assert(ps_d[pNo]*point_dim+i < 100*6);
-			float p_tmp = data[ps_d[pNo]*point_dim+i];
+			unsigned int tmp = ps_d[pNo];
+			assert(tmp < no_data);
+			float p_tmp = data[tmp*point_dim+i];
 			// for each point in sample
 			for(unsigned j = 0; j < no_in_sample; j++){
 				assert(entry*no_in_sample+j < no_of_samples*no_in_sample);
@@ -52,10 +52,10 @@ __global__ void pointsContainedDeviceNaive(float* data, unsigned int* centroids,
 			for(unsigned int i = 0; i < point_dim; i++){
 				//(not (dims[entry*point_dim+i])) ||
 				unsigned int centroid_index = centroids[currentCentroid];
-				//assert(centroid_index < no_data);
-				//assert(entry*point_dim+i < no_dims*point_dim);
-				//assert(centroid_index*point_dim+i < no_data*point_dim);
-				//assert(j*point_dim+i < no_data*point_dim);
+				assert(centroid_index < no_data);
+				assert(entry*point_dim+i < no_dims*point_dim);
+				assert(centroid_index*point_dim+i < no_data*point_dim);
+				assert(j*point_dim+i < no_data*point_dim);
 				const unsigned long entryDims = entry*point_dim+i;
 				const float centro = data[centroid_index*point_dim+i];
 				const float punto = data[j*point_dim+i];
@@ -594,10 +594,13 @@ __global__ void randIntArray(unsigned int *result , curandState_t* states , cons
 		for(int i = 0; i < numberPrThread; i++){
 			if(i*number_of_states+idx < size){
 				float myrandf = curand_uniform(&states[idx]);
-				myrandf *= (max - min + 0.999999);
-				myrandf += min;
-				result[i*number_of_states+idx] = (int)truncf(myrandf)%max;
-
+				myrandf *= (max - min + 0.9999);
+				unsigned int res = (unsigned int)truncf(myrandf);
+				res %= max;
+				res += min;
+				assert(res >= min);
+				assert(res <= max);
+				result[i*number_of_states+idx] = res;
 			}
 		}		
 	}
@@ -616,17 +619,20 @@ __global__ void notKernel(bool* array, unsigned int length){
 	}	
 }
 
-void notDevice(unsigned int dimGrid, unsigned int dimBlock,bool* array, unsigned int length){
-	notKernel<<<dimGrid, dimBlock>>>(array, length);
+void notDevice(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream, bool* array, unsigned int length){
+	notKernel<<<dimGrid, dimBlock, 0, stream>>>(array, length);
 }
 
-void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d,
-						   unsigned int* Dsum_out, unsigned int point_dim, unsigned int no_of_samples, unsigned int sample_size, unsigned int no_of_ps,
-						   unsigned int m, float width, unsigned int number_of_points){
+void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+						   unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d,
+						   unsigned int* Dsum_out, unsigned int point_dim,
+						   unsigned int no_of_samples, unsigned int sample_size,
+						   unsigned int no_of_ps,
+						   unsigned int m, float width, unsigned int no_data){
 
-    findDimmensionsDevice<<<dimGrid, dimBlock>>>(Xs_d, ps_d, data, res_d, Dsum_out,
+    findDimmensionsDevice<<<dimGrid, dimBlock, 0, stream>>>(Xs_d, ps_d, data, res_d, Dsum_out,
 												 point_dim, no_of_samples, sample_size,
-												 no_of_ps, m, width, number_of_points);
+												 no_of_ps, m, width, no_data);
 	
 };
 
@@ -750,11 +756,11 @@ void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid, unsigned i
 
 
 
-void scoreKernel(unsigned int dimGrid, unsigned int dimBlock,
+void scoreKernel(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
 				 unsigned int* cluster_size, unsigned int* dim_count, float* score_output,
 				 unsigned int len, float alpha, float beta, unsigned int num_points){
 
-	score<<<dimGrid, dimBlock>>>(cluster_size, dim_count, score_output,
+	score<<<dimGrid, dimBlock, 0, stream>>>(cluster_size, dim_count, score_output,
 								 len, alpha, beta, num_points);
 
 	
@@ -762,12 +768,13 @@ void scoreKernel(unsigned int dimGrid, unsigned int dimBlock,
 	
 };
 
-void createIndicesKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int* index, unsigned int length){
-	createIndices<<<dimGrid, dimBlock>>>(index, length);
+void createIndicesKernel(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream, unsigned int* index, unsigned int length){
+	createIndices<<<dimGrid, dimBlock, 0, stream>>>(index, length);
 
 };
 
 void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int sharedMemorySize,
+				  cudaStream_t stream,
 				  float* scores, unsigned int* scores_index, unsigned int input_size){
 
 	unsigned int* out = (unsigned int*) malloc(sizeof(unsigned int)*input_size);
@@ -778,7 +785,7 @@ void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int shar
 	unsigned int out_size = input_size;
 	while(out_size > 1){
 	   
-		argMaxDevice<<<dimGrid, dimBlock, sharedMemorySize>>>(scores, scores_index, out_size);
+		argMaxDevice<<<dimGrid, dimBlock, sharedMemorySize, stream>>>(scores, scores_index, out_size);
 		out_size = dimGrid;
 		dimGrid = ceil((float)out_size/(float)dimBlock);
 	}
@@ -1075,23 +1082,31 @@ int argMax(std::vector<float>* scores){
  * this needs to be called before generateRandomIntArrayDevice.
  * "save" the states to save on compiutational time.
  */
-bool generateRandomStatesArray(curandState* d_randomStates,
-		const size_t size,
-		const bool randomSeed,
-		unsigned int seed,
-		unsigned int dimBlock){
+bool generateRandomStatesArray(cudaStream_t stream,
+							   curandState* d_randomStates,
+							   const size_t size,
+							   const bool randomSeed,
+							   unsigned int seed,
+							   unsigned int dimBlock){
 	//set the seed
 	if(randomSeed){
 		std::random_device rd;
 		seed = rd();
 		//std::cout << "seed: " << seed << std::endl;
 	}
+
+#ifdef NDEBUG
+	// nondebug
+#else
+	// debug code
+	dimBlock = 512;
+#endif
 	//calculate the ammount of blocks
 	int ammountOfBlocks = size/dimBlock;
 	if(size%dimBlock != 0){
 		ammountOfBlocks++;
 	}
-	randIntArrayInit<<<ammountOfBlocks,dimBlock>>>(d_randomStates ,seed, size);
+	randIntArrayInit<<<ammountOfBlocks,dimBlock, 0, stream>>>(d_randomStates ,seed, size);
 
 	return true;
 }
@@ -1101,7 +1116,8 @@ bool generateRandomStatesArray(curandState* d_randomStates,
  * and the states.
  * to get the states generate random states array call generateRandomStatesArray.
  */
-bool generateRandomIntArrayDevice(unsigned int* randomIndexes_d,
+bool generateRandomIntArrayDevice(cudaStream_t stream,
+								  unsigned int* randomIndexes_d,
 								  curandState* randomStates_d,
 								  const size_t size_of_randomStates,
 								  const size_t size,
@@ -1115,7 +1131,7 @@ bool generateRandomIntArrayDevice(unsigned int* randomIndexes_d,
 	// if there is more random states than what we need, dont spawn too many threads
 	size_t accual_size = size_of_randomStates;
 	if(accual_size > size) accual_size = size;
-	
+
 
 	//calculate the ammount of blocks
 	int ammountOfBlocks = accual_size/dimBlock;
@@ -1126,7 +1142,7 @@ bool generateRandomIntArrayDevice(unsigned int* randomIndexes_d,
 
 	//std::cout << "max: " << max << std::endl;
 	//call the generation of random numbers
-	randIntArray<<<ammountOfBlocks,dimBlock>>>(randomIndexes_d, randomStates_d, size_of_randomStates, size , max , min);
+	randIntArray<<<ammountOfBlocks,dimBlock, 0, stream>>>(randomIndexes_d, randomStates_d, size_of_randomStates, size , max , min);
 
 	return true;
 }

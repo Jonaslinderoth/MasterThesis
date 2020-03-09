@@ -16,6 +16,9 @@
 #include "../dataReader/DataReader.h"
 #include "../Clustering.h"
 #include "DOCGPU_Kernels.h"
+#include <stdio.h>
+#include <stddef.h>
+#include <stdint.h>
 
 
 class DOCGPU : public Clustering{
@@ -35,6 +38,7 @@ public:
 	unsigned int getSize(){return this->size;};
 	unsigned int dimension(){return this->dim;};
 
+
  private:
 	float alpha;
 	float beta;
@@ -44,6 +48,11 @@ public:
 	std::vector<std::vector<float>*>* data;
 	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 	float* transformData();
+
+
+
+
+	
 };
 
 #endif /* DOCGPU_H_ */

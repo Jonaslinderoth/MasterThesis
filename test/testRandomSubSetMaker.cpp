@@ -15,14 +15,15 @@ TEST(testRandomSubSetMaker, _SLOW_testOne){
 	unsigned int* h_randomIndexs = new unsigned int[size];
 	curandState* d_randomStates;
 	cudaMalloc((void**)&d_randomStates, sizeof(curandState) * size);
-
+	cudaStream_t stream;
+	checkCudaErrors(cudaStreamCreate(&stream));
 	//generate the states
-	bool res1 = generateRandomStatesArray(d_randomStates,size, false, 10);
+	bool res1 = generateRandomStatesArray(stream,d_randomStates,size, false, 10);
 
 	//generate the random numbers
-	bool res2 = generateRandomIntArrayDevice(d_randomIndexs, d_randomStates , size, size);
+	bool res2 = generateRandomIntArrayDevice(stream,d_randomIndexs, d_randomStates , size, size);
 
-	cudaMemcpy(h_randomIndexs, d_randomIndexs, sizeof(unsigned int) * size, cudaMemcpyDeviceToHost);
+	cudaMemcpyAsync(h_randomIndexs, d_randomIndexs, sizeof(unsigned int) * size, cudaMemcpyDeviceToHost, stream);
 
 	if(print){
 		std::cout << "output: ";
@@ -53,14 +54,15 @@ TEST(testRandomSubSetMaker, testTwo){
 	unsigned int* h_randomIndexs = new unsigned int[size];
 	curandState* d_randomStates;
 	cudaMalloc((void**)&d_randomStates, sizeof(curandState) * size);
-
+	cudaStream_t stream;
+	checkCudaErrors(cudaStreamCreate(&stream));
 	//generate the states
-	bool res1 = generateRandomStatesArray(d_randomStates,size);
+	bool res1 = generateRandomStatesArray(stream,d_randomStates,size);
 
 	//generate the random numbers
-	bool res = generateRandomIntArrayDevice(d_randomIndexs, d_randomStates , size,size , 100 , 50);
+	bool res = generateRandomIntArrayDevice(stream,d_randomIndexs, d_randomStates , size,size , 100 , 50);
 
-	cudaMemcpy(h_randomIndexs, d_randomIndexs, sizeof(unsigned int) * size, cudaMemcpyDeviceToHost);
+	cudaMemcpyAsync(h_randomIndexs, d_randomIndexs, sizeof(unsigned int) * size, cudaMemcpyDeviceToHost, stream);
 
 	if(print){
 		std::cout << "output: ";
@@ -88,14 +90,16 @@ TEST(testRandomSubSetMaker, testMultible){
 
 	curandState* d_randomStates;
 	cudaMalloc((void**)&d_randomStates, sizeof(curandState) * n);
-
-	generateRandomStatesArray(d_randomStates,n,false, 1);
+	cudaStream_t stream;
+	checkCudaErrors(cudaStreamCreate(&stream));
 	
-	generateRandomIntArrayDevice(ids_d, d_randomStates , n,n , 10000 , 50);
-	cudaMemcpy(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost);
+	generateRandomStatesArray(stream,d_randomStates,n,false, 1);
 	
-	generateRandomIntArrayDevice(ids_d, d_randomStates , n,n , 10000 , 50);
-	cudaMemcpy(ids2_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost);
+	generateRandomIntArrayDevice(stream,ids_d, d_randomStates , n,n , 10000 , 50);
+	cudaMemcpyAsync(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost, stream);
+	
+	generateRandomIntArrayDevice(stream,ids_d, d_randomStates , n,n , 10000 , 50);
+	cudaMemcpyAsync(ids2_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost, stream);
 
 
 	for(int i = 0; i < n; i++){
@@ -112,21 +116,23 @@ TEST(testRandomSubSetMaker, testMultibleEqualSeed){
 	unsigned int* ids_h = (unsigned int*) malloc(sizeof(unsigned int) * n);
 	unsigned int* ids2_h = (unsigned int*) malloc(sizeof(unsigned int) * n);
 	
-
+	cudaStream_t stream;
+	checkCudaErrors(cudaStreamCreate(&stream));
+	
 	curandState* d_randomStates;
 	cudaMalloc((void**)&d_randomStates, sizeof(curandState) * n);
 
-	generateRandomStatesArray(d_randomStates,n,false, 1);
+	generateRandomStatesArray(stream, d_randomStates,n,false, 1);
 
-	generateRandomIntArrayDevice(ids_d, d_randomStates , n,n , 1000 , 50);
-	cudaMemcpy(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost);
+	generateRandomIntArrayDevice(stream, ids_d, d_randomStates , n,n , 1000 , 50);
+	cudaMemcpyAsync(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost, stream);
 
 	curandState* d_randomStates2;
 	cudaMalloc((void**)&d_randomStates2, sizeof(curandState) * n);
-	generateRandomStatesArray(d_randomStates2,n,false, 1);
+	generateRandomStatesArray(stream, d_randomStates2,n,false, 1);
 	
-	generateRandomIntArrayDevice(ids_d, d_randomStates2 , n,n , 1000 , 50);
-	cudaMemcpy(ids2_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost);
+	generateRandomIntArrayDevice(stream, ids_d, d_randomStates2 , n,n , 1000 , 50);
+	cudaMemcpyAsync(ids2_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost, stream);
 
 
 	for(int i = 0; i < n; i++){
@@ -142,17 +148,19 @@ TEST(testRandomSubSetMaker, testMultibleDifferentSizes){
 	unsigned int* ids_h = (unsigned int*) malloc(sizeof(unsigned int) * n*2);
 	unsigned int* ids2_h = (unsigned int*) malloc(sizeof(unsigned int) * n);
 	
-
+	cudaStream_t stream;
+	checkCudaErrors(cudaStreamCreate(&stream));
+	
 	curandState* d_randomStates;
 	cudaMalloc((void**)&d_randomStates, sizeof(curandState) * n*2);
 
-	generateRandomStatesArray(d_randomStates,n*2, false, 4);
+	generateRandomStatesArray(stream, d_randomStates,n*2, false, 4);
 	
-	generateRandomIntArrayDevice(ids_d, d_randomStates , n*2, n*2 , 100000 , 50);
-	cudaMemcpy(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost);
+	generateRandomIntArrayDevice(stream, ids_d, d_randomStates , n*2, n*2 , 100000 , 50);
+	cudaMemcpyAsync(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost, stream);
 	
-	generateRandomIntArrayDevice(ids_d, d_randomStates , n*2, n , 100000 , 50);
-	cudaMemcpy(ids2_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost);
+	generateRandomIntArrayDevice(stream, ids_d, d_randomStates , n*2, n , 100000 , 50);
+	cudaMemcpyAsync(ids2_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost, stream);
 
 
 	for(int i = 0; i < n; i++){
@@ -172,6 +180,10 @@ TEST(testRandomSubSetMaker, testMultibleDifferentSizes2){
 	unsigned int* ids2_d;
 	cudaMalloc(&ids_d, sizeof(unsigned int) * n);
 	cudaMalloc(&ids2_d, sizeof(unsigned int) * n2);
+
+
+	cudaStream_t stream;
+	checkCudaErrors(cudaStreamCreate(&stream));
 	
 	unsigned int* ids_h = (unsigned int*) malloc(sizeof(unsigned int) * n);
 	unsigned int* ids2_h = (unsigned int*) malloc(sizeof(unsigned int) * n2);
@@ -180,14 +192,14 @@ TEST(testRandomSubSetMaker, testMultibleDifferentSizes2){
 	curandState* d_randomStates;
 	cudaMalloc((void**)&d_randomStates, sizeof(curandState) * n);
 
-	generateRandomStatesArray(d_randomStates,n, false, 4);
+	generateRandomStatesArray(stream, d_randomStates,n, false, 4);
 	
 	
-	generateRandomIntArrayDevice(ids_d, d_randomStates, n, n , 100000 , 50);
-	generateRandomIntArrayDevice(ids2_d, d_randomStates, n , n2 , 100000 , 50);
+	generateRandomIntArrayDevice(stream, ids_d, d_randomStates, n, n , 100000 , 50);
+	generateRandomIntArrayDevice(stream, ids2_d, d_randomStates, n , n2 , 100000 , 50);
 	
-	cudaMemcpy(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost);
-	cudaMemcpy(ids2_h, ids2_d, sizeof(unsigned int) * n2, cudaMemcpyDeviceToHost);
+	cudaMemcpyAsync(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost, stream);
+	cudaMemcpyAsync(ids2_h, ids2_d, sizeof(unsigned int) * n2, cudaMemcpyDeviceToHost, stream);
 
 
 	for(int i = 0; i < n2; i++){
@@ -218,18 +230,20 @@ TEST(testRandomSubSetMaker, testMultibleDifferentSizes3){
 	unsigned int* ids_h = (unsigned int*) malloc(sizeof(unsigned int) * n);
 	unsigned int* ids2_h = (unsigned int*) malloc(sizeof(unsigned int) * n2);
 	
-
+	cudaStream_t stream;
+	checkCudaErrors(cudaStreamCreate(&stream));
+	
 	curandState* d_randomStates;
 	cudaMalloc((void**)&d_randomStates, sizeof(curandState) * n);
 
-	generateRandomStatesArray(d_randomStates,n, false, 4);
+	generateRandomStatesArray(stream, d_randomStates,n, false, 4);
 	
 	
-	generateRandomIntArrayDevice(ids_d, d_randomStates , n, n , 100000 , 50);
-	generateRandomIntArrayDevice(ids2_d, d_randomStates , n, n2 , 100000 , 50);
+	generateRandomIntArrayDevice(stream, ids_d, d_randomStates , n, n , 100000 , 50);
+	generateRandomIntArrayDevice(stream, ids2_d, d_randomStates , n, n2 , 100000 , 50);
 	
-	cudaMemcpy(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost);
-	cudaMemcpy(ids2_h, ids2_d, sizeof(unsigned int) * n2, cudaMemcpyDeviceToHost);
+	cudaMemcpyAsync(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost, stream);
+	cudaMemcpyAsync(ids2_h, ids2_d, sizeof(unsigned int) * n2, cudaMemcpyDeviceToHost,stream);
 
 
 	for(int i = 0; i < n2; i++){
@@ -261,19 +275,21 @@ TEST(testRandomSubSetMaker, testMultibleDifferentSizes4){
 	
 	unsigned int* ids_h = (unsigned int*) malloc(sizeof(unsigned int) * n);
 	unsigned int* ids2_h = (unsigned int*) malloc(sizeof(unsigned int) * n2);
-	
+
+	cudaStream_t stream;
+	checkCudaErrors(cudaStreamCreate(&stream));
 
 	curandState* d_randomStates;
 	cudaMalloc((void**)&d_randomStates, sizeof(curandState) * n2);
 
-	generateRandomStatesArray(d_randomStates,n2, false, 4);
+	generateRandomStatesArray(stream, d_randomStates,n2, false, 4);
 	
 	
-	generateRandomIntArrayDevice(ids_d, d_randomStates , n2, n , 100000 , 50);
-	generateRandomIntArrayDevice(ids2_d, d_randomStates , n2, n2 , 100000 , 50);
+	generateRandomIntArrayDevice(stream, ids_d, d_randomStates , n2, n , 100000 , 50);
+	generateRandomIntArrayDevice(stream, ids2_d, d_randomStates , n2, n2 , 100000 , 50);
 	
-	cudaMemcpy(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost);
-	cudaMemcpy(ids2_h, ids2_d, sizeof(unsigned int) * n2, cudaMemcpyDeviceToHost);
+	cudaMemcpyAsync(ids_h, ids_d, sizeof(unsigned int) * n, cudaMemcpyDeviceToHost, stream);
+	cudaMemcpyAsync(ids2_h, ids2_d, sizeof(unsigned int) * n2, cudaMemcpyDeviceToHost, stream);
 
 
 	for(int i = 0; i < n2; i++){

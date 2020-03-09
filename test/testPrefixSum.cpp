@@ -46,10 +46,13 @@ TEST(testPrefixSum, testOne){
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 		//std::cout << "CPU time: " << duration << std::endl;
 
+		cudaStream_t stream;
+		checkCudaErrors(cudaStreamCreate(&stream));
 		// Do GPU scan
 		start = std::clock();
-		sum_scan_blelloch(d_out_blelloch, d_in, h_in_len);
+		sum_scan_blelloch(stream, d_out_blelloch, d_in, h_in_len);
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+		checkCudaErrors(cudaStreamDestroy(stream));
 		//std::cout << "GPU time: " << duration << std::endl;
 
 		// Copy device output array to host output array
