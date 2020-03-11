@@ -1,18 +1,14 @@
-
+#include <gtest/gtest.h>
 #include <iostream>
-#include <chrono>
+#include "../src/DOC_GPU/DOCGPU_Kernels.h"
+#include "../src/DOC/HyperCube.h"
+#include "../src/randomCudaScripts/arrayEqual.h"
 #include <random>
-#include <iostream>
-#include "src/DOC_GPU/DOCGPU.h"
-#include "src/Clustering.h"
-#include "test/testData.h"
-#include <vector>
-#include "src/testingTools/DataGeneratorBuilder.h"
-#include "src/dataReader/Cluster.h"
-#include "src/dataReader/DataReader.h"
-#include "src/testingTools/MetaDataFileReader.h"
-int main ()
-{
+
+
+
+
+TEST(testFastDOCKernels, testSmall){
 	const unsigned long point_dim = 3;
 	const unsigned long no_data_p = 4;
 	const unsigned long with = 2;
@@ -27,7 +23,7 @@ int main ()
 
 
 
-	float* data_h = (float*)malloc(size_of_data);
+	unsigned long* data_h = (unsigned long*) malloc(size_of_data);
 	unsigned long* centroid_h = (unsigned long*)malloc(size_of_centroid);
 	unsigned long* count_h = (unsigned long*)malloc(size_of_count);
 	unsigned long* desired_count_h = (unsigned long*)malloc(size_of_count);
@@ -75,38 +71,19 @@ int main ()
 
 	desired_count_h[0] = 2;
 
-	output_h[0] = true;
-	output_h[1] = true;
-	output_h[2] = true;
-	output_h[3] = true;
-
-	cudaMemcpy(output_d, output_h, size_of_output, cudaMemcpyHostToDevice);
-
-	cudaMemcpy(centroid_d, centroid_h, size_of_centroid, cudaMemcpyHostToDevice);
-	cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice);
-	cudaMemcpy(dim_d, dim_h, size_of_dims, cudaMemcpyHostToDevice);
+	cudaMemcpy(centroid_d, centroid_h, size_of_output, cudaMemcpyHostToDevice);
+	cudaMemcpy(data_d, data_h, size_of_output, cudaMemcpyHostToDevice);
+	cudaMemcpy(dim_d, dim_h, size_of_output, cudaMemcpyHostToDevice);
 
 	cudaStream_t stream1;
 	cudaStreamCreate(&stream1);
 
 	whatDataIsInCentroid(stream1,1024,data_d,centroid_d,dim_d,output_d,with,point_dim,no_data_p);
 
-	cudaMemcpy(output_h, output_d, size_of_output, cudaMemcpyDeviceToHost);
-
-	for(int i = 0  ; i < no_data_p ; i++){
-		if(output_h[i] != desired_output_h[i]){
-			std::cout << "at index: " << i << " " << output_h[i] << " != " << desired_output_h[i] << std::endl;
-
-		}
-		//EXPECT_EQ(output_h[i], desired_output_h[i]) << "at index: " << i;
-	}
-
-	cudaMemcpy(count_h, count_d, size_of_output, cudaMemcpyDeviceToHost);
-
-	//EXPECT_EQ(count_h[0] , desired_count_h[0]);
 
 
 
-	std::cout << "hello" << std::endl;
-	
+
+
+	EXPECT_TRUE(true);
 }

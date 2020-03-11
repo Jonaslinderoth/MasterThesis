@@ -96,19 +96,19 @@ void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid,
 		unsigned int numberOfCentroids);
 
 void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid,
-		unsigned int dimBlock,
-        cudaStream_t stream,
-		float* data,
-		unsigned int* centroids,
-		bool* dims,
-		bool* output,
-		unsigned int* Csum_out,
-		float width,
-		unsigned int point_dim,
-		unsigned int no_data,
-		unsigned int no_dims,
-		unsigned int m,
-		unsigned int numberOfCentroids);
+												unsigned int dimBlock,
+												cudaStream_t stream,
+												float* data,
+												unsigned int* centroids,
+												bool* dims,
+												bool* output,
+												unsigned int* Csum_out,
+												float width,
+												unsigned int point_dim,
+												unsigned int no_data,
+												unsigned int no_dims,
+												unsigned int m,
+												unsigned int numberOfCentroids);
 
 void scoreKernel(unsigned int dimGrid,
 				 unsigned int dimBlock,
@@ -166,6 +166,20 @@ bool generateRandomIntArrayDevice(cudaStream_t stream,
 								  const unsigned int max = 100,
 								  const unsigned int min = 0,
 								  unsigned int dimBlock = 1024);
+
+bool whatDataIsInCentroid(cudaStream_t stream,
+						  unsigned int dimBlock,
+						  float* data,
+						  unsigned long* centroids,
+						  bool* dimensions,
+						  bool* output,
+						  const float width,
+						  const unsigned long point_dim,
+						  const unsigned long no_data_p);
+
+
+
+
 
 
 #endif
