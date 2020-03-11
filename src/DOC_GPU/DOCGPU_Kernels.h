@@ -136,6 +136,14 @@ void argMaxKernel(unsigned int dimGrid,
 				  unsigned int input_size);
 
 
+void argMaxKernel(unsigned int dimGrid,
+				  unsigned int dimBlock,
+				  unsigned int sharedMemorySize,
+				  cudaStream_t stream,
+				  unsigned int* scores,
+				  unsigned int* scores_index,
+				  unsigned int input_size);
+
 void notDevice(unsigned int dimGrid,
 			   unsigned int dimBlock,
 			   cudaStream_t stream,

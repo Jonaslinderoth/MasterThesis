@@ -23,6 +23,11 @@ class Fast_DOC : public Clustering{
 	void setBeta(float value){this->beta = value;};
 	void setWidth(float value){this->width = value;};
 	void setd0(unsigned int value){this->d0 = value;};
+	unsigned int getd0(){return this->d0;};
+	float getAlpha(){return this->alpha;};
+	float getBeta(){return this->beta;};
+	float getWidth(){return this->width;};
+	
 	unsigned int size(){return this->data->size();};
 	std::vector<bool>* findDimensions(std::vector<float>* centroid,
 									  std::vector<std::vector<float>* >* points, float width);
