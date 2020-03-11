@@ -65,7 +65,6 @@ __global__ void pointsContainedDeviceNaive(float* data, unsigned int* centroids,
 				const float abss = abs(centro - punto);
 				d &= (not (dims[entryDims])) || (abss < width);
 			}
-
 			assert(entry < no_dims);
 			assert((size_t)entry*(size_t)no_data+(size_t)j < (size_t)no_dims*(size_t)no_data+(size_t)j);
 			output[(size_t)entry*(size_t)no_data+(size_t)j] = d;
@@ -567,6 +566,44 @@ __global__ void argMaxDevice(float* scores, unsigned int* scores_index, unsigned
 	}
 	
 }
+
+
+__global__ void argMaxDevice(unsigned int* scores, unsigned int* scores_index, unsigned int input_size){
+	extern __shared__ int array[];
+	int* argData = (int*)array;
+	unsigned int* scoreData = (unsigned int*) &argData[blockDim.x];
+	
+	unsigned int tid = threadIdx.x;
+	unsigned int i = blockIdx.x*blockDim.x+threadIdx.x;
+
+	argData[tid] = 0;
+	scoreData[tid] = 0;
+
+	if(i < input_size){
+	argData[tid] = scores_index[i];
+	scoreData[tid] = scores[i];
+	
+	__syncthreads();		
+		for(unsigned int s=(blockDim.x/2); s > 0; s/=2) {
+			if(tid < s){
+				assert(tid+s < blockDim.x);
+				if(scoreData[tid] < scoreData[tid+s]){
+					scoreData[tid] = scoreData[tid+s];
+					argData[tid] = argData[tid+s];
+				}
+			}
+			__syncthreads();
+		}
+	
+		if(tid == 0){
+			scores_index[blockIdx.x] = argData[0];
+			scores[blockIdx.x] = scoreData[0];
+		}; 
+		
+	}
+	
+}
+
 __global__ void randIntArrayInit(curandState_t* states , unsigned int seed, unsigned int size){
 	int idx = threadIdx.x + blockIdx.x * blockDim.x;
 	if(idx < size)
@@ -781,10 +818,6 @@ void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int shar
 				  cudaStream_t stream,
 				  float* scores, unsigned int* scores_index, unsigned int input_size){
 
-	unsigned int* out = (unsigned int*) malloc(sizeof(unsigned int)*input_size);
-	float* outScores = (float*) malloc(sizeof(float)*input_size);
-	
-	
 	
 	unsigned int out_size = input_size;
 	while(out_size > 1){
@@ -795,6 +828,23 @@ void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int shar
 	}
 	
 };
+
+
+void argMaxKernel(unsigned int dimGrid, unsigned int dimBlock, unsigned int sharedMemorySize,
+				  cudaStream_t stream,
+				  unsigned int* scores, unsigned int* scores_index, unsigned int input_size){
+
+	
+	unsigned int out_size = input_size;
+	while(out_size > 1){
+	   
+		argMaxDevice<<<dimGrid, dimBlock, sharedMemorySize, stream>>>(scores, scores_index, out_size);
+		out_size = dimGrid;
+		dimGrid = ceil((float)out_size/(float)dimBlock);
+	}
+	
+};
+
 
 
 std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsContained(std::vector<std::vector<bool>*>* dims,

@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <random>
 //# include <cuda.h>
-# include <curand.h>
+#include <curand.h>
 #include "../dataReader/DataReader.h"
 #include "../Clustering.h"
 #include "DOCGPU_Kernels.h"
