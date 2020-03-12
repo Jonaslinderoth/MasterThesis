@@ -490,6 +490,35 @@ __global__ void pointsContainedDeviceSharedMemoryFewerBank(float* __restrict__ d
 
 }
 
+__global__
+void whatDataIsInCentroidKernel(bool* output,
+								float* data,
+								bool* dimensions,
+								const unsigned long* centroid,
+								const unsigned long no_data_p,
+								const unsigned long point_dim,
+								const float width){
+
+
+	for(unsigned long indexDataChunk_p = 0 ; indexDataChunk_p < no_data_p ; indexDataChunk_p += blockDim.x){
+		const unsigned long indexData_p = indexDataChunk_p+threadIdx.x;
+		if(indexData_p < no_data_p){
+			const unsigned long indexDataNoDim_f = indexData_p*point_dim;
+			const unsigned long centroid_f = centroid[0]*point_dim;
+			bool d = true;
+			for(unsigned long indexDim = 0 ; indexDim < point_dim ; indexDim++){
+				const unsigned long indexData_f = indexDataNoDim_f + indexDim;
+				const float dat = data[indexData_f];
+				const float cen = data[centroid_f+indexDim];
+				const bool dim = dimensions[indexDim];
+				d &= (not (dim)) || (abs(cen - dat) < width);
+			}
+			output[indexData_p] = d;
+
+		}
+	}
+}
+
 
 
 __global__ void score(unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output, unsigned int len, float alpha, float beta, unsigned int num_points){
@@ -660,6 +689,11 @@ __global__ void notKernel(bool* array, unsigned int length){
 		}
 	}	
 }
+
+
+
+
+
 
 void notDevice(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream, bool* array, unsigned int length){
 	notKernel<<<dimGrid, dimBlock, 0, stream>>>(array, length);
@@ -1201,5 +1235,37 @@ bool generateRandomIntArrayDevice(cudaStream_t stream,
 
 	return true;
 }
+
+
+
+
+
+
+bool whatDataIsInCentroid(cudaStream_t stream,
+						  unsigned int dimBlock,
+						  float* data,
+						  unsigned long* centroids,
+						  bool* dimensions,
+						  bool* output,
+						  const float width,
+						  const unsigned long point_dim,
+						  const unsigned long no_data_p){
+
+
+
+	whatDataIsInCentroidKernel<<<1,dimBlock,0,stream>>>(output,
+													    data,
+													    dimensions,
+													    centroids,
+													    no_data_p,
+													    point_dim,
+													    width);
+	return true;
+}
+
+
+
+
+
 
 
