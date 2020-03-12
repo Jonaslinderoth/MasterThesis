@@ -243,13 +243,15 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 			// Output Points in that cluster, along with the dimensions and centroid
 			unsigned int* best_score_h = (unsigned int*) malloc(sizeof(unsigned int));
 			checkCudaErrors(cudaMemcpyAsync(best_score_h, findDim_count_d, sizeof(unsigned int), cudaMemcpyDeviceToHost, stream1));
-
 			// Synchronize to make sure that the value have arrived to the host side
 			cudaStreamSynchronize(stream1);
 			if(maxScore < best_score_h[0]){ // if the new score is better than the current;
 				maxScore = best_score_h[0];
 				// Find points contained
-				pointsContainedKernelNaive(dimGrid, dimBlock, stream1, data_d, centroids_d, findDim_d+(best_index_h[0]*dim),
+
+				pointsContainedKernelNaive(dimGrid, dimBlock, stream1, data_d,
+										   centroids_d+(((size_t)(best_index_h[0]/m))*sizeof(unsigned int)),
+										   findDim_d+(best_index_h[0]*dim),
 										   pointsContained_d, pointsContained_count_d,
 										   width, dim, number_of_points, 1, 1);
 

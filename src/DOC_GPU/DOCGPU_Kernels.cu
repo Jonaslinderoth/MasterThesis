@@ -31,7 +31,6 @@ __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, fl
 			}
 			res_d[entry*point_dim+i] = d;
 			Dsum += d;
-
 		}
 		Dsum_out[entry] = Dsum;
 	}
@@ -639,6 +638,9 @@ __global__ void randIntArray(unsigned int *result , curandState_t* states , cons
 				res %= max;
 				res += min;
 				assert(res >= min);
+				if(!(res <= max)){
+					printf("res: %u, max: %u \n", res, max);
+				}
 				assert(res <= max);
 				result[i*number_of_states+idx] = res;
 			}

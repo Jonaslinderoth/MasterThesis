@@ -402,6 +402,7 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 		printf("i %u, pointNr; %u, pointOffset %u, dim %u, dimOffset %u, dim2 %u \n", i, point, pointOffset, dim, dimOffset, dim2);
 		}*/
 
+   
 	
 	if(point < numElements){
 		unsigned int offset = d_delete_array[point];
@@ -410,6 +411,7 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 			assert(threadIdx.x*dim+j < 48000/4);
 			temp[threadIdx.x*dim+j] = d_data[point*dimensions+dimOffset+j];
 		}
+		// Make sure we are done loading into shared mempry
 		__syncthreads();
 
 		if(offset == nextPrefix){
@@ -418,6 +420,8 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 				d_outData[offset*dimensions+dimOffset+j] = temp[threadIdx.x*dim+j];
 			}
 		}
+		// Make sure we are done reading from shared memory before we start writing to it
+		__syncthreads();
 
 	}
 }
