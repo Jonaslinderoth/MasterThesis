@@ -53,7 +53,6 @@ TEST(testPrefixSum, testOne){
 		sum_scan_blelloch(stream, d_out_blelloch, d_in, h_in_len);
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 		checkCudaErrors(cudaStreamDestroy(stream));
-		//std::cout << "GPU time: " << duration << std::endl;
 
 		// Copy device output array to host output array
 		// And free device-side memory
@@ -563,7 +562,7 @@ TEST(testPrefixSum, testDeleteSimple){
 	bool* b_d;
 	float* out_d;
 	cudaMalloc((void **) &a_d, 4*sizeof(float));
-	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &b_d, 5*sizeof(bool));
 	cudaMalloc((void **) &out_d, 2*sizeof(float));
 
 	cudaMemcpy(a_d, a_h, 4*sizeof(float), cudaMemcpyHostToDevice);
@@ -586,7 +585,7 @@ TEST(testPrefixSum, testDeleteSimple2){
 	bool* b_d;
 	float* out_d;
 	cudaMalloc((void **) &a_d, 4*sizeof(float));
-	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &b_d, 5*sizeof(bool));
 	cudaMalloc((void **) &out_d, 1*sizeof(float));
 
 	cudaMemcpy(a_d, a_h, 4*sizeof(float), cudaMemcpyHostToDevice);
@@ -608,7 +607,7 @@ TEST(testPrefixSum, testDeleteSimple3){
 	bool* b_d;
 	float* out_d;
 	cudaMalloc((void **) &a_d, 4*sizeof(float));
-	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &b_d, 5*sizeof(bool));
 	cudaMalloc((void **) &out_d, 1*sizeof(float));
 
 	cudaMemcpy(a_d, a_h, 4*sizeof(float), cudaMemcpyHostToDevice);
@@ -631,7 +630,7 @@ TEST(testPrefixSum, testDeleteSimple4){
 	bool* b_d;
 	float* out_d;
 	cudaMalloc((void **) &a_d, 8*sizeof(float));
-	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &b_d, 5*sizeof(bool));
 	cudaMalloc((void **) &out_d, 4*sizeof(float));
 
 	cudaMemcpy(a_d, a_h, 8*sizeof(float), cudaMemcpyHostToDevice);
@@ -657,7 +656,7 @@ TEST(testPrefixSum, testDeleteSimple5){
 	bool* b_d;
 	float* out_d;
 	cudaMalloc((void **) &a_d, 8*sizeof(float));
-	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &b_d, 5*sizeof(bool));
 	cudaMalloc((void **) &out_d, 4*sizeof(float));
 
 	cudaMemcpy(a_d, a_h, 8*sizeof(float), cudaMemcpyHostToDevice);
@@ -694,7 +693,7 @@ TEST(testPrefixSum, testDeleteInputOutput){
 	bool* b_d;
 	float* out_d;
 	cudaMalloc((void **) &a_d, 8*sizeof(float));
-	cudaMalloc((void **) &b_d, 4*sizeof(bool));
+	cudaMalloc((void **) &b_d, 5*sizeof(bool));
 	cudaMalloc((void **) &out_d, 4*sizeof(float));
 
 	cudaMemcpy(a_d, a_h, 8*sizeof(float), cudaMemcpyHostToDevice);

@@ -250,7 +250,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 				// Find points contained
 
 				pointsContainedKernelNaive(dimGrid, dimBlock, stream1, data_d,
-										   centroids_d+(((size_t)(best_index_h[0]/m))*sizeof(unsigned int)),
+										   centroids_d+(((size_t)(best_index_h[0]/m))),
 										   findDim_d+(best_index_h[0]*dim),
 										   pointsContained_d, pointsContained_count_d,
 										   width, dim, number_of_points, 1, 1);

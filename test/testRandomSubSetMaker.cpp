@@ -144,7 +144,7 @@ TEST(testRandomSubSetMaker, testMultibleEqualSeed){
 TEST(testRandomSubSetMaker, testMultibleDifferentSizes){
 	unsigned int n = 100;
 	unsigned int* ids_d;
-	cudaMalloc(&ids_d, sizeof(unsigned int) * n);
+	cudaMalloc(&ids_d, sizeof(unsigned int) * n*2);
 	unsigned int* ids_h = (unsigned int*) malloc(sizeof(unsigned int) * n*2);
 	unsigned int* ids2_h = (unsigned int*) malloc(sizeof(unsigned int) * n);
 	

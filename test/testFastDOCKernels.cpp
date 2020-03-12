@@ -8,7 +8,7 @@
 
 
 
-TEST(testFastDOCKernels, testSmall){
+TEST(testFastDOCKernels, DISABLED_testSmall){
 	const unsigned long point_dim = 3;
 	const unsigned long no_data_p = 4;
 	const unsigned long with = 2;
@@ -71,19 +71,26 @@ TEST(testFastDOCKernels, testSmall){
 
 	desired_count_h[0] = 2;
 
-	cudaMemcpy(centroid_d, centroid_h, size_of_output, cudaMemcpyHostToDevice);
-	cudaMemcpy(data_d, data_h, size_of_output, cudaMemcpyHostToDevice);
-	cudaMemcpy(dim_d, dim_h, size_of_output, cudaMemcpyHostToDevice);
-
-	cudaStream_t stream1;
-	cudaStreamCreate(&stream1);
-
-	whatDataIsInCentroid(stream1,1024,data_d,centroid_d,dim_d,output_d,with,point_dim,no_data_p);
+	cudaMemcpy(centroid_d, centroid_h, size_of_centroid, cudaMemcpyHostToDevice);
+	cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice);
+	cudaMemcpy(dim_d, dim_h, size_of_dims, cudaMemcpyHostToDevice);
 
 
+	
+	 cudaStream_t stream1;
+	 cudaStreamCreate(&stream1);
+
+	 whatDataIsInCentroid(stream1,1024,data_d,centroid_d,dim_d,output_d,with,point_dim,no_data_p);
+
+	 cudaStreamDestroy(stream1);
+	 cudaFree(data_d);
+	 cudaFree(centroid_d);
+	 cudaFree(dim_d);
+	 cudaFree(output_d);
+	 cudaFree(count_d);
 
 
-
+   
 
 	EXPECT_TRUE(true);
 }
