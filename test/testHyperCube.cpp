@@ -118,7 +118,6 @@ TEST(testHyperCube, testPointContained3){
 }
 
 
-
 TEST(testHyperCube, testPointContained4){
 
 	std::vector<float>* centroid = new std::vector<float>{-10, 20, 30, -40, 50, 60, 70, -80, -90, 100};
