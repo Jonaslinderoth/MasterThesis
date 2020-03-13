@@ -490,15 +490,19 @@ __global__ void pointsContainedDeviceSharedMemoryFewerBank(float* __restrict__ d
 
 }
 
+
 __global__
 void whatDataIsInCentroidKernel(bool* output,
+								unsigned long* count,
 								float* data,
 								bool* dimensions,
 								const unsigned long* centroid,
 								const unsigned long no_data_p,
 								const unsigned long point_dim,
 								const float width){
+	extern __shared__ unsigned long countSM[];
 
+	countSM[threadIdx.x] = 0;
 
 	for(unsigned long indexDataChunk_p = 0 ; indexDataChunk_p < no_data_p ; indexDataChunk_p += blockDim.x){
 		const unsigned long indexData_p = indexDataChunk_p+threadIdx.x;
@@ -512,13 +516,29 @@ void whatDataIsInCentroidKernel(bool* output,
 				const float cen = data[centroid_f+indexDim];
 				const bool dim = dimensions[indexDim];
 				d &= (not (dim)) || (abs(cen - dat) < width);
+
+
 			}
 			output[indexData_p] = d;
+			countSM[threadIdx.x] += d;
 
 		}
 	}
-}
 
+	__syncthreads();
+	for(unsigned long s = blockDim.x/2; s > 0; s/=2) {
+		if(threadIdx.x < s){
+			assert(threadIdx.x+s < blockDim.x);
+			countSM[threadIdx.x] += countSM[threadIdx.x+s];
+		}
+		__syncthreads();
+	}
+
+	if(threadIdx.x == 0){
+		count[0] = countSM[threadIdx.x];
+	};
+
+}
 
 
 __global__ void score(unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output, unsigned int len, float alpha, float beta, unsigned int num_points){
@@ -1243,23 +1263,25 @@ bool generateRandomIntArrayDevice(cudaStream_t stream,
 
 bool whatDataIsInCentroid(cudaStream_t stream,
 						  unsigned int dimBlock,
+						  bool* output,
+						  unsigned long* count,
 						  float* data,
 						  unsigned long* centroids,
 						  bool* dimensions,
-						  bool* output,
 						  const float width,
 						  const unsigned long point_dim,
 						  const unsigned long no_data_p){
 
 
 
-	whatDataIsInCentroidKernel<<<1,dimBlock,0,stream>>>(output,
-													    data,
-													    dimensions,
-													    centroids,
-													    no_data_p,
-													    point_dim,
-													    width);
+	whatDataIsInCentroidKernel<<<1,dimBlock,dimBlock*sizeof(unsigned long),stream>>>(output,
+																					 count,
+																					 data,
+																					 dimensions,
+																					 centroids,
+																					 no_data_p,
+																					 point_dim,
+																					 width);
 	return true;
 }
 

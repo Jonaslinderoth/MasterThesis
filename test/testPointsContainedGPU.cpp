@@ -447,7 +447,7 @@ TEST_F(testPointsContainedGPU, testWithSimpleData11){
 }
 */
 
-TEST_F(testPointsContainedGPU, _SLOW_testRandomCompCPU){
+TEST_F(testPointsContainedGPU, SUPER_SLOW_testRandomCompCPU){
 	unsigned int point_dim = 100;
 	unsigned int no_data = 2000;
 	unsigned int no_centroids = 20;
@@ -503,6 +503,9 @@ TEST_F(testPointsContainedGPU, _SLOW_testRandomCompCPU){
 				f++;
 			}
 			EXPECT_EQ(d,c->at(i)->at(j)) << "i: " << i << " j: " <<j << " : " << data->at(j);
+			if(d != c->at(i)->at(j)){
+				break;
+			}
 		}
 	}
 
@@ -510,7 +513,7 @@ TEST_F(testPointsContainedGPU, _SLOW_testRandomCompCPU){
 
 
 
-TEST_F(testPointsContainedGPU, _SLOW_testIfDifferentPointContainedDeviceKernel){
+TEST_F(testPointsContainedGPU, SUPER_SLOW_testIfDifferentPointContainedDeviceKernel){
 	unsigned int point_dim = 100;
 	unsigned int no_data = 4000;
 	unsigned int no_centroids = 20;

@@ -177,17 +177,14 @@ bool generateRandomIntArrayDevice(cudaStream_t stream,
 
 bool whatDataIsInCentroid(cudaStream_t stream,
 						  unsigned int dimBlock,
+						  bool* output,
+						  unsigned long* count,
 						  float* data,
 						  unsigned long* centroids,
 						  bool* dimensions,
-						  bool* output,
 						  const float width,
 						  const unsigned long point_dim,
 						  const unsigned long no_data_p);
-
-
-
-
 
 
 #endif
