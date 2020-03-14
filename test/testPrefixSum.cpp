@@ -830,6 +830,8 @@ TEST(testPrefixSum, testDeleteInputOutput3){
     checkCudaErrors(cudaStreamCreate(&stream1));
 	deleteFromArray(stream1, data_d, mask_d, data_d, n/dim, dim);
 
+	cudaStreamSynchronize(stream1);
+
 	cudaMemcpyAsync(data_out_h, data_d, output_numbers*sizeof(float), cudaMemcpyDeviceToHost, stream1);
 
 	int a = 0;
