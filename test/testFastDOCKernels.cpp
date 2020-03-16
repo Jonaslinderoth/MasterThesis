@@ -125,7 +125,7 @@ TEST(testFastDOCKernels, testSmall){
 
 
 
-TEST(testFastDOCKernels, SUPER_SLOW_testMedium){
+TEST(testFastDOCKernels, _SUPER_SLOW_testMedium){
 
 
 	std::mt19937 gen{0};
