@@ -18,24 +18,24 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 
 TEST(testFastDOCKernels, testSmall){
-	const unsigned long point_dim = 3;
-	const unsigned long no_data_p = 4;
-	const unsigned long with = 2;
+	const unsigned int point_dim = 3;
+	const unsigned int no_data_p = 4;
+	const unsigned int with = 2;
 
 
-	const unsigned long no_data_f = no_data_p*point_dim;
-	const unsigned long size_of_data = no_data_f*sizeof(float);
-	const unsigned long size_of_count = sizeof(unsigned long);
-	const unsigned long size_of_dims = point_dim*sizeof(bool);
-	const unsigned long size_of_centroid = sizeof(unsigned long);
-	const unsigned long size_of_output = no_data_p*sizeof(bool);
+	const size_t no_data_f = no_data_p*point_dim;
+	const size_t size_of_data = no_data_f*sizeof(float);
+	const size_t size_of_count = sizeof(unsigned int);
+	const size_t size_of_dims = point_dim*sizeof(bool);
+	const size_t size_of_centroid = sizeof(unsigned int);
+	const size_t size_of_output = no_data_p*sizeof(bool);
 
 
 
 	float* data_h = (float*)malloc(size_of_data);
-	unsigned long* centroid_h = (unsigned long*)malloc(size_of_centroid);
-	unsigned long* count_h = (unsigned long*)malloc(size_of_count);
-	unsigned long* desired_count_h = (unsigned long*)malloc(size_of_count);
+	unsigned int* centroid_h = (unsigned int*)malloc(size_of_centroid);
+	unsigned int* count_h = (unsigned int*)malloc(size_of_count);
+	unsigned int* desired_count_h = (unsigned int*)malloc(size_of_count);
 
 	bool* dim_h = (bool*)malloc(size_of_dims);
 	bool* output_h = (bool*)malloc(size_of_output);
@@ -43,8 +43,8 @@ TEST(testFastDOCKernels, testSmall){
 
 
 	float* data_d;
-	unsigned long* centroid_d;
-	unsigned long* count_d;
+	unsigned int* centroid_d;
+	unsigned int* count_d;
 	bool* dim_d;
 	bool* output_d;
 
@@ -139,29 +139,29 @@ TEST(testFastDOCKernels, _SUPER_SLOW_testMedium){
 
 	const float with = 10.0;
 
-	for(unsigned long point_dim = 10 ; point_dim < 350-smallValue; point_dim +=smallValue){
-		for(unsigned long no_data = 10 ; no_data < 5000-smallValue; no_data +=smallValue){
-			unsigned long count = 0;
+	for(unsigned int point_dim = 10 ; point_dim < 350-smallValue; point_dim +=smallValue){
+		for(unsigned int no_data = 10 ; no_data < 5000-smallValue; no_data +=smallValue){
+			unsigned int count = 0;
 			std::uniform_real_distribution<float> distPoint(0, 100);
 
 			std::vector<std::vector<float>> data;
-			for(unsigned long indexData = 0; indexData < no_data ; indexData++){
+			for(unsigned int indexData = 0; indexData < no_data ; indexData++){
 				std::vector<float> point;
-				for(unsigned long indexDim = 0 ; indexDim < point_dim ; indexDim++){
+				for(unsigned int indexDim = 0 ; indexDim < point_dim ; indexDim++){
 					point.push_back(distPoint(rand));
 				}
 				data.push_back(point);
 			}
 
 			std::vector<float> centroid;
-			std::uniform_int_distribution<unsigned long> distCentroid(0, data.size()-1);
-			unsigned long centroidIndex = distCentroid(rand);
+			std::uniform_int_distribution<unsigned int> distCentroid(0, data.size()-1);
+			unsigned int centroidIndex = distCentroid(rand);
 			centroid = data.at(centroidIndex);
 
 			std::bernoulli_distribution distBool(0.5);
 			std::vector<bool> dimensions;
 
-			for(unsigned long indexDims = 0 ; indexDims < point_dim ; indexDims++){
+			for(unsigned int indexDims = 0 ; indexDims < point_dim ; indexDims++){
 				dimensions.push_back(distBool(rand));
 			}
 
@@ -172,19 +172,19 @@ TEST(testFastDOCKernels, _SUPER_SLOW_testMedium){
 				count += (unsigned long)HyperCube.pointContained(&(*iter));
 			}
 
-			const unsigned long no_data_f = no_data*point_dim;
-			const unsigned long size_of_data = no_data_f*sizeof(float);
-			const unsigned long size_of_count = sizeof(unsigned long);
-			const unsigned long size_of_dims = point_dim*sizeof(bool);
-			const unsigned long size_of_centroid = sizeof(unsigned long);
-			const unsigned long size_of_output = no_data*sizeof(bool);
+			const unsigned int no_data_f = no_data*point_dim;
+			const size_t size_of_data = no_data_f*sizeof(float);
+			const size_t size_of_count = sizeof(unsigned long);
+			const size_t size_of_dims = point_dim*sizeof(bool);
+			const size_t size_of_centroid = sizeof(unsigned long);
+			const size_t size_of_output = no_data*sizeof(bool);
 
 
 
 			float* data_h = (float*)malloc(size_of_data);
-			unsigned long* centroid_h = (unsigned long*)malloc(size_of_centroid);
-			unsigned long* count_h = (unsigned long*)malloc(size_of_count);
-			unsigned long* desired_count_h = (unsigned long*)malloc(size_of_count);
+			unsigned int* centroid_h = (unsigned int*)malloc(size_of_centroid);
+			unsigned int* count_h = (unsigned int*)malloc(size_of_count);
+			unsigned int* desired_count_h = (unsigned int*)malloc(size_of_count);
 
 			bool* dim_h = (bool*)malloc(size_of_dims);
 			bool* output_h = (bool*)malloc(size_of_output);
@@ -192,8 +192,8 @@ TEST(testFastDOCKernels, _SUPER_SLOW_testMedium){
 
 
 			float* data_d;
-			unsigned long* centroid_d;
-			unsigned long* count_d;
+			unsigned int* centroid_d;
+			unsigned int* count_d;
 			bool* dim_d;
 			bool* output_d;
 

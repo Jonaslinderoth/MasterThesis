@@ -165,7 +165,7 @@ __global__ void gpu_prescan(unsigned int* const d_out,
 	unsigned int* const d_block_sums,
 	const unsigned int len,
 	const unsigned int shmem_sz,
-	const unsigned int max_elems_per_block)
+							const unsigned int max_elems_per_block, bool inverted)
 {
 	// Allocated on invocation
 	extern __shared__ unsigned int s_out[];
@@ -191,10 +191,10 @@ __global__ void gpu_prescan(unsigned int* const d_out,
 	unsigned int cpy_idx = max_elems_per_block * blockIdx.x + threadIdx.x;
 	if (cpy_idx < len)
 	{
-		bool a = d_in[cpy_idx];
+		bool a = d_in[cpy_idx] ^ inverted;
 		s_out[ai + CONFLICT_FREE_OFFSET(ai)] = a;
 		if (cpy_idx + blockDim.x < len)
-			s_out[bi + CONFLICT_FREE_OFFSET(bi)] = d_in[cpy_idx + blockDim.x];
+			s_out[bi + CONFLICT_FREE_OFFSET(bi)] = d_in[cpy_idx + blockDim.x] ^ inverted;
 	}
 
 	// For both upsweep and downsweep:
@@ -396,25 +396,27 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 		dim2 = dimensions-dimOffset;
 	}
 	
- 
-
 	/*if(i < 12){
-		printf("i %u, pointNr; %u, pointOffset %u, dim %u, dimOffset %u, dim2 %u \n", i, point, pointOffset, dim, dimOffset, dim2);
-		}*/
+	  printf("i %u, pointNr; %u, pointOffset %u, dim %u, dimOffset %u, dim2 %u \n", i, point, pointOffset, dim, dimOffset, dim2);
+	  }*/
 
-	
+
 	if(point < numElements){
 		unsigned int offset = d_delete_array[point];
 		unsigned int nextPrefix = d_delete_array[point+1];
 		for(int j = 0; j < dim2; j++){
 			assert(threadIdx.x*dim+j < 48000/4);
+			assert(dimOffset < dimensions);
+			assert(point*dimensions+dimOffset+j < numElements*dimensions);
 			temp[threadIdx.x*dim+j] = d_data[point*dimensions+dimOffset+j];
 		}
 		// Make sure data is sone written into shared memory
 		__syncthreads();
-
 		if(offset == nextPrefix){
-			offset = point-offset;
+			assert(point >= offset);
+			unsigned int orgOffset = offset;
+			offset = point-offset;	
+			
 			for(int j = 0; j < dim2; j++){
 				d_outData[offset*dimensions+dimOffset+j] = temp[threadIdx.x*dim+j];
 			}
@@ -430,7 +432,7 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 void sum_scan_blelloch(cudaStream_t stream, 
 					   unsigned int* const d_out,
 					   bool* d_in,
-					   const size_t numElems)
+					   const size_t numElems, bool inverted)
 {
 	// Zero out d_out
 	checkCudaErrors(cudaMemsetAsync(d_out, 0, numElems * sizeof(unsigned int), stream));
@@ -467,7 +469,7 @@ void sum_scan_blelloch(cudaStream_t stream,
 																	d_block_sums,
 																	numElems,
 																	shmem_sz,
-																	max_elems_per_block);
+																				max_elems_per_block, inverted);
 
 	// Sum scan total sums produced by each block
 	// Use basic implementation if number of total sums is <= 2 * block_sz
@@ -566,32 +568,36 @@ void cpuDeleteFromArray(float* const h_outData,
  * return the list where entry i in the data is deleted if entry i in the bools array is 0.
  * it also deletes from the indexes keeping track of what is what.
  * but it does not resize the indexs , meaning that some if the indexs array can be garbage.
- */
+ */	
 void deleteFromArray(cudaStream_t stream,
 					 float* d_outData,
 					 bool* d_delete_array,
 					 const float* d_data,
 					 const unsigned long numElements,
-					 const unsigned int dimension){
+					 const unsigned int dimension, bool inverted){
 
 	// Set up device-side memory for output
 	unsigned int* d_out_blelloch;
 	checkCudaErrors(cudaMalloc(&d_out_blelloch, sizeof(unsigned int) * (numElements+1)));
 
-	sum_scan_blelloch(stream, d_out_blelloch,d_delete_array,(numElements+1));
-
+	sum_scan_blelloch(stream, d_out_blelloch,d_delete_array,(numElements+1), inverted);
 
 	/*
+		
 	unsigned int* h_prefixSum = new unsigned int[numElements+1];
-
 	checkCudaErrors(cudaMemcpy(h_prefixSum, d_out_blelloch, sizeof(unsigned int) * (numElements+1), cudaMemcpyDeviceToHost));
 
-	for(unsigned int i = 0 ; i < (numElements+1) ; ++i){
-		std::cout << h_prefixSum[i] << " " ;
+	int counter = 0;
+	std::cout << (numElements+1) << std::endl;
+	for(unsigned int i = 0 ; i < (numElements) ; ++i){
+		//	std::cout << h_prefixSum[i] << " " ;
+		counter += h_prefixSum[i] == h_prefixSum[i+1];
 	}
+	std::cout << "to be moved: " << counter << std::endl;
 	std::cout << std::endl;
 		std::cout << std::endl;
-		std::cout << std::endl;*/
+		std::cout << std::endl;
+	*/
 	
 
 
@@ -599,7 +605,7 @@ void deleteFromArray(cudaStream_t stream,
 	const unsigned int threadsUsed = 1024;
 	unsigned int numberOfvaluesPrThread = 10; // hardcoded, could be up to 11,... it is bounded by the size of shared memory
 	unsigned int numberOfThreadsPrPoint = ceilf((float)dimension/(float)numberOfvaluesPrThread);
-
+	
 	
 	unsigned int smem = threadsUsed*sizeof(float)*numberOfvaluesPrThread;
 
@@ -607,7 +613,6 @@ void deleteFromArray(cudaStream_t stream,
 	if((numElements*numberOfThreadsPrPoint)%1024 != 0){
 		blocksNeccesary++;
 	}
-   
 	gpuDeleteFromArray<<<blocksNeccesary,threadsUsed,smem, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension,numberOfThreadsPrPoint);
 
 	cudaFree(d_out_blelloch);
@@ -618,11 +623,11 @@ void deleteFromArray(float* d_outData,
 					 bool* d_delete_array,
 					 const float* d_data,
 					 const unsigned long numElements,
-					 const unsigned int dimension){
+					 const unsigned int dimension, bool inverted){
 
 	
 	cudaStream_t stream;
 	checkCudaErrors(cudaStreamCreate(&stream));
-	deleteFromArray(stream, d_outData, d_delete_array, d_data, numElements, dimension);
+	deleteFromArray(stream, d_outData, d_delete_array, d_data, numElements, dimension, inverted);
 	checkCudaErrors(cudaStreamDestroy(stream));
 }

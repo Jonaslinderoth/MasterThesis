@@ -649,6 +649,52 @@ TEST(testPrefixSum, testDeleteSimple4){
 }
 
 
+TEST(testPrefixSum, testDeleteSimple4_1){
+	float a_h[8] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+	bool b_h[5] = {true, true, true, false, false};
+	float* a_d;
+	bool* b_d;
+	float* out_d;
+	cudaMalloc((void **) &a_d, 8*sizeof(float));
+	cudaMalloc((void **) &b_d, 5*sizeof(bool));
+	cudaMalloc((void **) &out_d, 2*sizeof(float));
+
+	cudaMemcpy(a_d, a_h, 8*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(b_d, b_h, 5*sizeof(bool), cudaMemcpyHostToDevice);
+
+	deleteFromArray(out_d, b_d, a_d, 4, 2);
+
+	float* out_h = (float*) malloc(2*sizeof(float));
+	cudaMemcpy(out_h, out_d, 2*sizeof(float), cudaMemcpyDeviceToHost);
+
+	EXPECT_EQ(out_h[0], 7.0);
+	EXPECT_EQ(out_h[1], 8.0);
+}
+
+
+TEST(testPrefixSum, testDeleteSimple4_2){
+	float a_h[8] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+	bool b_h[5] = {true, true, false, true, false};
+	float* a_d;
+	bool* b_d;
+	float* out_d;
+	cudaMalloc((void **) &a_d, 8*sizeof(float));
+	cudaMalloc((void **) &b_d, 5*sizeof(bool));
+	cudaMalloc((void **) &out_d, 2*sizeof(float));
+
+	cudaMemcpy(a_d, a_h, 8*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(b_d, b_h, 5*sizeof(bool), cudaMemcpyHostToDevice);
+
+	deleteFromArray(out_d, b_d, a_d, 4, 2);
+
+	float* out_h = (float*) malloc(2*sizeof(float));
+	cudaMemcpy(out_h, out_d, 2*sizeof(float), cudaMemcpyDeviceToHost);
+
+	EXPECT_EQ(out_h[0], 5.0);
+	EXPECT_EQ(out_h[1], 6.0);
+}
+
+
 TEST(testPrefixSum, testDeleteSimple5){
 	float a_h[8] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
 	bool b_h[5] = {true, false, true, false, false};
@@ -711,7 +757,108 @@ TEST(testPrefixSum, testDeleteInputOutput){
 	EXPECT_EQ(out_h[3], 8.0);
 }
 
+TEST(testPrefixSum, testCreatePrefixSum){
+	int number_of_points = 100000;
+	int deleteNo =  1;
+	
+	size_t size_of_deleteArray = (number_of_points+1) * sizeof(bool);
+	size_t size_of_output = (number_of_points +1)*sizeof(unsigned int);
 
+	bool* deleteArray_h = (bool*) malloc(size_of_deleteArray);
+	unsigned int* output_h = (unsigned int*) malloc(size_of_output);
+
+	for(int i = 0; i < number_of_points+1; i++){
+		deleteArray_h[i] = false;
+	}
+
+	int i = 0;
+
+	while(i < deleteNo){
+		int a = 0 + (rand() % static_cast<int>(number_of_points - 0));
+		if(!deleteArray_h[a]){
+			i++;
+			deleteArray_h[a] = true;
+		}
+	}
+
+	bool* deleteArray_d;
+	unsigned int* output_d;
+	(cudaMalloc(&deleteArray_d, size_of_deleteArray));
+	(cudaMalloc(&output_d, size_of_output));
+
+	cudaMemcpy(deleteArray_d, deleteArray_h, size_of_deleteArray, cudaMemcpyHostToDevice);
+	cudaStream_t stream;
+	checkCudaErrors(cudaStreamCreate(&stream));
+	sum_scan_blelloch(stream, output_d,deleteArray_d,(number_of_points+1));
+	checkCudaErrors(cudaStreamDestroy(stream));
+
+	cudaMemcpy(output_h, output_d, size_of_output, cudaMemcpyDeviceToHost);
+
+	int counter = 0;
+	for(unsigned int i = 0 ; i < (number_of_points) ; ++i){
+		//	std::cout << h_prefixSum[i] << " " ;
+		counter += output_h[i] == output_h[i+1];
+	}
+	int counter2 = 0;
+	for(unsigned int i = 0; i < (number_of_points); i++){
+		counter2 += !deleteArray_h[i];
+	}
+
+	EXPECT_EQ(counter2, number_of_points - deleteNo);
+	EXPECT_EQ(counter, number_of_points - deleteNo);
+	
+}
+
+TEST(testPrefixSum, testCreatePrefixSumInverted){
+	int number_of_points = 100000;
+	int deleteNo =  1;
+	
+	size_t size_of_deleteArray = (number_of_points+1) * sizeof(bool);
+	size_t size_of_output = (number_of_points +1)*sizeof(unsigned int);
+
+	bool* deleteArray_h = (bool*) malloc(size_of_deleteArray);
+	unsigned int* output_h = (unsigned int*) malloc(size_of_output);
+
+	for(int i = 0; i < number_of_points+1; i++){
+		deleteArray_h[i] = false;
+	}
+
+	int i = 0;
+
+	while(i < deleteNo){
+		int a = 0 + (rand() % static_cast<int>(number_of_points - 0));
+		if(!deleteArray_h[a]){
+			i++;
+			deleteArray_h[a] = true;
+		}
+	}
+
+	bool* deleteArray_d;
+	unsigned int* output_d;
+	(cudaMalloc(&deleteArray_d, size_of_deleteArray));
+	(cudaMalloc(&output_d, size_of_output));
+
+	cudaMemcpy(deleteArray_d, deleteArray_h, size_of_deleteArray, cudaMemcpyHostToDevice);
+	cudaStream_t stream;
+	checkCudaErrors(cudaStreamCreate(&stream));
+	sum_scan_blelloch(stream, output_d,deleteArray_d,(number_of_points+1), true);
+	checkCudaErrors(cudaStreamDestroy(stream));
+
+	cudaMemcpy(output_h, output_d, size_of_output, cudaMemcpyDeviceToHost);
+
+	int counter = 0;
+	for(unsigned int i = 0 ; i < (number_of_points) ; ++i){
+		counter += output_h[i] == output_h[i+1];
+	}
+	int counter2 = 0;
+	for(unsigned int i = 0; i < (number_of_points); i++){
+		counter2 += deleteArray_h[i];
+	}
+
+	EXPECT_EQ(counter2, deleteNo);
+	EXPECT_EQ(counter, deleteNo);
+	
+}
 
 TEST(testPrefixSum, _SLOW_testDeleteInputOutput2){
 	unsigned int dim = 301;
@@ -834,6 +981,7 @@ TEST(testPrefixSum, testDeleteInputOutput3){
 
 	cudaMemcpyAsync(data_out_h, data_d, output_numbers*sizeof(float), cudaMemcpyDeviceToHost, stream1);
 
+	cudaStreamSynchronize(stream1);
 	int a = 0;
 	for(int i = 0; i < n/dim; i++){
 		if(not mask_h[i]){
@@ -854,4 +1002,62 @@ TEST(testPrefixSum, testDeleteInputOutput3){
 		//std::cout << std::endl;
 	}
 
+}
+
+
+
+TEST(testPrefixSum, _SLOW_testDelete48000){
+	int numberOfPoints = 2000000;
+	int dim = 12;
+	
+	int pointsToBeDeleted = numberOfPoints*0.85;
+	int numberOfPointsInOutput = numberOfPoints-pointsToBeDeleted;
+	
+	
+	float* data_h = (float*) malloc(numberOfPoints*dim*sizeof(float));
+	float* output = (float*) malloc(numberOfPointsInOutput*dim*sizeof(float));
+	bool* toBeDeleted = (bool*) malloc((numberOfPoints+1)*sizeof(bool));
+
+	
+	for(int i = 0; i < numberOfPoints*dim; i++){
+		data_h[i] = i%1000000;
+	}
+
+	int deletedCount = 0;
+	for(int i = 0; i < numberOfPoints+1; i++){
+		int a = (int)ceilf((float)numberOfPoints/(float)numberOfPointsInOutput)+1;
+
+		if(deletedCount >= pointsToBeDeleted){
+			toBeDeleted[i] = 0;			
+		}else{
+			deletedCount += (i%a != 0);
+			toBeDeleted[i] = (i%a != 0);			
+		};
+	}
+
+	int k = 0;
+	for(int i = 0; i < numberOfPoints; i++){
+		if(toBeDeleted[i] == 1) k++;
+	}
+
+	std::cout << std::endl << k << ", " << numberOfPointsInOutput << ", " << deletedCount << ", " << pointsToBeDeleted << std::endl;
+
+	float* data_d;
+	bool* toBeDeleted_d;
+	float* out_d;
+	cudaMalloc((void **) &data_d, numberOfPoints*dim*sizeof(float));
+	cudaMalloc((void **) &toBeDeleted_d, (numberOfPoints+1)*sizeof(bool));
+	cudaMalloc((void **) &out_d, numberOfPointsInOutput*dim*sizeof(float));
+
+	cudaMemcpy(data_d, data_h, numberOfPoints*dim*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(toBeDeleted_d, toBeDeleted, (numberOfPoints+1)*sizeof(bool), cudaMemcpyHostToDevice);
+
+	deleteFromArray(out_d, toBeDeleted_d, data_d, numberOfPoints, dim);
+
+	cudaMemcpy(output, out_d, numberOfPointsInOutput*dim*sizeof(float), cudaMemcpyDeviceToHost);
+	for(int i = 0; i < numberOfPointsInOutput*dim; i++){
+		//std::cout << output[i] << ", ";
+	}
+
+	SUCCEED();
 }

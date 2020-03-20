@@ -6,7 +6,7 @@ CXX = g++
 CXXFLAGS=-I. -nocudalib -O2 #-g -G  
 else
 CXX = nvcc
-CXXFLAGS=-I/usr/local/include/coin -I. -arch=sm_37 -g -G #-O2
+CXXFLAGS=-I/usr/local/include/coin -I. -arch=sm_37  -O2 -DNDEBUG # -g -G -DNDEBUG -g -G 
 endif
 
 
@@ -39,7 +39,6 @@ BENCHMARKOBJS= $(patsubst %.cu, %.o, $(patsubst %.cpp, %.o, $(BENCHMARKFILES)))
 
 
 all: $(sources) $(EXE_DIR)/${EXE}  $(EXE_DIR)/${TEST}
-
 
 os:
 	echo $(OS_NAME)

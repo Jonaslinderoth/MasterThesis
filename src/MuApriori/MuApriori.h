@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <queue>
 #include <boost/dynamic_bitset.hpp>
 #include <math.h>
 
@@ -32,7 +33,17 @@ class MuApriori{
 	float beta;
 	std::vector<boost::dynamic_bitset<>*>* itemSet;
 	unsigned int minSupp;
-	std::vector<Candidate>* bestCandidates;
+	unsigned int numberOfCandidates;
+	struct CustomCompare{
+		bool operator()(const Candidate& a, const Candidate& b){
+			return *(a.item) < *(b.item);
+		};		
+	};
+
+	
+	std::priority_queue<Candidate, std::vector<Candidate>,  CustomCompare>* bestCandidates;
+
+
 };
 
 #endif

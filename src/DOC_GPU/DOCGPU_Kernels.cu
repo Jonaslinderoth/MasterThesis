@@ -493,25 +493,25 @@ __global__ void pointsContainedDeviceSharedMemoryFewerBank(float* __restrict__ d
 
 __global__
 void whatDataIsInCentroidKernel(bool* output,
-								unsigned long* count,
+								unsigned int* count,
 								float* data,
 								bool* dimensions,
-								const unsigned long* centroid,
-								const unsigned long no_data_p,
-								const unsigned long point_dim,
+								const unsigned int* centroid,
+								const unsigned int no_data_p,
+								const unsigned int point_dim,
 								const float width){
-	extern __shared__ unsigned long countSM[];
+	extern __shared__ unsigned int countSM[];
 
 	countSM[threadIdx.x] = 0;
 
-	for(unsigned long indexDataChunk_p = 0 ; indexDataChunk_p < no_data_p ; indexDataChunk_p += blockDim.x){
-		const unsigned long indexData_p = indexDataChunk_p+threadIdx.x;
+	for(unsigned int indexDataChunk_p = 0 ; indexDataChunk_p < no_data_p ; indexDataChunk_p += blockDim.x){
+		const size_t indexData_p = indexDataChunk_p+threadIdx.x;
 		if(indexData_p < no_data_p){
-			const unsigned long indexDataNoDim_f = indexData_p*point_dim;
-			const unsigned long centroid_f = centroid[0]*point_dim;
+			const size_t indexDataNoDim_f = indexData_p*point_dim;
+			const size_t centroid_f = centroid[0]*point_dim;
 			bool d = true;
-			for(unsigned long indexDim = 0 ; indexDim < point_dim ; indexDim++){
-				const unsigned long indexData_f = indexDataNoDim_f + indexDim;
+			for(unsigned int indexDim = 0 ; indexDim < point_dim ; indexDim++){
+				const size_t indexData_f = indexDataNoDim_f + indexDim;
 				const float dat = data[indexData_f];
 				const float cen = data[centroid_f+indexDim];
 				const bool dim = dimensions[indexDim];
@@ -526,7 +526,7 @@ void whatDataIsInCentroidKernel(bool* output,
 	}
 
 	__syncthreads();
-	for(unsigned long s = blockDim.x/2; s > 0; s/=2) {
+	for(unsigned int s = blockDim.x/2; s > 0; s/=2) {
 		if(threadIdx.x < s){
 			assert(threadIdx.x+s < blockDim.x);
 			countSM[threadIdx.x] += countSM[threadIdx.x+s];
@@ -1264,17 +1264,17 @@ bool generateRandomIntArrayDevice(cudaStream_t stream,
 bool whatDataIsInCentroid(cudaStream_t stream,
 						  unsigned int dimBlock,
 						  bool* output,
-						  unsigned long* count,
+						  unsigned int* count,
 						  float* data,
-						  unsigned long* centroids,
+						  unsigned int* centroids,
 						  bool* dimensions,
 						  const float width,
-						  const unsigned long point_dim,
-						  const unsigned long no_data_p){
+						  const unsigned int point_dim,
+						  const unsigned int no_data_p){
 
 
 
-	whatDataIsInCentroidKernel<<<1,dimBlock,dimBlock*sizeof(unsigned long),stream>>>(output,
+	whatDataIsInCentroidKernel<<<1,dimBlock,dimBlock*sizeof(unsigned int),stream>>>(output,
 																					 count,
 																					 data,
 																					 dimensions,

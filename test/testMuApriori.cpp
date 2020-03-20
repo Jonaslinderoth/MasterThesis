@@ -101,7 +101,7 @@ TEST(testMuApriori, testFindBest1){
 	EXPECT_EQ(b->at(0).score, a.mu(1,1));	
 }
 
-TEST(testMuApriori, testFindBest2){
+TEST(testMuApriori, DISABLED_testFindBest2){
 	std::vector<boost::dynamic_bitset<>*>* itemSet = new std::vector<boost::dynamic_bitset<>*>;
 
 	boost::dynamic_bitset<>* point1 = new boost::dynamic_bitset<>;
@@ -144,7 +144,6 @@ TEST(testMuApriori, testFindBest3){
 	auto b = a.findBest(1);
 	EXPECT_EQ(b->size(),1);
 	EXPECT_EQ(b->at(0).support, 2);
-	std::cout << *(b->at(0).item) << std::endl;
 	EXPECT_EQ(b->at(0).score, a.mu(2,1));
 	EXPECT_EQ(b->at(0).item->operator[](0), 0);
 	EXPECT_EQ(b->at(0).item->operator[](1), 1);
@@ -201,8 +200,47 @@ TEST(testMuApriori, testFindBest5){
 	point2->push_back(1);
 	itemSet->push_back(point2);
 
-	point3->push_back(1);
 	point3->push_back(0);
+	point3->push_back(1);
+	point3->push_back(1);
+	point3->push_back(1);
+	
+	itemSet->push_back(point3);
+	
+	auto a = MuApriori(itemSet, 1);
+	EXPECT_EQ(a.getBeta(), 0.25);
+	auto b = a.findBest(1);
+	EXPECT_EQ(b->size(),1);
+	EXPECT_EQ(b->at(0).support, 2);
+	EXPECT_EQ(b->at(0).score, a.mu(2,3));
+	EXPECT_EQ(b->at(0).item->operator[](0), 0);
+	EXPECT_EQ(b->at(0).item->operator[](1), 1);
+	EXPECT_EQ(b->at(0).item->operator[](2), 1);
+	EXPECT_EQ(b->at(0).item->operator[](3), 1);
+}
+
+
+
+TEST(testMuApriori, testFindBest6){
+	std::vector<boost::dynamic_bitset<>*>* itemSet = new std::vector<boost::dynamic_bitset<>*>;
+
+	boost::dynamic_bitset<>* point1 = new boost::dynamic_bitset<>;
+	boost::dynamic_bitset<>* point2 = new boost::dynamic_bitset<>;
+	boost::dynamic_bitset<>* point3 = new boost::dynamic_bitset<>;
+	point1->push_back(0);
+	point1->push_back(0);
+	point1->push_back(0);
+	point1->push_back(1);
+	itemSet->push_back(point1);
+
+	point2->push_back(0);
+	point2->push_back(0);
+	point2->push_back(0);
+	point2->push_back(1);
+	itemSet->push_back(point2);
+
+	point3->push_back(1);
+	point3->push_back(1);
 	point3->push_back(1);
 	point3->push_back(1);
 	
@@ -212,11 +250,12 @@ TEST(testMuApriori, testFindBest5){
 	EXPECT_EQ(a.getBeta(), 0.25);
 	auto b = a.findBest(1);
 	EXPECT_EQ(b->size(),1);
-	EXPECT_EQ(b->at(0).support, 2);
-	EXPECT_EQ(b->at(0).score, a.mu(2,2));
-	std::cout << "got here" << std::endl;
-	EXPECT_EQ(b->at(0).item->operator[](0), 0);
+	EXPECT_EQ(b->at(0).support, 1);
+	EXPECT_EQ(b->at(0).score, a.mu(1,4));
+	EXPECT_EQ(b->at(0).item->operator[](0), 1);
 	EXPECT_EQ(b->at(0).item->operator[](1), 1);
-	EXPECT_EQ(b->at(0).item->operator[](2), 0);
+	EXPECT_EQ(b->at(0).item->operator[](2), 1);
 	EXPECT_EQ(b->at(0).item->operator[](3), 1);
 }
+
+

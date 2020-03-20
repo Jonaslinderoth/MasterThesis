@@ -25,7 +25,7 @@
 #endif
 
 void sum_scan_blelloch(cudaStream_t stream, unsigned int* const d_out,const unsigned int* const d_in,const size_t numElems);
-void sum_scan_blelloch(cudaStream_t stream, unsigned int* const d_out, bool* d_in,const size_t numElems);
+void sum_scan_blelloch(cudaStream_t stream, unsigned int* const d_out, bool* d_in,const size_t numElems, bool inverted = false);
 
 void cpu_sum_scan(unsigned int* const h_out, const bool* const h_in, const size_t numElems);
 void cpu_sum_scan(unsigned int* const h_out, const unsigned int* const h_in,const size_t numElems);
@@ -34,8 +34,8 @@ void cpuDeleteFromArray(float* const d_outData, const bool* delete_array, const 
 						const size_t numElements, unsigned int dimension = 1);
 
 void deleteFromArray(cudaStream_t stream, float* d_outData, bool* delete_array, const float* data,
-					 const unsigned long numElements, unsigned int dimension = 1);
+					 const unsigned long numElements, unsigned int dimension = 1, bool inverted = false);
 
 void deleteFromArray(float* d_outData, bool* delete_array, const float* data,
-					 const unsigned long numElements, unsigned int dimension = 1);
+					 const unsigned long numElements, unsigned int dimension = 1, bool inverted = false);
 #endif /* DELETEFROMARRAY_H_ */

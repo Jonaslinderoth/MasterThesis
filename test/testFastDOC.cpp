@@ -67,6 +67,54 @@ TEST(testFastDOC, testFindClusterSimple1GPU){
 	auto res = c->findCluster();
 
 	EXPECT_EQ(res.first->size(), 4);
+	EXPECT_EQ(res.first->at(0)->at(0), 1);
+	EXPECT_EQ(res.first->at(1)->at(0), 2);
+	EXPECT_EQ(res.first->at(2)->at(0), 3);
+	EXPECT_EQ(res.first->at(3)->at(0), 4);
+
+	
+	EXPECT_EQ(res.second->size(), 2);
+	EXPECT_TRUE(res.second->at(0));
+	EXPECT_TRUE(res.second->at(1));
+}
+
+
+
+TEST(testFastDOC, testFindClusterSimple1GPU_2){
+	auto data = new std::vector<std::vector<float>*>;
+	{
+		auto point = new std::vector<float>{10000,1};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{1,10000};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{2,10000};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{3,10000};
+		data->push_back(point);
+	}
+	{
+		auto point = new std::vector<float>{4,10000};
+		data->push_back(point);
+	}
+
+
+	auto c = new Fast_DOCGPU(data);
+	c->setSeed(1);
+	auto res = c->findCluster();
+
+	EXPECT_EQ(res.first->size(), 4);
+	EXPECT_EQ(res.first->at(0)->at(0), 1);
+	EXPECT_EQ(res.first->at(1)->at(0), 2);
+	EXPECT_EQ(res.first->at(2)->at(0), 3);
+	EXPECT_EQ(res.first->at(3)->at(0), 4);
+
+	
 	EXPECT_EQ(res.second->size(), 2);
 	EXPECT_TRUE(res.second->at(0));
 	EXPECT_TRUE(res.second->at(1));
@@ -254,7 +302,7 @@ TEST(testFastDOC, testFindClusterGPUvsCPU_1_1){
 	}
 
 	auto gpu = new Fast_DOCGPU(data);
-	gpu->setSeed(3);
+	gpu->setSeed(4);
 	auto cpu = new Fast_DOC(data);
 	cpu->setSeed(3);
 
