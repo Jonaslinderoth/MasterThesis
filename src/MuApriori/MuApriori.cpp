@@ -5,7 +5,9 @@ MuApriori::MuApriori(std::vector<boost::dynamic_bitset<>>* itemSet, unsigned int
 	this->itemSet = itemSet;
 	this->minSupp = minSupp;
 	this->beta = beta;
-	this->bestCandidates = new std::priority_queue<Candidate, std::vector<Candidate>,  CustomCompare>;
+
+	this->bestCandidates = new std::priority_queue<OutputCandidate, std::vector<OutputCandidate>,  CustomCompare>;
+	this->centroidNr = 0;
 };
 
 std::vector<Candidate*>* MuApriori::createInitialCandidates(){
@@ -28,6 +30,7 @@ std::vector<Candidate*>* MuApriori::createInitialCandidates(){
 			index = this->itemSet->at(i).find_next(index);
 		}
 	}
+
 	unsigned int i = 0;
 	while(i< result->size()){
 		if(result->at(i)->support < this->minSupp){
@@ -35,11 +38,15 @@ std::vector<Candidate*>* MuApriori::createInitialCandidates(){
 		}else{
 			result->at(i)->score = this->mu(result->at(i)->support, result->at(i)->item.count());
 			if(this->bestCandidates->size() < this->numberOfCandidates){
-				this->bestCandidates->push(*(result->at(i)));
+				auto cand = (OutputCandidate)(*(result->at(i)));
+				cand.centroidNr = this->centroidNr;
+				this->bestCandidates->push(cand);
 			}else{
 				if(this->bestCandidates->top().score < result->at(i)->score){
 					this->bestCandidates->pop();
-					this->bestCandidates->push(*(result->at(i)));
+					auto cand = (OutputCandidate)(*(result->at(i)));
+					cand.centroidNr = this->centroidNr;
+					this->bestCandidates->push(cand);
 				}
 			}
 
@@ -76,14 +83,13 @@ std::vector<Candidate*>* MuApriori::createKthCandidates(unsigned int k, std::vec
 	}
 
 	// remove dublicates
-		std::sort( result->begin(), result->end(), [](const Candidate*  a, const Candidate* b) -> bool{
+	std::sort( result->begin(), result->end(), [](const Candidate*  a, const Candidate* b) -> bool{
 			return (a->item) > (b->item);
 		});
 	result->erase( std::unique( result->begin(), result->end(),[](const Candidate* a, const Candidate* b) -> bool{
-			return (a->item) == (b->item);
+				return (a->item) == (b->item);
 			}), result->end() );
 
-	
 	// Count support
 	for(unsigned int i = 0; i < this->itemSet->size(); i++){
 		for(unsigned int j = 0; j < result->size(); j++){
@@ -107,11 +113,15 @@ std::vector<Candidate*>* MuApriori::createKthCandidates(unsigned int k, std::vec
 		}else{
 			result->at(i)->score = this->mu(result->at(i)->support, result->at(i)->item.count());
 			if(this->bestCandidates->size() < this->numberOfCandidates){
-				this->bestCandidates->push(*(result->at(i)));
+				auto cand = (OutputCandidate)(*(result->at(i)));
+				cand.centroidNr = this->centroidNr;
+				this->bestCandidates->push(cand);
 			}else{
 				if(this->bestCandidates->top().score < result->at(i)->score){
 					this->bestCandidates->pop();
-					this->bestCandidates->push(*(result->at(i)));
+					auto cand = (OutputCandidate)(*(result->at(i)));
+					cand.centroidNr = this->centroidNr;
+					this->bestCandidates->push(cand);
 				}
 			}
 			i++;
@@ -123,10 +133,11 @@ std::vector<Candidate*>* MuApriori::createKthCandidates(unsigned int k, std::vec
 
 
 
-std::vector<Candidate*>* MuApriori::findBest(unsigned int numberOfBest){
+void MuApriori::findBest(unsigned int numberOfBest){
 	this->numberOfCandidates = numberOfBest;
 	std::vector<Candidate*>* result = this->createInitialCandidates();
 	std::vector<Candidate*>* result_tmp;
+	if(result->size() < 1){return;};
 	unsigned int dim = result->at(0)->item.size();
 	unsigned int k = 1;
 	while(result->size() > 0 && k < dim){
@@ -137,21 +148,6 @@ std::vector<Candidate*>* MuApriori::findBest(unsigned int numberOfBest){
 			delete result_tmp->at(i);
 		}
 		delete result_tmp;
-
 	}
-	auto output = new std::vector<Candidate*>;
-	auto numberOfCandidates = this->bestCandidates->size();
-	for(int i = 0; i < numberOfCandidates; i++){
 
-			
-		Candidate* c = new Candidate;
-		c->item = (this->bestCandidates->top().item);
-		c->support = this->bestCandidates->top().support;
-		c->score = this->bestCandidates->top().score;
-		output->push_back(c);
-		this->bestCandidates->pop();
-	}
-	std::reverse(output->begin(),output->end());
-	 
-	return output;
 };

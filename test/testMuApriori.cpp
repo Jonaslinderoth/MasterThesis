@@ -33,7 +33,8 @@ TEST(testMuApriori, testCreateInitialCandidates){
 	itemSet->push_back(point);
 	auto a = MuApriori(itemSet, 1);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.createInitialCandidates();
+	a.createInitialCandidates();
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(), 0);
 	SUCCEED();
 }
@@ -47,7 +48,8 @@ TEST(testMuApriori, testCreateInitialCandidates2){
 	itemSet->push_back(point);
 	auto a = MuApriori(itemSet, 1);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.createInitialCandidates();
+		a.createInitialCandidates();
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(), 1);
 	EXPECT_EQ(b->at(0)->support, 1);
 	EXPECT_EQ(b->at(0)->score, a.mu(1,1));
@@ -95,7 +97,8 @@ TEST(testMuApriori, testFindBest1){
 	itemSet->push_back(point2);
 	auto a = MuApriori(itemSet, 1);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(1);
+	a.findBest(1);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),1);
 	EXPECT_EQ(b->at(0)->support, 1);
 	EXPECT_EQ(b->at(0)->score, a.mu(1,1));	
@@ -116,7 +119,8 @@ TEST(testMuApriori, testFindBest2){
 	
 	auto a = MuApriori(itemSet, 1);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(2);
+	a.findBest(2);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),2);
 	EXPECT_EQ(b->at(0)->support, 1);
 	EXPECT_EQ(b->at(0)->score, a.mu(1,1));
@@ -141,7 +145,8 @@ TEST(testMuApriori, testFindBest3){
 	
 	auto a = MuApriori(itemSet, 0);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(1);
+	a.findBest(1);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),1);
 	EXPECT_EQ(b->at(0)->support, 2);
 	EXPECT_EQ(b->at(0)->score, a.mu(2,1));
@@ -171,7 +176,8 @@ TEST(testMuApriori, testFindBest4){
 	
 	auto a = MuApriori(itemSet, 0);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(1);
+	a.findBest(1);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),1);
 	EXPECT_EQ(b->at(0)->support, 2);
 	EXPECT_EQ(b->at(0)->score, a.mu(2,1));
@@ -209,7 +215,8 @@ TEST(testMuApriori, testFindBest5){
 	
 	auto a = MuApriori(itemSet, 1);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(1);
+	a.findBest(1);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),1);
 	EXPECT_EQ(b->at(0)->support, 2);
 	EXPECT_EQ(b->at(0)->score, a.mu(2,3));
@@ -248,7 +255,8 @@ TEST(testMuApriori, testFindBest6){
 	
 	auto a = MuApriori(itemSet, 0);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(1);
+	a.findBest(1);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),1);
 	EXPECT_EQ(b->at(0)->support, 1);
 	EXPECT_EQ(b->at(0)->score, a.mu(1,4));
@@ -286,7 +294,8 @@ TEST(testMuApriori, testFindBest2Clusters){
 	
 	auto a = MuApriori(itemSet, 0);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(2);
+	a.findBest(2);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),2);
 	EXPECT_GT(b->at(0)->score, b->at(1)->score);
 	EXPECT_EQ(b->at(0)->support, 2);
@@ -345,7 +354,8 @@ TEST(testMuApriori, testFindBest2Clusters2){
 	
 	auto a = MuApriori(itemSet, 1);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(2);
+	a.findBest(2);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),2);
 	EXPECT_EQ(b->at(0)->support, 2);
 	EXPECT_EQ(((b->at(0)->item))[0], 1);
@@ -421,7 +431,8 @@ TEST(testMuApriori, testFindBest3Clusters){
 	
 	auto a = MuApriori(itemSet, 1);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(3);
+	a.findBest(3);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),3);
 	EXPECT_EQ(b->at(0)->support, 2);
 	EXPECT_EQ(b->at(0)->score, a.mu(2,8));
@@ -451,7 +462,8 @@ TEST(testMuApriori, _SLOW_testFindBest10Clusters){
 
 	auto a = MuApriori(itemSet, 1);
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(10);
+	a.findBest(10);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),10);
 	EXPECT_EQ(b->at(0)->support, 1000);
 	EXPECT_EQ(b->at(1)->support, 2000);
@@ -511,7 +523,8 @@ TEST(testMuApriori, _SLOWtestFindBest20Clusters){
 
 	auto a = MuApriori(itemSet, 0.1*itemSet->size());
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(20);
+	a.findBest(20);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),20);
 	
 
@@ -575,7 +588,8 @@ TEST(testMuApriori, _SUPER_SLOW_testFindBest20ClustersRandom){
 
 	auto a = MuApriori(itemSet, 0.1*itemSet->size());
 	EXPECT_EQ(a.getBeta(), 0.25);
-	auto b = a.findBest(20);
+	a.findBest(20);
+	auto b = a.getBest();
 	EXPECT_EQ(b->size(),20);
 	
 
