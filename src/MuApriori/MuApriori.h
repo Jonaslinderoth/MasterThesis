@@ -8,7 +8,7 @@
 #include <math.h>
 
 struct Candidate{
-	boost::dynamic_bitset<>* item;
+	boost::dynamic_bitset<> item;
 	unsigned int support;
 	float score;
 };
@@ -17,12 +17,12 @@ struct Candidate{
 
 class MuApriori{
  public:
- MuApriori(std::vector<boost::dynamic_bitset<>*>* itemSet, unsigned int minSupp) : MuApriori(itemSet, minSupp, 0.25){};
-	MuApriori(std::vector<boost::dynamic_bitset<>*>* itemSet, unsigned int minSupp, float beta);
-	std::vector<Candidate>* createInitialCandidates();
-	std::vector<Candidate>* createKthCandidates(unsigned int k, std::vector<Candidate>* prevCandidates);
+ MuApriori(std::vector<boost::dynamic_bitset<>>* itemSet, unsigned int minSupp) : MuApriori(itemSet, minSupp, 0.25){};
+	MuApriori(std::vector<boost::dynamic_bitset<>>* itemSet, unsigned int minSupp, float beta);
+	std::vector<Candidate*>* createInitialCandidates();
+	std::vector<Candidate*>* createKthCandidates(unsigned int k, std::vector<Candidate*>* prevCandidates);
 	
-	std::vector<Candidate>* findBest(unsigned int numberOfBest);
+	std::vector<Candidate*>* findBest(unsigned int numberOfBest);
 	float mu(int a, int b){
 		return a*pow(((float) 1/this->beta),b);
 	};
@@ -31,12 +31,12 @@ class MuApriori{
 	
  private:
 	float beta;
-	std::vector<boost::dynamic_bitset<>*>* itemSet;
+	std::vector<boost::dynamic_bitset<>>* itemSet;
 	unsigned int minSupp;
 	unsigned int numberOfCandidates;
 	struct CustomCompare{
-		bool operator()(const Candidate& a, const Candidate& b){
-			return *(a.item) < *(b.item);
+		bool operator()(const Candidate & a, const Candidate & b){
+			return (a.score) > (b.score);
 		};		
 	};
 
