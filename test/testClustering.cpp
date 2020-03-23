@@ -5,6 +5,7 @@
 #include "../src/DOC_GPU/DOCGPU.h"
 #include "../src/Fast_DOC/Fast_DOC.h"
 #include "../src/Fast_DOCGPU/Fast_DOCGPU.h"
+#include "../src/MineClus/MineClus.h"
 #include <algorithm>
 #include "testData.h"
 
@@ -107,6 +108,8 @@ Clustering* constructClustering(std::string type, std::vector<std::vector<float>
 		return new Fast_DOC(data);
 	}else if (type == "Fast_DOCGPU"){
 		return new Fast_DOCGPU(data);
+	}else if (type == "MineClus"){
+		return new MineClus(data);
 	}
 };
 
@@ -116,7 +119,8 @@ INSTANTIATE_TEST_CASE_P(ValidInput,
 										  "DOC",
 										  "DOCGPU",
 										  "Fast_DOC",
-										  "Fast_DOCGPU"
+										  "Fast_DOCGPU",
+										  "MineClus"
 										  ),
                         );
  

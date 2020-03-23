@@ -75,8 +75,22 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> MineClus::findC
 
 std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> MineClus::findKClusters(int k){
 	auto res = std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>>();
-	throw std::runtime_error("Not implemented yet!");
-
+	for(int i = 0; i < k; i++){
+		if(this->data->size() <= 0) {break;}
+		auto cluster = this->findCluster();
+		int head = cluster.first->size()-1;
+		for(int j = this->data->size()-1; j >=0  ;j-- ){
+			if (this->data->at(j) == cluster.first->at(head)){
+				auto temp = this->data->at(j);
+				this->data->at(j) = this->data->at(this->data->size()-1);
+				this->data->at(this->data->size()-1) = temp;
+				this->data->pop_back();
+				head--;
+				if(head < 0){break;}
+			}
+		}
+		res.push_back(cluster);
+	}
 	return res;
 };
 
