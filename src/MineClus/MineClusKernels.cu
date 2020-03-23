@@ -4,30 +4,39 @@
 
 /*
   Naive kernel for creating the itemSet. 
-  
+  Takes the data, and a index for a centroid, and creates the itemSet 
+  The items are stored with the points as columns, and the dimensions as rows, 
+  and then a row major fasion
 */
 __global__ void createItemSet(float* data, unsigned int dim, unsigned int numberOfPoints, unsigned int centroidId, float width, unsigned int* output){
 	unsigned int point = blockIdx.x*blockDim.x+threadIdx.x;
 	if(point < numberOfPoints){
 		unsigned int numberOfOutputs = ceilf((float)dim/32);
+		// For each of the blocks in the output in this dimension
 		for(unsigned int i = 0; i < numberOfOutputs; i++){
 			unsigned int output_block = 0;
+			// for each bit in a block
 			for(unsigned int j = 0; j < 32; j++){
+				// break if the last block dont line up with 32 bits
 				if(i == numberOfOutputs-1 && j >= dim%32){
 					break;
 				}else{
 					assert(dim*centroidId+i*32+j < numberOfpoints*dim);
 					assert(point*dim+i*32+j < numberOfpoints*dim);
+					// Check if the dimension are within the width, and write to block in register
 					output_block |= ((abs(data[dim*centroidId+i*32+j] - data[point*dim+i*32+j]) < width) << j);
 				}
 			}
+			// write block to global memory.
 			assert(numberOfPoints*i+point < numberOfPoints*ceilf(dim/32));
 			output[numberOfPoints*i+point] = output_block;
 		}	
 	}
 }
 
-
+/**
+   This function is only for testing that the kernel works correctly
+*/
 std::vector<unsigned int> createItemSetTester(std::vector<std::vector<float>*>* data, unsigned int centroid, float width){
 	uint size = data->size();
 	uint dim = data->at(0)->size();
@@ -64,6 +73,9 @@ std::vector<unsigned int> createItemSetTester(std::vector<std::vector<float>*>* 
 }
 
 
+/**
+   Creates the initial candidtes given the dimensions. 
+ */
 __global__ void createInitialCandidates(unsigned int dim, unsigned int* output){
 	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocksPrPoint = ceilf((float)dim/32);
@@ -78,6 +90,9 @@ __global__ void createInitialCandidates(unsigned int dim, unsigned int* output){
 }
 
 
+/**
+   This function is only for testing
+*/
 std::vector<unsigned int> createInitialCandidatesTester(unsigned int dim){
 	unsigned int dimBlock = 1024;
 	unsigned int dimGrid = ceilf((float)dim/dimBlock);
@@ -98,5 +113,6 @@ std::vector<unsigned int> createInitialCandidatesTester(unsigned int dim){
 		res.push_back(output_h[i]);
 	}
 	return res;
-	
 }
+
+
