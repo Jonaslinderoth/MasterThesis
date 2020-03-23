@@ -117,3 +117,59 @@ TEST(testCreateItemSet, testWithTwoPoints65Dim){
 	EXPECT_EQ(readBit(res.at(5), 1), 0);
 	EXPECT_EQ(readBit(res.at(5), 30), 0);
 }
+
+
+
+
+TEST(testCreateItemSet, testWith66Points65Dim){
+	auto data = new std::vector<std::vector<float>*>;
+	{
+		auto point = new std::vector<float>;
+		for(int i = 0; i < 65; i++){
+			point->push_back(i);
+		}
+		data->push_back(point);
+	}
+
+	for(int j = 0; j < 65; j++){
+		auto point = new std::vector<float>;
+		for(int i = 0; i < 65; i++){
+			if(i == j){
+				point->push_back(i);	
+			}else{
+				point->push_back(99999);	
+			}
+		}
+		data->push_back(point);
+	}
+
+	
+	auto res = createItemSetTester(data, 0, 10);
+	EXPECT_EQ(res.size(), 66*3);
+
+	for(int k = 0; k < 1; k++){
+		for(int j = 0; j < 3; j++){
+			for(int i = 0; i < 32; i++){
+				if(j >= 2 && i >= 65%32){break;}
+				EXPECT_EQ(readBit(res.at(j*66+k), i), 1);						
+			}				
+		}
+	}
+	
+	
+	for(int k = 1; k < 66; k++){
+		for(int j = 0; j < 3; j++){
+			for(int i = 0; i < 32; i++){
+				if(j >= 2 && i >= 65%32){break;}
+				if(k-1 == i+32*j){
+					EXPECT_EQ(readBit(res.at(j*66+k), i), 1) << "i: " << i << " j: " << j << " k " << k << std::endl;												
+				}else{
+					EXPECT_EQ(readBit(res.at(j*66+k), i), 0) << "i: " << i << " j: " << j << " k " << k << std::endl;						
+				}
+			}				
+		}
+	}
+	
+
+	
+}
