@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
 #include "../src/MineClus/MineClusKernels.h"
+#include "testingTools.h"
 
-bool readBit(unsigned int value, unsigned int index){
-	return ((value & (1 << index)) >> index);
-}
 
 TEST(testCreateItemSet, testSimple){
 	auto data = new std::vector<std::vector<float>*>;

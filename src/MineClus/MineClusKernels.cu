@@ -64,3 +64,39 @@ std::vector<unsigned int> createItemSetTester(std::vector<std::vector<float>*>* 
 }
 
 
+__global__ void createInitialCandidates(unsigned int dim, unsigned int* output){
+	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int numberOfBlocksPrPoint = ceilf((float)dim/32);
+	unsigned int myBlock = candidate/32;
+	// make sure all are 0;
+	for(int i = 0; i < numberOfBlocksPrPoint; i++){
+		output[candidate+dim * i] = 0;
+	}
+	// set the correct candidate
+	unsigned int output_block = (1 << (candidate%32));
+	output[candidate+dim*myBlock] = output_block;
+}
+
+
+std::vector<unsigned int> createInitialCandidatesTester(unsigned int dim){
+	unsigned int dimBlock = 1024;
+	unsigned int dimGrid = ceilf((float)dim/dimBlock);
+
+	size_t sizeof_output = dim*ceilf((float)dim/32)*sizeof(unsigned int);
+
+	unsigned int* output_h = (unsigned int*) malloc(sizeof_output);
+	unsigned int* output_d;
+
+	cudaMalloc((void**) &output_d, sizeof_output);
+
+	createInitialCandidates<<<dimGrid, dimBlock>>>(dim, output_d);
+
+	cudaMemcpy(output_h, output_d, sizeof_output, cudaMemcpyDeviceToHost);
+	
+	std::vector<unsigned int> res;
+	for(int i = 0; i < ceilf((float)dim/32)*dim;i++){
+		res.push_back(output_h[i]);
+	}
+	return res;
+	
+}
