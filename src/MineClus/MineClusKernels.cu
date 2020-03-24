@@ -1,6 +1,8 @@
 #include "MineClusKernels.h"
 #include <assert.h>
 #include <iostream>
+#include <tuple>
+#include "../randomCudaScripts/Utils.h"
 
 /*
   Naive kernel for creating the itemSet. 
@@ -21,14 +23,14 @@ __global__ void createItemSet(float* data, unsigned int dim, unsigned int number
 				if(i == numberOfOutputs-1 && j >= dim%32){
 					break;
 				}else{
-					assert(dim*centroidId+i*32+j < numberOfpoints*dim);
-					assert(point*dim+i*32+j < numberOfpoints*dim);
+					assert(dim*centroidId+i*32+j < numberOfPoints*dim);
+					assert(point*dim+i*32+j < numberOfPoints*dim);
 					// Check if the dimension are within the width, and write to block in register
 					output_block |= ((abs(data[dim*centroidId+i*32+j] - data[point*dim+i*32+j]) < width) << j);
 				}
 			}
 			// write block to global memory.
-			assert(numberOfPoints*i+point < numberOfPoints*ceilf(dim/32));
+			assert(numberOfPoints*i+point < numberOfPoints*ceilf((float)dim/32));
 			output[numberOfPoints*i+point] = output_block;
 		}	
 	}
@@ -115,4 +117,144 @@ std::vector<unsigned int> createInitialCandidatesTester(unsigned int dim){
 	return res;
 }
 
+__global__ void countSupport(unsigned int* candidates, unsigned int* itemSet,
+							 unsigned int dim, unsigned int numberOfItems,
+							 unsigned int numberOfCandidates,
+							 unsigned int minSupp, float beta,
+							 unsigned int* outSupp, float* outScore,
+							 bool* outToBeDeleted){
+	
+	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 
+	unsigned int numberOfBlocksPrItem = ceilf((float)dim/32);
+	if(candidate < numberOfCandidates){
+		unsigned int count = 0;
+		for(unsigned int i = 0; i < numberOfItems; i++){
+			bool isSubset = true;
+			for(unsigned int j = 0; j < numberOfBlocksPrItem; j++){
+				unsigned int itemBlock = itemSet[j*numberOfItems+i];
+				unsigned int candidateBlock = candidates[j*numberOfCandidates + candidate];
+				unsigned int candidateBlockCount = __popc(candidateBlock);
+				unsigned int unionCount = __popc(itemBlock&candidateBlock);
+				isSubset &= candidateBlockCount == unionCount;
+			}
+			
+			count += isSubset;
+		}
+		outSupp[candidate] = count;
+		// the subspace count below could be done in the loop above, to have one less load of the candidate.
+		
+		unsigned int subSpaceCount = 0;
+		for(unsigned int j = 0; j < numberOfBlocksPrItem; j++){
+			unsigned int candidateBlock = candidates[j*numberOfCandidates + candidate];
+			subSpaceCount += __popc(candidateBlock);
+		}
+		outScore[candidate] = count*pow(((float) 1/beta),subSpaceCount) ; // calculate score and store
+		outToBeDeleted[candidate] = count < minSupp;
+	}
+
+}
+
+std::tuple<
+	std::vector<unsigned int>,
+	std::vector<float>,
+	std::vector<bool>> countSupportTester(std::vector<std::vector<bool>> candidates, std::vector<std::vector<bool>> itemSet,
+							 unsigned int minSupp, float beta){
+	unsigned int numberOfCandidates = candidates.size();
+	unsigned int numberOfItems = itemSet.size();
+	unsigned int dim = itemSet.at(0).size();
+	unsigned int numberOfBlocksPrElement = ceilf((float)dim/32);
+	unsigned int bitsInLastBlock = dim%32;
+
+	size_t sizeOfCandidates = numberOfCandidates*numberOfBlocksPrElement*sizeof(unsigned int);
+	size_t sizeOfItemSet = numberOfItems*numberOfBlocksPrElement*sizeof(unsigned int);
+	size_t sizeOfScores = numberOfCandidates*sizeof(float);
+	size_t sizeOfSupport = numberOfCandidates*sizeof(unsigned int);
+	size_t sizeOfToBeDeleted = numberOfCandidates*sizeof(bool);
+
+	unsigned int dimBlock = 1024;
+	unsigned int dimGrid = ceilf((float)dim/1024);
+
+	unsigned int* candidates_h;
+	unsigned int* itemSet_h;
+	unsigned int* outSupport_h;
+	float* outScores_h;
+	bool* outToBeDeleted_h;
+
+	unsigned int* candidates_d;
+	unsigned int* itemSet_d;
+	unsigned int* outSupport_d;
+	float* outScores_d;
+	bool* outToBeDeleted_d;
+
+	cudaMallocHost((void**) &candidates_h, sizeOfCandidates);
+	cudaMallocHost((void**) &itemSet_h, sizeOfItemSet);
+	cudaMallocHost((void**) &outSupport_h, sizeOfSupport);
+	cudaMallocHost((void**) &outScores_h, sizeOfScores);
+	cudaMallocHost((void**) &outToBeDeleted_h, sizeOfToBeDeleted);
+
+	cudaMalloc((void**) &candidates_d, sizeOfCandidates);
+	cudaMalloc((void**) &itemSet_d, sizeOfItemSet);
+	cudaMalloc((void**) &outSupport_d, sizeOfSupport);
+	cudaMalloc((void**) &outScores_d, sizeOfScores);
+	cudaMalloc((void**) &outToBeDeleted_d, sizeOfToBeDeleted);
+
+	// fill candidates
+	for(unsigned int i = 0; i < numberOfCandidates; i++){
+		unsigned int block = 0;
+		unsigned int blockNr = 0;
+		for(int j = 0; j < dim; j++){
+			if (j % 32 == 0 && j != 0){
+				candidates_h[i+blockNr*numberOfCandidates] = block;
+				block = 0;
+				blockNr++;
+			}
+			block |= (candidates.at(i).at(j) << j);
+		}
+		candidates_h[i+blockNr*numberOfCandidates] = block;
+	}
+
+	// fill itemSet
+	for(unsigned int i = 0; i < numberOfItems; i++){
+		unsigned int block = 0;
+		unsigned int blockNr = 0;
+		for(int j = 0; j < dim; j++){
+			if (j % 32 == 0 && j != 0){
+				itemSet_h[i+blockNr*numberOfItems] = block;
+				block = 0;
+				blockNr++;
+			}
+			block |= (itemSet.at(i).at(j) << j);
+			
+		}
+		itemSet_h[i+blockNr*numberOfItems] = block;
+	}
+
+	checkCudaErrors(cudaMemcpy(candidates_d, candidates_h, sizeOfCandidates, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(itemSet_d, itemSet_h, sizeOfItemSet, cudaMemcpyHostToDevice));
+	
+	countSupport<<<dimGrid, dimBlock>>>(candidates_d, itemSet_d, dim, numberOfItems, numberOfCandidates, minSupp, beta, outSupport_d, outScores_d, outToBeDeleted_d); 
+	checkCudaErrors(cudaMemcpy(outSupport_h, outSupport_d, sizeOfSupport, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(outScores_h, outScores_d, sizeOfScores, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(outToBeDeleted_h, outToBeDeleted_d, sizeOfToBeDeleted, cudaMemcpyDeviceToHost));
+	auto support = std::vector<unsigned int>();
+	auto score = std::vector<float>();
+	auto toBeDeleted = std::vector<bool>();
+	for(unsigned int i = 0; i < numberOfCandidates; i++){
+		support.push_back(outSupport_h[i]);
+		score.push_back(outScores_h[i]);
+		toBeDeleted.push_back(outToBeDeleted_h[i]);
+	}
+	
+	std::tuple<
+	std::vector<unsigned int>,
+	std::vector<float>,
+	std::vector<bool>
+		> result;
+
+	std::get<0>(result) = support;
+	std::get<1>(result) = score;
+	std::get<2>(result) = toBeDeleted;
+
+	return result;
+}
