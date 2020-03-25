@@ -35,7 +35,10 @@ __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, fl
 		Dsum_out[entry] = Dsum;
 	}
 }
-
+/*
+ * This fuction returns if the points are in the hypercube made by the centroid by using a subset of the dimensions
+ * It does not use anything fancy.
+ */
 __global__ void pointsContainedDeviceNaive(float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
 									  float width, unsigned int point_dim, unsigned int no_data, unsigned int no_dims, unsigned int m){
 	// one kernel for each hypercube
@@ -73,7 +76,11 @@ __global__ void pointsContainedDeviceNaive(float* data, unsigned int* centroids,
 	}
 }
 
-
+/*
+ * This does the same as the naive but it moved the data to shared memory before.
+ * making
+ *
+ */
 __global__ void pointsContainedDeviceSharedMemory(float* data,
 		unsigned int* centroids,
 		bool* dims,

@@ -379,12 +379,12 @@ void sum_scan_blelloch(cudaStream_t stream,
 	}*/
 
 
-__global__ void gpuDeleteFromArray(float* d_outData,
-								   const unsigned int* d_delete_array,
-								   const float* d_data,
-								   const size_t numElements,
-								   const unsigned int dimensions,
-								   const unsigned int numberOfThreadsPrPoint){
+__global__ void gpuDeleteFromArrayOld(float* d_outData,
+								      const unsigned int* d_delete_array,
+								      const float* d_data,
+								      const size_t numElements,
+								      const unsigned int dimensions,
+								      const unsigned int numberOfThreadsPrPoint){
 	extern __shared__ float temp[];
 	unsigned int i = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int point = i/numberOfThreadsPrPoint;
@@ -414,7 +414,6 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 		__syncthreads();
 		if(offset == nextPrefix){
 			assert(point >= offset);
-			unsigned int orgOffset = offset;
 			offset = point-offset;	
 			
 			for(int j = 0; j < dim2; j++){
@@ -427,6 +426,28 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 
 	}
 }
+
+__global__ void gpuDeleteFromArray(float* d_outData,
+								   const unsigned int* d_delete_array,
+								   const float* d_data,
+								   const size_t numElements,
+								   const unsigned int dimensions){
+	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if(idx < numElements*dimensions){
+
+		const size_t pointIdex = idx/dimensions;
+		const size_t dimIndex = idx%dimensions;
+		const size_t offSet = d_delete_array[pointIdex];
+		const size_t nextOffSet = d_delete_array[pointIdex+1];
+		const size_t newIndex = (pointIdex-offSet)*dimensions+dimIndex;
+		const float theData = d_data[idx];
+		if(offSet == nextOffSet){
+			d_outData[newIndex] = theData;
+		}
+	}
+
+}
+
 
 
 void sum_scan_blelloch(cudaStream_t stream, 
@@ -569,36 +590,20 @@ void cpuDeleteFromArray(float* const h_outData,
  * it also deletes from the indexes keeping track of what is what.
  * but it does not resize the indexs , meaning that some if the indexs array can be garbage.
  */	
-void deleteFromArray(cudaStream_t stream,
-					 float* d_outData,
-					 bool* d_delete_array,
-					 const float* d_data,
-					 const unsigned long numElements,
-					 const unsigned int dimension, bool inverted){
+void deleteFromArrayOld(cudaStream_t stream,
+					    float* d_outData,
+					    bool* d_delete_array,
+					    const float* d_data,
+					    const unsigned long numElements,
+					    const unsigned int dimension,
+					    bool inverted,
+					    float* time){
 
 	// Set up device-side memory for output
 	unsigned int* d_out_blelloch;
 	checkCudaErrors(cudaMalloc(&d_out_blelloch, sizeof(unsigned int) * (numElements+1)));
 
 	sum_scan_blelloch(stream, d_out_blelloch,d_delete_array,(numElements+1), inverted);
-
-	/*
-		
-	unsigned int* h_prefixSum = new unsigned int[numElements+1];
-	checkCudaErrors(cudaMemcpy(h_prefixSum, d_out_blelloch, sizeof(unsigned int) * (numElements+1), cudaMemcpyDeviceToHost));
-
-	int counter = 0;
-	std::cout << (numElements+1) << std::endl;
-	for(unsigned int i = 0 ; i < (numElements) ; ++i){
-		//	std::cout << h_prefixSum[i] << " " ;
-		counter += h_prefixSum[i] == h_prefixSum[i+1];
-	}
-	std::cout << "to be moved: " << counter << std::endl;
-	std::cout << std::endl;
-		std::cout << std::endl;
-		std::cout << std::endl;
-	*/
-	
 
 
 	//unsigned int* const d_outData, const unsigned int* delete_array, const float* data,unsigned int* indexes , const size_t numElements
@@ -613,21 +618,82 @@ void deleteFromArray(cudaStream_t stream,
 	if((numElements*numberOfThreadsPrPoint)%1024 != 0){
 		blocksNeccesary++;
 	}
-	gpuDeleteFromArray<<<blocksNeccesary,threadsUsed,smem, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension,numberOfThreadsPrPoint);
+	cudaEvent_t start, stop;
+	if(time != nullptr){
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaEventRecord(start);
+	}
+	gpuDeleteFromArrayOld<<<blocksNeccesary,threadsUsed,smem, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension,numberOfThreadsPrPoint);
 
 	cudaFree(d_out_blelloch);
+	if(time != nullptr){
+		cudaEventRecord(stop);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(time, start, stop);
+	}
+
 
 }
+
+
+/*
+ * This is take two of the fuction , i make different versions to keep track of performance changes
+ * this fuction takes the data , and an array of bools that is one longer than the data where the last bool is not relevant.
+ * return the list where entry i in the data is deleted if entry i in the bools array is 0.
+ * it also deletes from the indexes keeping track of what is what.
+ * but it does not resize the indexs , meaning that some if the indexs array can be garbage.
+ */
+void deleteFromArray(cudaStream_t stream,
+					 float* d_outData,
+					 bool* d_delete_array,
+					 const float* d_data,
+					 const unsigned long numElements,
+					 const unsigned int dimension,
+					 const bool inverted,
+					 float* time){
+	const unsigned int threadsUsed = 1024;
+	// Set up device-side memory for output
+	unsigned int* d_out_blelloch;
+	checkCudaErrors(cudaMalloc(&d_out_blelloch, sizeof(unsigned int) * (numElements+1)));
+
+	sum_scan_blelloch(stream, d_out_blelloch,d_delete_array,(numElements+1), inverted);
+
+	unsigned int blocksToUse = numElements*dimension/threadsUsed;
+	if((numElements*dimension)%threadsUsed!=0){
+		blocksToUse++;
+	}
+	cudaEvent_t start, stop;
+
+	if(time != nullptr){
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaEventRecord(start);
+	}
+
+	gpuDeleteFromArray<<<blocksToUse,threadsUsed,0, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
+
+	cudaFree(d_out_blelloch);
+	if(time != nullptr){
+		cudaEventRecord(stop);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(time, start, stop);
+	}
+
+}
+
 
 void deleteFromArray(float* d_outData,
 					 bool* d_delete_array,
 					 const float* d_data,
 					 const unsigned long numElements,
-					 const unsigned int dimension, bool inverted){
+					 const unsigned int dimension,
+					 bool inverted,
+					 float* time){
 
-	
+
 	cudaStream_t stream;
 	checkCudaErrors(cudaStreamCreate(&stream));
-	deleteFromArray(stream, d_outData, d_delete_array, d_data, numElements, dimension, inverted);
+	deleteFromArray(stream, d_outData, d_delete_array, d_data, numElements, dimension, inverted,time);
 	checkCudaErrors(cudaStreamDestroy(stream));
 }

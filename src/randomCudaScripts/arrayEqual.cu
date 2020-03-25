@@ -258,21 +258,21 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
     int block_size = 1024;
 
     // Calculaating sizes
-	int point_dim = data->at(0)->size();
-	int no_of_points = data->size();
-	int no_of_dims = dims->size();
-	int no_of_centroids = centroids->size();
+	std::size_t point_dim = data->at(0)->size();
+	std::size_t no_of_points = data->size();
+	std::size_t no_of_dims = dims->size();
+	std::size_t no_of_centroids = centroids->size();
 
-	int floats_in_data = point_dim * no_of_points;
-	int bools_in_dims = no_of_dims * point_dim;
-	int bools_in_output = no_of_points * no_of_dims;
-	int ints_in_output_count = no_of_dims;
+	std::size_t floats_in_data = point_dim * no_of_points;
+	std::size_t bools_in_dims = no_of_dims * point_dim;
+	std::size_t bools_in_output = no_of_points * no_of_dims;
+	std::size_t ints_in_output_count = no_of_dims;
 
-	int size_of_data = floats_in_data*sizeof(float);
-	int size_of_dims = bools_in_dims*sizeof(bool);
-	int size_of_centroids = no_of_centroids*sizeof(unsigned int);
-	int size_of_output = bools_in_output*sizeof(bool);
-	int size_of_output_count = ints_in_output_count*sizeof(unsigned int);
+	std::size_t size_of_data = floats_in_data*sizeof(float);
+	std::size_t size_of_dims = bools_in_dims*sizeof(bool);
+	std::size_t size_of_centroids = no_of_centroids*sizeof(unsigned int);
+	std::size_t size_of_output = bools_in_output*sizeof(bool);
+	std::size_t size_of_output_count = ints_in_output_count*sizeof(unsigned int);
 
 	// allocating on the host
 	float* data_h = (float*) malloc(size_of_data);

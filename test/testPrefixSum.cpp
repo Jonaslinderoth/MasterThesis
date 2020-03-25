@@ -895,9 +895,9 @@ TEST(testPrefixSum, _SLOW_testDeleteInputOutput2){
 	cudaMemcpy(data_d, data_h, n*sizeof(float), cudaMemcpyHostToDevice);
 
 	
-	deleteFromArray(data_d, mask_d, data_d, n/dim, dim);
+	deleteFromArray(data_out_d, mask_d, data_d, n/dim, dim);
 
-	cudaMemcpy(data_out_h, data_d, output_numbers*sizeof(float), cudaMemcpyDeviceToHost);
+	cudaMemcpy(data_out_h, data_out_d, output_numbers*sizeof(float), cudaMemcpyDeviceToHost);
 
 	int a = 0;
 	for(int i = 0; i < n/dim; i++){
@@ -975,11 +975,11 @@ TEST(testPrefixSum, testDeleteInputOutput3){
 
     cudaStream_t stream1;
     checkCudaErrors(cudaStreamCreate(&stream1));
-	deleteFromArray(stream1, data_d, mask_d, data_d, n/dim, dim);
+	deleteFromArray(stream1, data_out_d, mask_d, data_d, n/dim, dim);
 
 	cudaStreamSynchronize(stream1);
 
-	cudaMemcpyAsync(data_out_h, data_d, output_numbers*sizeof(float), cudaMemcpyDeviceToHost, stream1);
+	cudaMemcpyAsync(data_out_h, data_out_d, output_numbers*sizeof(float), cudaMemcpyDeviceToHost, stream1);
 
 	cudaStreamSynchronize(stream1);
 	int a = 0;
