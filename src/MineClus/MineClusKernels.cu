@@ -37,6 +37,22 @@ __global__ void createItemSet(float* data, unsigned int dim, unsigned int number
 }
 
 /**
+Thin wrapper for createItemSet
+*/
+void createItemSetWrapper(unsigned int dimGrid,
+						  unsigned int dimBlock,
+						  cudaStream_t stream,
+						  float* data,
+						  unsigned int dim,
+						  unsigned int numberOfPoints,
+						  unsigned int centroidId,
+						  float width,
+						  unsigned int* output){
+	createItemSet<<<dimGrid, dimBlock, 0, stream>>>(data, dim, numberOfPoints, centroidId, width, output);
+}
+
+
+/**
    This function is only for testing that the kernel works correctly
 */
 std::vector<unsigned int> createItemSetTester(std::vector<std::vector<float>*>* data, unsigned int centroid, float width){
@@ -95,6 +111,18 @@ __global__ void createInitialCandidates(unsigned int dim, unsigned int* output){
 	}
 }
 
+
+/**
+   Thin wrapper for CreateInitialCandidates
+*/
+void createInitialCandidatesWrapper(unsigned int dimGrid,
+									unsigned int dimBlock,
+									cudaStream_t stream,
+									unsigned int dim,
+									unsigned int* output
+									){
+	createInitialCandidates<<<dimGrid, dimBlock, 0, stream>>>(dim, output);
+}
 
 /**
    This function is only for testing
@@ -156,9 +184,41 @@ __global__ void countSupport(unsigned int* candidates, unsigned int* itemSet,
 		outScore[candidate] = count*pow(((float) 1/beta),subSpaceCount) ; // calculate score and store
 		outToBeDeleted[candidate] = count < minSupp;
 	}
-
 }
 
+/**
+Thin wrapper for CountSupport kernel
+*/
+void countSupportWrapper(unsigned int dimGrid,
+						 unsigned int dimBlock,
+						 cudaStream_t stream,
+						 unsigned int* candidates,
+						 unsigned int* itemSet,
+						 unsigned int dim,
+						 unsigned int numberOfItems,
+						 unsigned int numberOfCandidates,
+						 unsigned int minSupp,
+						 float beta,
+						 unsigned int* outSupp,
+						 float* outScore,
+						 bool* outToBeDeleted
+						 ){
+	countSupport<<<dimGrid, dimBlock, 0, stream>>>(candidates,
+												   itemSet,
+												   dim,
+												   numberOfItems,
+												   numberOfCandidates,
+												   minSupp,
+												   beta,
+												   outSupp,
+												   outScore,
+												   outToBeDeleted);
+};
+
+
+/**
+   ONLY For testing the kernel countSupport
+*/
 std::tuple<
 	std::vector<unsigned int>,
 	std::vector<float>,
@@ -279,6 +339,20 @@ __global__ void mergeCandidates(unsigned int* candidates, unsigned int numberOfC
 	}
 }
 
+/**
+   Thin wrapper for mergeCandidates
+*/
+void mergeCandidatesWrapper(unsigned int dimGrid,
+							unsigned int dimBlock,
+							cudaStream_t stream,
+							unsigned int* candidates,
+							unsigned int numberOfCandidates,
+							unsigned int dim,
+							unsigned int* output
+							){
+	mergeCandidates<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, output);
+};
+
 std::vector<unsigned int> mergeCandidatesTester(std::vector<std::vector<bool>> candidates){
 	unsigned int numberOfCandidates = candidates.size();
 	unsigned int dim = candidates.at(0).size();
@@ -332,4 +406,147 @@ std::vector<unsigned int> mergeCandidatesTester(std::vector<std::vector<bool>> c
 			   
 	
 }
+
+
+
+__global__ void findDublicatesNaive(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim, bool* output){
+	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int numberOfBlocks = ceilf((float)dim/32);
+	if(candidate < numberOfCandidates){
+		for(unsigned int i = candidate+1; i < numberOfCandidates; i++){
+			bool equal = true;
+			for(unsigned int j = 0; j < numberOfBlocks; j++){
+				equal &= (candidates[candidate + numberOfCandidates*j] == candidates[i + numberOfCandidates*j]);
+			}
+			if(equal){
+				output[i] = true;
+			}
+		}
+	}
+}
+
+
+__global__ void findDublicatesBreaking(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim, bool* output){
+	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int numberOfBlocks = ceilf((float)dim/32);
+	if(candidate < numberOfCandidates){
+		for(unsigned int i = candidate+1; i < numberOfCandidates; i++){
+			bool equal = true;
+			for(unsigned int j = 0; j < numberOfBlocks; j++){
+				equal &= (candidates[candidate + numberOfCandidates*j] == candidates[i + numberOfCandidates*j]);
+			}
+			if(equal){
+				output[i] = true;
+				break;
+			}
+		}
+	}
+}
+
+__global__ void findDublicatesMoreBreaking(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim, bool* output){
+	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int numberOfBlocks = ceilf((float)dim/32);
+	if(candidate < numberOfCandidates){
+		for(unsigned int i = candidate+1; i < numberOfCandidates; i++){
+			bool equal = true;
+			for(unsigned int j = 0; j < numberOfBlocks; j++){
+				equal &= (candidates[candidate + numberOfCandidates*j] == candidates[i + numberOfCandidates*j]);
+				if(!equal){
+					break;
+				}
+			}
+			if(equal){
+				output[i] = true;
+				break;
+			}
+		}
+	}
+}
+
+
+/**
+   Thin Wrapper for findDublicates
+*/
+void findDublicatesWrapper(unsigned int dimGrid,
+						   unsigned int dimBlock,
+						   cudaStream_t stream,
+						   unsigned int* candidates,
+						   unsigned int numberOfCandidates,
+						   unsigned int dim,
+						   bool* output,
+						   dublicatesType version
+						   ){
+	if(version == Naive){
+		findDublicatesNaive<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, output);			
+	}else if(version == Breaking){
+		findDublicatesBreaking<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, output);			
+	}else if(version == MoreBreaking){
+		findDublicatesMoreBreaking<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, output);			
+	}
+};
+
+/**
+   ONLY FOR TESTING
+*/
+std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates, dublicatesType version){
+	unsigned int numberOfCandidates = candidates.size();
+	unsigned int dim = candidates.at(0).size();
+	unsigned int numberOfBlocks = ceilf((float)dim/32);
+
+	unsigned int dimBlock = 1024;
+	unsigned int dimGrid = ceilf((float)numberOfCandidates/dimBlock);
+
+	size_t sizeOfCandidates = numberOfCandidates*numberOfBlocks*sizeof(unsigned int);
+	size_t sizeOfOutput = numberOfCandidates*sizeof(bool);
+
+	unsigned int* candidates_h;
+	bool* output_h;
+	
+	unsigned int* candidates_d;
+	bool* output_d;
+
+	cudaMallocHost((void**) &candidates_h, sizeOfCandidates);
+	cudaMallocHost((void**) &output_h, sizeOfOutput);
+
+
+	cudaMalloc((void**) &candidates_d, sizeOfCandidates);
+	cudaMalloc((void**) &output_d, sizeOfOutput);
+
+	for(unsigned int i = 0; i < numberOfCandidates; i++){
+		unsigned int block = 0;
+		unsigned int blockNr = 0;
+		for(int j = 0; j < dim; j++){
+			if (j % 32 == 0 && j != 0){
+				candidates_h[i+blockNr*numberOfCandidates] = block;
+				block = 0;
+				blockNr++;
+			}
+			block |= (candidates.at(i).at(j) << j);
+		}
+		candidates_h[i+blockNr*numberOfCandidates] = block;
+	}
+
+
+	cudaMemcpy(candidates_d, candidates_h, sizeOfCandidates, cudaMemcpyHostToDevice);
+	cudaMemset(output_d, false, sizeOfOutput);
+	if(version == Naive){
+		findDublicatesNaive<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, output_d);
+	}else if(version == Breaking){
+		findDublicatesBreaking<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, output_d);		
+	}else if(version == MoreBreaking){
+		findDublicatesMoreBreaking<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, output_d);		
+	}
+
+
+	cudaMemcpy(output_h, output_d, sizeOfOutput, cudaMemcpyDeviceToHost);
+
+	auto result = std::vector<bool>();
+	for(int i = 0; i < numberOfCandidates; i++){
+		result.push_back(output_h[i]);
+	}
+
+	return result;
+}
+
+
 

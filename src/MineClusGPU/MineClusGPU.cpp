@@ -1,7 +1,7 @@
 #include "MineClusGPU.h"
 #include <stdexcept>   // for exception, runtime_error, out_of_range
-
-
+#include "../MineClus/MineClusKernels.h"
+#include "../randomCudaScripts/DeleteFromArray.h"
 
 MineClusGPU::MineClusGPU(std::vector<std::vector<float>*>* input, float alpha, float beta, float width) {
 	this->data = input;
@@ -64,7 +64,97 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> MineClusGPU::fi
 
 
 std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> MineClusGPU::findKClusters(int k){
+
+	unsigned int numberOfPoints = this->data->size();
+	unsigned int dim = this->data->at(0)->size();
+	unsigned int numberOfBlocksPrPoint = ceilf((float)dim/32);
+	unsigned int dimBlock = 1024;
+
+	unsigned int minSupp = size*this->alpha;
+	
+	unsigned int sizeOfData = size*dim*sizeof(float);
+	float* data_h = this->transformData();
+	float* data_d;
+	cudaMalloc((void**) &data_d, sizeOfData);
+
+
+	size_t sizeOfInitialCandidates = dim*numberOfBlocksPrPoint*sizeof(unsigned int);
+	unsigned int* initialCandidates_d;
+	cudaMalloc((void**) &initialCandidates_d, sizeOfInitialCandidates);
+
+	size_t sizeOfItemSet = numberOfPoints*numberOfBlocksPrPoint*sizeof(unsigned int);
+	unsigned int* itemSet_d;
+	cudaMalloc((void**) &itemSet_d, sizeOfItemSet);
+
+	size_t sizeOfInitialSupport = dim*sizeof(unsigned int);
+	size_t sizeOfInitialScore = dim*sizeof(float);
+	size_t sizeOfInitialToBeDeleted = (dim+1)*sizeof(bool);
+
+	unsigned int* initialSupport_d;
+	float* initialScore_d;
+	bool* initialToBeDeleted_d;
+
+	cudaMalloc((void**) &initialSupport_d, sizeOfInitialSupport);
+	cudaMalloc((void**) &initialScore_d, sizeOfInitialScore);
+	cudaMalloc((void**) &initialToBeDeleted_d, sizeOfInitialToBeDeleted);
+
+
+	size_t sizeOfPrefixSum = (dim+1)*sizeof(unsigned int);
+	unsigned int* prefixSum_d;
+	cudaMalloc((void**) &prefixSum_d, sizeOfPrefixSum);
+	
+	
+	cudaStream_t stream1_1;
+	cudaStreamCreate(&stream1_1);
+	cudaStream_t stream1_2;
+	cudaStreamCreate(&stream1_2);
+
+
+	cudaMemcpyAsync(data_d, data_h, sizeOfData, cudaMemcpyHostToDevice, stream1_2);
+	
+	createItemSetWrapper(ceilf((float)size/dimBlock), dimBlock, stream1_2, data_d, dim, numberOfPoints, 0, this->width, itemSet_d); /// OBS hardcoded to centroid 0
+	createInitialCandidatesWrapper(ceilf((float)dim/dimBlock), dimBlock, stream1_1, dim, initialCandidates_d);
+	cudaStreamSynchronize(stream1_1);
+	cudaStreamSynchronize(stream1_2);
+
+	countSupportWrapper(ceilf((float)dim/dimBlock), dimBlock, stream1_1, initialCandidates_d, itemSet_d, dim, numberOfPoints, dim, minSupp, this->beta, initialSupport_d, initialScore_d, initialToBeDeleted_d);
+
+	sum_scan_blelloch(stream1_1, prefixSum_d,initialToBeDeleted_d,(dim+1), false);
+
+	unsigned int* sum_h;
+	cudaMallocHost((void**) &sum_h, sizeof(unsigned int));
+	cudaMemcpyAsync(sum_h, prefixSum_d+dim, sizeof(unsigned int), cudaMemcpyDeviceToHost,stream1_1);
+	cudaStreamSynchronize(stream1_1);
+
+	unsigned int sizeAfterDelete = dim-sum_h[0];
+	std::cout << "sizeAfterDelete: " << sizeAfterDelete << std::endl;
+
+	
+	unsigned int* h_block_sums = new unsigned int[dim+1];
+	checkCudaErrors(cudaMemcpy(h_block_sums, prefixSum_d, sizeof(unsigned int) * (dim+1), cudaMemcpyDeviceToHost));
+	std::cout << "Block sums: ";
+	for (int i = 0; i < dim+1; ++i)
+	{
+		std::cout << h_block_sums[i] << ", ";
+	}
+	std::cout << std::endl;
+	std::cout << "Block sums length: " << dim+1 << std::endl;
+
+			   
+
+			   
+	
+	
+
+						 
+	
+	
+	
+	cudaStreamDestroy(stream1_1);
+	cudaStreamDestroy(stream1_2);
+
 	throw std::runtime_error("Not implemented Yet");
+	
 	/*
 	create itemSet
 	create initial candidates
