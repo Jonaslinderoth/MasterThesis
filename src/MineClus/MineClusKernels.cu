@@ -77,18 +77,22 @@ std::vector<unsigned int> createItemSetTester(std::vector<std::vector<float>*>* 
 
 /**
    Creates the initial candidtes given the dimensions. 
- */
+*/
 __global__ void createInitialCandidates(unsigned int dim, unsigned int* output){
 	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocksPrPoint = ceilf((float)dim/32);
 	unsigned int myBlock = candidate/32;
-	// make sure all are 0;
-	for(int i = 0; i < numberOfBlocksPrPoint; i++){
-		output[candidate+dim * i] = 0;
+	if(candidate < dim){
+	
+		// make sure all are 0;
+		for(int i = 0; i < numberOfBlocksPrPoint; i++){
+			assert(candidate+dim * i < dim*(ceilf((float)dim/32)));
+			output[candidate+dim * i] = 0;
+		}
+		// set the correct candidate
+		unsigned int output_block = (1 << (candidate%32));
+		output[candidate+dim*myBlock] = output_block;
 	}
-	// set the correct candidate
-	unsigned int output_block = (1 << (candidate%32));
-	output[candidate+dim*myBlock] = output_block;
 }
 
 
@@ -258,3 +262,74 @@ std::tuple<
 
 	return result;
 }
+
+
+
+__global__ void mergeCandidates(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim, unsigned int* output){
+	unsigned int k = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int i = numberOfCandidates - 2- floorf(sqrtf(-8*k + 4*numberOfCandidates*(numberOfCandidates-1)-7)/ 2.0 - 0.5);
+	unsigned int j = k + i + 1 - numberOfCandidates*(numberOfCandidates-1)/2 + (numberOfCandidates-i)*((numberOfCandidates-i)-1)/2;
+	unsigned int numberOfNewCandidates = (numberOfCandidates*(numberOfCandidates+1))/2 - numberOfCandidates;
+	unsigned int numberOfBlocks = ceilf((float)dim/32);
+
+	if(k < numberOfNewCandidates){
+		for(unsigned int a = 0; a < numberOfBlocks; a++){
+			output[a*numberOfNewCandidates+k] = (candidates[a*numberOfCandidates+i] | candidates[a*numberOfCandidates+j]);
+		}
+	}
+}
+
+std::vector<unsigned int> mergeCandidatesTester(std::vector<std::vector<bool>> candidates){
+	unsigned int numberOfCandidates = candidates.size();
+	unsigned int dim = candidates.at(0).size();
+	unsigned int numberOfNewCandidates = ((numberOfCandidates*(numberOfCandidates+1)) / 2) - numberOfCandidates;
+	unsigned int numberOfBlocks = ceilf((float)dim/32);
+
+	size_t sizeOfOutput = numberOfNewCandidates*numberOfBlocks*sizeof(unsigned int);
+	size_t sizeOfCandidates = numberOfCandidates*numberOfBlocks*sizeof(unsigned int);
+
+	unsigned int dimBlock = 1024;
+	unsigned int dimGrid = ceilf((float)numberOfNewCandidates/dimBlock);
+
+	unsigned int* candidates_h;
+	unsigned int* output_h;
+
+	unsigned int* candidates_d;
+	unsigned int* output_d;
+
+	cudaMallocHost((void**) &candidates_h, sizeOfCandidates);
+	cudaMallocHost((void**) &output_h, sizeOfOutput);
+
+	cudaMalloc((void**) &candidates_d, sizeOfCandidates);
+	cudaMalloc((void**) &output_d, sizeOfOutput);
+
+	for(unsigned int i = 0; i < numberOfCandidates; i++){
+		unsigned int block = 0;
+		unsigned int blockNr = 0;
+		for(int j = 0; j < dim; j++){
+			if (j % 32 == 0 && j != 0){
+				candidates_h[i+blockNr*numberOfCandidates] = block;
+				block = 0;
+				blockNr++;
+			}
+			block |= (candidates.at(i).at(j) << j);
+		}
+		candidates_h[i+blockNr*numberOfCandidates] = block;
+	}
+
+	cudaMemcpy(candidates_d, candidates_h, sizeOfCandidates, cudaMemcpyHostToDevice);
+
+	mergeCandidates<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, output_d);
+
+	cudaMemcpy(output_h, output_d, sizeOfOutput, cudaMemcpyDeviceToHost);
+
+	auto result = std::vector<unsigned int>();
+	for(int i = 0; i < numberOfNewCandidates*numberOfBlocks; i++){
+		
+		result.push_back(output_h[i]);
+	}
+	return result;
+			   
+	
+}
+
