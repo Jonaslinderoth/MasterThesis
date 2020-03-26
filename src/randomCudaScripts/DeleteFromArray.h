@@ -50,6 +50,17 @@ void deleteFromArray(float* d_outData,
 					 bool inverted = false,
 					 float* time = nullptr);
 
+
+void deleteFromArrayTrasformedData(cudaStream_t stream,
+					 			   float* d_outData,
+					 			   bool* delete_array,
+					 			   const float* data,
+					 			   const unsigned long numElements,
+					 			   unsigned int dimension = 1,
+					 			   bool inverted = false,
+					 			   float* time = nullptr);
+
+
 void deleteFromArrayOld(cudaStream_t stream,
 						float* d_outData,
 						bool* delete_array,

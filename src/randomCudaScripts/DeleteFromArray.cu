@@ -448,6 +448,28 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 
 }
 
+__global__ void gpuDeleteFromArrayTrasformed(float* d_outData,
+								             const unsigned int* d_delete_array,
+								             const float* d_data,
+								             const size_t numElements,
+								             const unsigned int dimensions){
+	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if(idx < numElements*dimensions){
+		const float theData = d_data[idx];
+		const unsigned int whatPoint = idx%numElements;
+		const unsigned int whatDim = idx/numElements;
+		const unsigned int offSet = d_delete_array[whatPoint];
+		const unsigned int nextOffSet = d_delete_array[whatPoint+1];
+		const unsigned int maxOffSet = d_delete_array[numElements];
+		const unsigned int newIndex = whatDim*(numElements-maxOffSet)+whatPoint-offSet;
+		if(offSet == nextOffSet){
+			d_outData[newIndex] = theData;
+		}
+		//printf(" theData: %f \n whatPoint %u \n whatDim %u \n offSet %u \n nextOffSet %u \n maxOffSet %u \n newIndex %u \n",theData,whatPoint,whatDim,offSet,nextOffSet,maxOffSet,newIndex);
+	}
+
+}
+
 
 
 void sum_scan_blelloch(cudaStream_t stream, 
@@ -672,6 +694,55 @@ void deleteFromArray(cudaStream_t stream,
 	}
 
 	gpuDeleteFromArray<<<blocksToUse,threadsUsed,0, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
+
+	cudaFree(d_out_blelloch);
+	if(time != nullptr){
+		cudaEventRecord(stop);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(time, start, stop);
+	}
+
+}
+
+
+
+/*
+ * This fuction odes the same as the not transformed it just get the data in another formatting.
+ * This is take two of the fuction , i make different versions to keep track of performance changes
+ * this fuction takes the data , and an array of bools that is one longer than the data where the last bool is not relevant.
+ * return the list where entry i in the data is deleted if entry i in the bools array is 0.
+ * it also deletes from the indexes keeping track of what is what.
+ * but it does not resize the indexs , meaning that some if the indexs array can be garbage.
+ */
+void deleteFromArrayTrasformedData(cudaStream_t stream,
+					               float* d_outData,
+					               bool* d_delete_array,
+					               const float* d_data,
+					               const unsigned long numElements,
+					               const unsigned int dimension,
+					               const bool inverted,
+					               float* time){
+
+	const unsigned int threadsUsed = 1024;
+	// Set up device-side memory for output
+	unsigned int* d_out_blelloch;
+	checkCudaErrors(cudaMalloc(&d_out_blelloch, sizeof(unsigned int) * (numElements+1)));
+
+	sum_scan_blelloch(stream, d_out_blelloch,d_delete_array,(numElements+1), inverted);
+
+	unsigned int blocksToUse = numElements*dimension/threadsUsed;
+	if((numElements*dimension)%threadsUsed!=0){
+		blocksToUse++;
+	}
+	cudaEvent_t start, stop;
+
+	if(time != nullptr){
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaEventRecord(start);
+	}
+
+	gpuDeleteFromArrayTrasformed<<<blocksToUse,threadsUsed,0, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
 
 	cudaFree(d_out_blelloch);
 	if(time != nullptr){
