@@ -71,4 +71,14 @@ void deleteFromArrayOld(cudaStream_t stream,
 						float* time = nullptr);
 
 
+void deleteFromArrayTransfomedDataWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+										  float* data, unsigned int* prefixSum, unsigned int numberOfElements,
+										  unsigned int dim, float* output);
+
+void deleteFromArrayTransfomedDataWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+										  unsigned int* data, unsigned int* prefixSum, unsigned int numberOfElements,
+										  unsigned int dim, unsigned int* output);
+void deleteFromArrayWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+							float* data, unsigned int* prefixSum, unsigned int numberOfElements,
+							unsigned int dim, float* output);
 #endif /* DELETEFROMARRAY_H_ */

@@ -35,6 +35,32 @@ TEST(testFindDublicates, test2Candidates){
 	EXPECT_EQ(result3.at(1), 1);
 }
 
+TEST(testFindDublicates, test1Candidate){
+	auto candidates = std::vector<std::vector<bool>>();
+
+	{
+		auto point = std::vector<bool>({1,1});
+		candidates.push_back(point);
+	}
+
+
+	auto result = findDublicatesTester(candidates, Naive);
+	auto result2 = findDublicatesTester(candidates, Breaking);
+	auto result3 = findDublicatesTester(candidates, MoreBreaking);
+
+
+	EXPECT_EQ(result.size(), 1);
+	EXPECT_EQ(result2.size(), 1);
+	EXPECT_EQ(result3.size(), 1);
+
+	EXPECT_EQ(result.at(0), 0);
+
+	EXPECT_EQ(result2.at(0), 0);
+
+	EXPECT_EQ(result3.at(0), 0);
+}
+
+
 
 
 TEST(testFindDublicates, test3Candidates){
@@ -188,7 +214,7 @@ TEST(testFindDublicates, test100CandidatesIn200Dim2){
 
 
 
-TEST(testFindDublicates, test10000CandidatesIn200DimNaive){
+TEST(testFindDublicates, _SUPER_SLOW_test10000CandidatesIn200DimNaive){
 	auto candidates = std::vector<std::vector<bool>>();
 
 	for(int i = 0; i < 10000; i++){
@@ -295,7 +321,7 @@ TEST(testFindDublicates, test10000CandidatesIn200DimMoreBreaking){
 
 
 
-TEST(testFindDublicates, test100000CandidatesIn200){
+TEST(testFindDublicates, _SUPER_SLOW_test100000CandidatesIn200){
 	auto candidates = std::vector<std::vector<bool>>();
 	std::default_random_engine gen;
 	gen.seed(0);

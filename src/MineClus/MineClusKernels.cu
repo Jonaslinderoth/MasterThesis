@@ -549,4 +549,258 @@ std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates
 }
 
 
+__global__ void extractMax(unsigned int* candidates, float* scores, unsigned int centroid, unsigned int numberOfCandidates,
+					  unsigned int* bestIndex,
+					  unsigned int dim, unsigned int* bestCandidate, float* bestScore, unsigned int* bestCentroid){
+	unsigned int block = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int numberOfBlocks = ceilf((float)dim/32);
+	if(scores[0] > bestScore[0]){
+		//printf("got here %f \n", bestScore[0]);
+		if(block < numberOfBlocks){
+			bestCandidate[block] = candidates[block*numberOfCandidates+bestIndex[0]];
+		}
+		if(block == numberOfBlocks){
+			bestCentroid[0] = centroid;
+		}
+		if(block == numberOfBlocks+1){
+			bestScore[0] = scores[bestIndex[0]];
+		}	
+	}
+}
 
+
+
+void extractMaxWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+					   unsigned int* candidates, float* scores, unsigned int centroid, unsigned int numberOfCandidates,
+					   unsigned int* bestIndex,
+					   unsigned int dim, unsigned int* bestCandidate, float* bestScore, unsigned int* bestCentroid){
+	extractMax<<<dimGrid, dimBlock, 0, stream>>>(candidates, scores, centroid, numberOfCandidates,
+												 bestIndex,
+												 dim, bestCandidate, bestScore, bestCentroid);
+}
+
+
+std::pair<std::vector<unsigned int>, float> extractMaxTester(std::vector<bool> oldCandidate,
+															 unsigned int oldScore, unsigned int oldCentroid,
+															 std::vector<std::vector<bool>> newCandidates,
+															 std::vector<float> newScores, unsigned int newCentroid,
+															 unsigned int index){
+	unsigned int numberOfBlocks = ceilf((float)oldCandidate.size()/32);
+	unsigned int dim = oldCandidate.size();
+	unsigned int numberOfCandidates = newCandidates.size();
+
+	unsigned int* oldCandidate_h;
+	unsigned int* newCandidates_h;
+
+	unsigned int* oldCentroid_h;
+	unsigned int* newCentroid_h;
+
+	float* oldScore_h;
+	float* newScores_h;
+
+	cudaMallocHost((void**) &oldCandidate_h, numberOfBlocks*sizeof(unsigned int));
+	cudaMallocHost((void**) &newCandidates_h, numberOfCandidates*numberOfBlocks*sizeof(unsigned int));
+
+	cudaMallocHost((void**) &oldCentroid_h, sizeof(unsigned int));
+	cudaMallocHost((void**) &newCentroid_h, sizeof(unsigned int));
+
+	cudaMallocHost((void**) &oldScore_h, sizeof(float));
+	cudaMallocHost((void**) &newScores_h, numberOfCandidates*sizeof(float));
+
+
+	unsigned int* oldCandidate_d;
+	unsigned int* newCandidates_d;
+
+	unsigned int* oldCentroid_d;
+	unsigned int* newCentroid_d;
+
+	float* oldScore_d;
+	float* newScores_d;
+	
+	cudaMalloc((void**) &oldCandidate_d, numberOfBlocks*sizeof(unsigned int));
+	cudaMalloc((void**) &newCandidates_d, numberOfCandidates*numberOfBlocks*sizeof(unsigned int));
+
+	cudaMalloc((void**) &oldCentroid_d, sizeof(unsigned int));
+	cudaMalloc((void**) &newCentroid_d, sizeof(unsigned int));
+
+	cudaMalloc((void**) &oldScore_d, sizeof(float));
+	cudaMalloc((void**) &newScores_d, numberOfCandidates*sizeof(float));
+
+	for(unsigned int i = 0; i < newScores.size(); i++){
+		newScores_h[i] = newScores.at(i);
+	}
+	
+	unsigned int value = 0;
+	unsigned int blockNr = 0;
+	for(unsigned int i = 0; i < oldCandidate.size(); i++){
+		if(i %32 == 0 && i !=0){
+			oldCandidate_h[blockNr] = value;
+			blockNr++;
+			value = 0;
+		}
+		value |= (oldCandidate.at(i) << i);
+	}
+	oldCandidate_h[blockNr] = value;
+
+	oldScore_h[0] = oldScore;
+	oldCentroid_h[0] = oldCentroid;
+
+
+	for(unsigned int i = 0; i < numberOfCandidates; i++){
+		unsigned int block = 0;
+		unsigned int blockNr = 0;
+		for(int j = 0; j < dim; j++){
+			if (j % 32 == 0 && j != 0){
+				newCandidates_h[i+blockNr*numberOfCandidates] = block;
+				block = 0;
+				blockNr++;
+			}
+			block |= (newCandidates.at(i).at(j) << j);
+		}
+		newCandidates_h[i+blockNr*numberOfCandidates] = block;
+	}
+	
+	unsigned int* index_h;
+	cudaMallocHost((void**) &index_h, sizeof(unsigned int));
+	index_h[0] = index;
+	
+	unsigned int* index_d;
+	cudaMalloc((void**) &index_d, sizeof(unsigned int));
+	
+	cudaMemcpy(index_d, index_h, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+
+	newCentroid_h[0] = newCentroid;
+
+	cudaMemcpy(oldCandidate_d, oldCandidate_h, numberOfBlocks*sizeof(unsigned int), cudaMemcpyHostToDevice);
+	cudaMemcpy(oldScore_d, oldScore_h, sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(oldCentroid_d, oldCentroid_h, sizeof(unsigned int), cudaMemcpyHostToDevice);
+
+	
+	cudaMemcpy(newCandidates_d, newCandidates_h, numberOfCandidates*numberOfBlocks*sizeof(unsigned int), cudaMemcpyHostToDevice);
+	cudaMemcpy(newScores_d, newScores_h, numberOfCandidates*sizeof(float), cudaMemcpyHostToDevice);
+	//cudaMemcpy(newCentroid_d, newCentroid_h, sizeof(unsigned int), cudaMemcpyHostToDevice);
+
+	extractMax<<<ceilf((float)(dim+2)/1024), 1024>>>(newCandidates_d, newScores_d, newCentroid, newCandidates.size(), index_d, dim,
+												 oldCandidate_d, oldScore_d, oldCentroid_d);
+
+	cudaMemcpy(oldCandidate_h, oldCandidate_d, numberOfBlocks*sizeof(unsigned int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(oldScore_h, oldScore_d, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(oldCentroid_h, oldCentroid_d, sizeof(float), cudaMemcpyDeviceToHost);
+
+	std::vector<unsigned int> bestCandidate;
+	for(int i = 0; i < numberOfBlocks; i++){
+		bestCandidate.push_back(oldCandidate_h[i]);
+	}
+
+	bestCandidate.push_back(oldCentroid_h[0]);
+
+	std::pair<std::vector<unsigned int>, float> result;
+	result = make_pair(bestCandidate, oldScore_h[0]);
+	return result;
+
+	
+	}
+
+
+__global__ void findPointsInCluster(unsigned int* candidate, float* data, unsigned int* centroid, unsigned int dim, unsigned int numberOfPoints, float width, bool* pointsContained){
+	unsigned int point = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int numberOfBlocks = ceilf((float)dim/32);
+	if(point < numberOfPoints){
+		bool isContained = true;
+		for(unsigned int i = 0; i < numberOfBlocks; i++){
+			unsigned int block = candidate[i];
+			for(unsigned int j = 0; j < 32; j++){
+				if(i*32+j < dim){
+					bool isDimChosen = (block >> j) & 1;
+					float cent = data[centroid[0]*dim+i*32+j];
+					float poin = data[point*dim+i*32+j];
+					bool r = (not(isDimChosen)) || ((abs(cent - poin)) < width);
+					isContained &= r;
+				}else{
+					break;
+				}
+			}
+		}
+		pointsContained[point] = isContained;
+	}
+}
+
+
+void findPointInClusterWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+							   unsigned int* candidate, float* data, unsigned int* centroid, unsigned int dim,
+							   unsigned int numberOfPoints, float width, bool* pointsContained){
+	findPointsInCluster<<<dimGrid, dimBlock, 0, stream>>>(candidate, data, centroid, dim, numberOfPoints, width, pointsContained);
+}
+
+
+
+std::vector<bool> findPointsInClusterTester(std::vector<bool> candidate, std::vector<std::vector<float>*>* data, unsigned int centroid, float width){
+	unsigned int numberOfPoints = data->size();
+	unsigned int dim = data->at(0)->size();
+	unsigned int numberOfBlocks = ceilf((float)dim/32);
+	
+	size_t sizeOfCandidate = numberOfBlocks*sizeof(unsigned int);
+	size_t sizeOfCentroid = sizeof(unsigned int);
+	size_t sizeOfData = numberOfPoints * dim * sizeof(float);
+	size_t sizeOfPointsContained = numberOfPoints * sizeof(bool);
+	
+	unsigned int* candidate_h;
+	unsigned int* centroid_h;
+	float* data_h;
+	bool* pointsContained_h;
+
+	cudaMallocHost((void**) &candidate_h, sizeOfCandidate);
+	cudaMallocHost((void**) &centroid_h, sizeOfCentroid);
+	cudaMallocHost((void**) &data_h, sizeOfData);
+	cudaMallocHost((void**) &pointsContained_h, sizeOfPointsContained);
+
+	unsigned int* candidate_d;
+	unsigned int* centroid_d;
+	float* data_d;
+	bool* pointsContained_d;
+
+	cudaMalloc((void**) &candidate_d, sizeOfCandidate);
+	cudaMalloc((void**) &centroid_d, sizeOfCentroid);
+	cudaMalloc((void**) &data_d, sizeOfData);	
+	cudaMalloc((void**) &pointsContained_d, sizeOfPointsContained);
+	
+	unsigned int value = 0;
+	unsigned int blockNr = 0;
+	for(unsigned int i = 0; i < candidate.size(); i++){
+		if(i %32 == 0 && i !=0){
+			candidate_h[blockNr] = value;
+			blockNr++;
+			value = 0;
+		}
+		value |= (candidate.at(i) << i);
+	}
+	candidate_h[blockNr] = value;
+
+	for(unsigned int i = 0; i < numberOfPoints; i++){
+		for(unsigned int j = 0; j < dim; j++){
+			data_h[i*dim+j] = data->at(i)->at(j);
+		}
+	}
+
+	centroid_h[0] = centroid;
+
+	
+	unsigned int dimBlock = 1024;
+	unsigned int dimGrid = ceilf((float)numberOfPoints/dimBlock);
+
+	cudaMemcpy(candidate_d, candidate_h, sizeOfCandidate, cudaMemcpyHostToDevice);
+	cudaMemcpy(data_d, data_h, sizeOfData, cudaMemcpyHostToDevice);
+	cudaMemcpy(centroid_d, centroid_h, sizeOfCentroid, cudaMemcpyHostToDevice);
+
+
+	
+	findPointsInCluster<<<dimGrid, dimBlock>>>(candidate_d, data_d, centroid_d, dim, numberOfPoints, width, pointsContained_d);
+
+	cudaMemcpy(pointsContained_h, pointsContained_d, sizeOfPointsContained, cudaMemcpyDeviceToHost);
+	
+	auto result = std::vector<bool>();
+	for(unsigned int i = 0; i < numberOfPoints; i++){
+		result.push_back(pointsContained_h[i]);
+	}
+	return result;
+}
