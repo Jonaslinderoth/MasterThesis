@@ -48,7 +48,9 @@ void mergeCandidatesWrapper(unsigned int dimGrid,
 							unsigned int* candidates,
 							unsigned int numberOfCandidates,
 							unsigned int dim,
-							unsigned int* output
+							unsigned int itrNr,
+							unsigned int* output,
+							bool* toBeDeleted
 							);
 
 
@@ -58,6 +60,7 @@ void findDublicatesWrapper(unsigned int dimGrid,
 						   unsigned int* candidates,
 						   unsigned int numberOfCandidates,
 						   unsigned int dim,
+						   bool* alreadyDeleted,
 						   bool* output,
 						   dublicatesType version = Naive
 						   );
@@ -75,12 +78,16 @@ void findPointInClusterWrapper(unsigned int dimGrid, unsigned int dimBlock, cuda
 							   unsigned int* candidate, float* data, unsigned int* centroid, unsigned int dim,
 							   unsigned int numberOfPoints, float width, bool* pointsContained);
 
+
+void andKernelWrapper(unsigned int dimGrid, unsigned int dimBlock,  cudaStream_t stream,
+					  unsigned int numberOfElements, bool* a, bool* b);
+
 // Testing functions
 // ONLY FOR TESTING THE KERNELS
 std::vector<unsigned int> createItemSetTester(std::vector<std::vector<float>*>* data, unsigned int centroid, float width);
 std::vector<unsigned int> createInitialCandidatesTester(unsigned int dim);
 std::tuple<std::vector<unsigned int>,std::vector<float>, std::vector<bool>> countSupportTester(std::vector<std::vector<bool>> candidates, std::vector<std::vector<bool>> itemSet, unsigned int minSupp, float beta);
-std::vector<unsigned int> mergeCandidatesTester(std::vector<std::vector<bool>> candidates);
+std::pair<std::vector<unsigned int>,std::vector<bool>> mergeCandidatesTester(std::vector<std::vector<bool>> candidates, unsigned int itrNr = 2);
 std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates, dublicatesType version = Naive);
 std::pair<std::vector<unsigned int>, float> extractMaxTester(std::vector<bool> oldCandidate,
 															 unsigned int oldScore, unsigned int oldCentroid,

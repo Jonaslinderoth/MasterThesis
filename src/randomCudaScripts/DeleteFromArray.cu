@@ -161,10 +161,10 @@ __global__ void gpu_prescan(unsigned int* const d_out,
 // Modified version of Mark Harris' implementation of the Blelloch scan
 //  according to https://www.mimuw.edu.pl/~ps209291/kgkp/slides/scan.pdf
 __global__ void gpu_prescan(unsigned int* const d_out,
-	bool*  d_in,
-	unsigned int* const d_block_sums,
-	const unsigned int len,
-	const unsigned int shmem_sz,
+							bool*  d_in,
+							unsigned int* const d_block_sums,
+							const unsigned int len,
+							const unsigned int shmem_sz,
 							const unsigned int max_elems_per_block, bool inverted)
 {
 	// Allocated on invocation
@@ -173,6 +173,8 @@ __global__ void gpu_prescan(unsigned int* const d_out,
 	int ai = thid;
 	int bi = thid + blockDim.x;
 
+
+	
 	// Zero out the shared memory
 	// Helpful especially when input size is not power of two
 	s_out[thid] = 0;
@@ -457,7 +459,7 @@ __global__ void gpuDeleteFromArrayTrasformed(T* d_outData,
 								             const unsigned int dimensions){
 	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
 	if(idx < numElements*dimensions){
-		const float theData = d_data[idx];
+		const T theData = d_data[idx];
 		const unsigned int whatPoint = idx%numElements;
 		const unsigned int whatDim = idx/numElements;
 		const unsigned int offSet = d_delete_array[whatPoint];

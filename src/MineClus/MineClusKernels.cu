@@ -325,17 +325,23 @@ std::tuple<
 
 
 
-__global__ void mergeCandidates(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim, unsigned int* output){
+__global__ void mergeCandidates(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim, unsigned int iterNr,
+								unsigned int* output, bool* toBeDeleted){
 	unsigned int k = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int i = numberOfCandidates - 2- floorf(sqrtf(-8*k + 4*numberOfCandidates*(numberOfCandidates-1)-7)/ 2.0 - 0.5);
 	unsigned int j = k + i + 1 - numberOfCandidates*(numberOfCandidates-1)/2 + (numberOfCandidates-i)*((numberOfCandidates-i)-1)/2;
 	unsigned int numberOfNewCandidates = (numberOfCandidates*(numberOfCandidates+1))/2 - numberOfCandidates;
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
 
+	assert(iterNr >= 2);
 	if(k < numberOfNewCandidates){
+		unsigned int interSectionCount=0;
 		for(unsigned int a = 0; a < numberOfBlocks; a++){
+			assert(a*numberOfNewCandidates+k < numberOfBlocks*numberOfNewCandidates);
 			output[a*numberOfNewCandidates+k] = (candidates[a*numberOfCandidates+i] | candidates[a*numberOfCandidates+j]);
+			interSectionCount += __popc(candidates[a*numberOfCandidates+i] & candidates[a*numberOfCandidates+j]);
 		}
+		toBeDeleted[k] = !((int)interSectionCount == (((int)iterNr)-2));
 	}
 }
 
@@ -348,12 +354,15 @@ void mergeCandidatesWrapper(unsigned int dimGrid,
 							unsigned int* candidates,
 							unsigned int numberOfCandidates,
 							unsigned int dim,
-							unsigned int* output
+							unsigned int itrNr,
+							unsigned int* output,
+							bool* toBeDeleted
 							){
-	mergeCandidates<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, output);
+	mergeCandidates<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, itrNr, output, toBeDeleted);
 };
 
-std::vector<unsigned int> mergeCandidatesTester(std::vector<std::vector<bool>> candidates){
+
+std::pair<std::vector<unsigned int>,std::vector<bool>> mergeCandidatesTester(std::vector<std::vector<bool>> candidates, unsigned int itrNr){
 	unsigned int numberOfCandidates = candidates.size();
 	unsigned int dim = candidates.at(0).size();
 	unsigned int numberOfNewCandidates = ((numberOfCandidates*(numberOfCandidates+1)) / 2) - numberOfCandidates;
@@ -361,7 +370,8 @@ std::vector<unsigned int> mergeCandidatesTester(std::vector<std::vector<bool>> c
 
 	size_t sizeOfOutput = numberOfNewCandidates*numberOfBlocks*sizeof(unsigned int);
 	size_t sizeOfCandidates = numberOfCandidates*numberOfBlocks*sizeof(unsigned int);
-
+	size_t sizeOfToBeDeleted = numberOfNewCandidates*sizeof(bool);
+	
 	unsigned int dimBlock = 1024;
 	unsigned int dimGrid = ceilf((float)numberOfNewCandidates/dimBlock);
 
@@ -371,11 +381,17 @@ std::vector<unsigned int> mergeCandidatesTester(std::vector<std::vector<bool>> c
 	unsigned int* candidates_d;
 	unsigned int* output_d;
 
+	bool* toBeDeleted_h;
+	bool* toBeDeleted_d;
+
 	cudaMallocHost((void**) &candidates_h, sizeOfCandidates);
 	cudaMallocHost((void**) &output_h, sizeOfOutput);
+	cudaMallocHost((void**) &toBeDeleted_h, sizeOfToBeDeleted);
 
 	cudaMalloc((void**) &candidates_d, sizeOfCandidates);
 	cudaMalloc((void**) &output_d, sizeOfOutput);
+	cudaMalloc((void**) &toBeDeleted_d, sizeOfToBeDeleted);
+	
 
 	for(unsigned int i = 0; i < numberOfCandidates; i++){
 		unsigned int block = 0;
@@ -393,26 +409,34 @@ std::vector<unsigned int> mergeCandidatesTester(std::vector<std::vector<bool>> c
 
 	cudaMemcpy(candidates_d, candidates_h, sizeOfCandidates, cudaMemcpyHostToDevice);
 
-	mergeCandidates<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, output_d);
+	mergeCandidates<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, itrNr, output_d, toBeDeleted_d);
 
 	cudaMemcpy(output_h, output_d, sizeOfOutput, cudaMemcpyDeviceToHost);
+	cudaMemcpy(toBeDeleted_h, toBeDeleted_d, sizeOfToBeDeleted, cudaMemcpyDeviceToHost);
 
 	auto result = std::vector<unsigned int>();
 	for(int i = 0; i < numberOfNewCandidates*numberOfBlocks; i++){
 		
 		result.push_back(output_h[i]);
 	}
-	return result;
+
+	auto result2 = std::vector<bool>();
+	for(int i = 0; i < numberOfNewCandidates; i++){
+		
+		result2.push_back(toBeDeleted_h[i]);
+	}
+	return std::make_pair(result, result2);
 			   
 	
 }
 
 
 
-__global__ void findDublicatesNaive(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim, bool* output){
+__global__ void findDublicatesNaive(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim,
+									bool* isAlreadyDeleted, bool* output){
 	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
-	if(candidate < numberOfCandidates){
+	if(candidate < numberOfCandidates && !isAlreadyDeleted[candidate]){
 		for(unsigned int i = candidate+1; i < numberOfCandidates; i++){
 			bool equal = true;
 			for(unsigned int j = 0; j < numberOfBlocks; j++){
@@ -421,15 +445,17 @@ __global__ void findDublicatesNaive(unsigned int* candidates, unsigned int numbe
 			if(equal){
 				output[i] = true;
 			}
-		}
+		}		
 	}
 }
 
 
-__global__ void findDublicatesBreaking(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim, bool* output){
+
+__global__ void findDublicatesBreaking(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim,
+									bool* isAlreadyDeleted, bool* output){
 	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
-	if(candidate < numberOfCandidates){
+	if(candidate < numberOfCandidates && !isAlreadyDeleted[candidate]){
 		for(unsigned int i = candidate+1; i < numberOfCandidates; i++){
 			bool equal = true;
 			for(unsigned int j = 0; j < numberOfBlocks; j++){
@@ -443,10 +469,11 @@ __global__ void findDublicatesBreaking(unsigned int* candidates, unsigned int nu
 	}
 }
 
-__global__ void findDublicatesMoreBreaking(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim, bool* output){
+__global__ void findDublicatesMoreBreaking(unsigned int* candidates, unsigned int numberOfCandidates, unsigned int dim,
+									bool* isAlreadyDeleted, bool* output){
 	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
-	if(candidate < numberOfCandidates){
+	if(candidate < numberOfCandidates && !isAlreadyDeleted[candidate]){
 		for(unsigned int i = candidate+1; i < numberOfCandidates; i++){
 			bool equal = true;
 			for(unsigned int j = 0; j < numberOfBlocks; j++){
@@ -473,15 +500,16 @@ void findDublicatesWrapper(unsigned int dimGrid,
 						   unsigned int* candidates,
 						   unsigned int numberOfCandidates,
 						   unsigned int dim,
+						   bool* alreadyDeleted,
 						   bool* output,
 						   dublicatesType version
 						   ){
 	if(version == Naive){
-		findDublicatesNaive<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, output);			
+		findDublicatesNaive<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, alreadyDeleted, output);			
 	}else if(version == Breaking){
-		findDublicatesBreaking<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, output);			
+		findDublicatesBreaking<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, alreadyDeleted, output);			
 	}else if(version == MoreBreaking){
-		findDublicatesMoreBreaking<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, output);			
+		findDublicatesMoreBreaking<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, alreadyDeleted, output);			
 	}
 };
 
@@ -512,6 +540,12 @@ std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates
 	cudaMalloc((void**) &candidates_d, sizeOfCandidates);
 	cudaMalloc((void**) &output_d, sizeOfOutput);
 
+
+
+	bool* alreadyDeleted_d;
+	cudaMalloc((void**) &alreadyDeleted_d, numberOfCandidates*sizeof(bool));
+	cudaMemset(alreadyDeleted_d, 0, numberOfCandidates*sizeof(bool));
+
 	for(unsigned int i = 0; i < numberOfCandidates; i++){
 		unsigned int block = 0;
 		unsigned int blockNr = 0;
@@ -527,14 +561,15 @@ std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates
 	}
 
 
+
 	cudaMemcpy(candidates_d, candidates_h, sizeOfCandidates, cudaMemcpyHostToDevice);
 	cudaMemset(output_d, false, sizeOfOutput);
 	if(version == Naive){
-		findDublicatesNaive<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, output_d);
+		findDublicatesNaive<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, alreadyDeleted_d, output_d);
 	}else if(version == Breaking){
-		findDublicatesBreaking<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, output_d);		
+		findDublicatesBreaking<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, alreadyDeleted_d, output_d);		
 	}else if(version == MoreBreaking){
-		findDublicatesMoreBreaking<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, output_d);		
+		findDublicatesMoreBreaking<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, alreadyDeleted_d, output_d);		
 	}
 
 
@@ -555,7 +590,6 @@ __global__ void extractMax(unsigned int* candidates, float* scores, unsigned int
 	unsigned int block = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
 	if(scores[0] > bestScore[0]){
-		//printf("got here %f \n", bestScore[0]);
 		if(block < numberOfBlocks){
 			bestCandidate[block] = candidates[block*numberOfCandidates+bestIndex[0]];
 		}
@@ -803,4 +837,17 @@ std::vector<bool> findPointsInClusterTester(std::vector<bool> candidate, std::ve
 		result.push_back(pointsContained_h[i]);
 	}
 	return result;
+}
+
+
+__global__ void andKernel(unsigned int numberOfElements, bool* a, bool* b){
+	unsigned int i = blockIdx.x*blockDim.x+threadIdx.x;
+	if(i < numberOfElements){
+		a[i] |= b[i];	
+	}
+}
+
+void andKernelWrapper(unsigned int dimGrid, unsigned int dimBlock,  cudaStream_t stream,
+					  unsigned int numberOfElements, bool* a, bool* b){
+	andKernel<<<dimGrid, dimBlock, 0, stream>>>(numberOfElements, a, b);
 }
