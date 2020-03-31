@@ -198,7 +198,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 		
 		unsigned int iterationNr = 1;
 		std::cout << "number of candidates before loop: "<< numberOfCandidates << std::endl;
-		while(numberOfCandidates > 0 && iterationNr <= dim){
+		while(numberOfCandidates > 0 && iterationNr <= dim+1){
 			iterationNr++;
 			// Merge candidates
 			oldNumberOfCandidates = numberOfCandidates;
@@ -217,18 +217,20 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			sizeOfToBeDeleted = (numberOfCandidates+1)*sizeof(bool);
 			checkCudaErrors(cudaFree(toBeDeleted_d));
 			checkCudaErrors(cudaMalloc((void**) &toBeDeleted_d, sizeOfToBeDeleted));
+			checkCudaErrors(cudaMemsetAsync(toBeDeleted_d, 0, sizeOfToBeDeleted, stream1_1));
 			findDublicatesWrapper(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1, candidates_d, numberOfCandidates, dim, toBeDeleted_d);
 
 			bool* toBeDeleted_h;
-			cudaMallocHost((void**) &toBeDeleted_h, sizeof(bool));
+			cudaMallocHost((void**) &toBeDeleted_h, sizeof(bool)*2);
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));		
-			cudaMemcpyAsync(toBeDeleted_h, toBeDeleted_d, sizeof(bool), cudaMemcpyDeviceToHost, stream1_1);
-			std::cout << "should first element be deleted? " << toBeDeleted_h[0] << std::endl;
+			cudaMemcpyAsync(toBeDeleted_h, toBeDeleted_d, sizeof(bool)*2, cudaMemcpyDeviceToHost, stream1_1);
+			checkCudaErrors(cudaStreamSynchronize(stream1_1));		
+			std::cout << "should first element be deleted? " << toBeDeleted_h[0] << ", " << toBeDeleted_h[1] << std::endl;
 
 			// Delete dublicates
 			sizeOfPrefixSum = (numberOfCandidates+1)*sizeof(unsigned int);
 			checkCudaErrors(cudaMalloc((void**) &prefixSum_d, sizeOfPrefixSum));
-			sum_scan_blelloch(stream1_1, prefixSum_d,toBeDeleted_d,(numberOfCandidates+1), true);
+			sum_scan_blelloch(stream1_1, prefixSum_d,toBeDeleted_d,(numberOfCandidates+1), false);
 			
 			checkCudaErrors(cudaMemcpyAsync(sum_h, prefixSum_d+numberOfCandidates, sizeof(unsigned int), cudaMemcpyDeviceToHost,stream1_1));
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));		
@@ -324,12 +326,12 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			std::cout << "curret best: " << score_h[0] << std::endl;
 		}
 		
-		cudaMalloc((void**) &bestCentroid_d, sizeof(unsigned int));
-		cudaMemcpy(bestScore_h, bestScore_d, sizeof(float), cudaMemcpyDeviceToHost);
+		checkCudaErrors(cudaMalloc((void**) &bestCentroid_d, sizeof(unsigned int)));
+		checkCudaErrors(cudaMemcpy(bestScore_h, bestScore_d, sizeof(float), cudaMemcpyDeviceToHost));
 		std::cout << "findalBestScore: " << bestScore_h[0] << std::endl;
 
 		unsigned int* bestCandidate_h;
-		cudaMallocHost((void**) &bestCandidate_h, numberOfBlocksPrPoint*sizeof(unsigned int));
+		checkCudaErrors(cudaMallocHost((void**) &bestCandidate_h, numberOfBlocksPrPoint*sizeof(unsigned int)));
 		cudaMemcpy(bestCandidate_h, bestCandidate_d, numberOfBlocksPrPoint*sizeof(unsigned int), cudaMemcpyDeviceToHost);
 		std::cout << "bestCandidate: " << bestCandidate_h[0] << std::endl;
 

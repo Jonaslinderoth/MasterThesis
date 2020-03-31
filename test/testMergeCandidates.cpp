@@ -17,6 +17,17 @@ TEST(testMergeCandidates, testWith2Dim){
 	EXPECT_EQ(result.at(0), 3); // 3 = 000000011
 }
 
+TEST(testMergeCandidates, testWith2Dim_2){
+	auto candidates = std::vector<std::vector<bool>>();
+	{
+		auto point = std::vector<bool>({1,1});
+		candidates.push_back(point);
+	}
+
+	auto result = mergeCandidatesTester(candidates);
+	EXPECT_EQ(result.size(), 0);
+}
+
 
 TEST(testMergeCandidates, testWith3Dim){
 	auto candidates = std::vector<std::vector<bool>>();
