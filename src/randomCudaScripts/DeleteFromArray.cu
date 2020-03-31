@@ -451,6 +451,101 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 	}
 
 }
+
+
+__global__ void gpuDeleteFromArraySpeical(float* d_outData,
+								          const unsigned int* d_delete_array,
+								          const float* d_data,
+								          const size_t numElements,
+								          const unsigned int dimensions){
+	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
+
+	for(size_t howLongOnTheData = 0 ; howLongOnTheData < numElements*dimensions ; howLongOnTheData+=4*blockDim.x){
+
+		const size_t advIdex1 = idx+howLongOnTheData;
+		const size_t advIdex2 = idx+howLongOnTheData+blockDim.x;
+		const size_t advIdex3 = idx+howLongOnTheData+2*blockDim.x;
+		const size_t advIdex4 = idx+howLongOnTheData+3*blockDim.x;
+		float theData1;
+		float theData2;
+		float theData3;
+		float theData4;
+
+		if(advIdex1 < numElements*dimensions){
+			theData1 = d_data[advIdex1];
+			if(advIdex2 < numElements*dimensions){
+				theData2 = d_data[advIdex2];
+				if(advIdex3 < numElements*dimensions){
+					theData3 = d_data[advIdex3];
+					if(advIdex4 < numElements*dimensions){
+						theData4 = d_data[advIdex4];
+					}
+				}
+			}
+		}
+
+		if(advIdex1 < numElements*dimensions){
+			{
+				const size_t pointIdex = advIdex1/dimensions;
+				const size_t dimIndex = advIdex1%dimensions;
+				const size_t offSet = d_delete_array[pointIdex];
+				const size_t nextOffSet = d_delete_array[pointIdex+1];
+				const size_t newIndex = (pointIdex-offSet)*dimensions+dimIndex;
+
+				if(offSet == nextOffSet){
+					d_outData[newIndex] = theData1;
+				}
+			}
+
+			if(advIdex2 < numElements*dimensions){
+				{
+					const size_t pointIdex = advIdex2/dimensions;
+					const size_t dimIndex = advIdex2%dimensions;
+					const size_t offSet = d_delete_array[pointIdex];
+					const size_t nextOffSet = d_delete_array[pointIdex+1];
+					const size_t newIndex = (pointIdex-offSet)*dimensions+dimIndex;
+
+					if(offSet == nextOffSet){
+						d_outData[newIndex] = theData2;
+					}
+				}
+				if(advIdex3 < numElements*dimensions){
+					{
+						const size_t pointIdex = advIdex3/dimensions;
+						const size_t dimIndex = advIdex3%dimensions;
+						const size_t offSet = d_delete_array[pointIdex];
+						const size_t nextOffSet = d_delete_array[pointIdex+1];
+						const size_t newIndex = (pointIdex-offSet)*dimensions+dimIndex;
+
+						if(offSet == nextOffSet){
+							d_outData[newIndex] = theData3;
+						}
+					}
+					if(advIdex4 < numElements*dimensions){
+						{
+							const size_t pointIdex = advIdex4/dimensions;
+							const size_t dimIndex = advIdex4%dimensions;
+							const size_t offSet = d_delete_array[pointIdex];
+							const size_t nextOffSet = d_delete_array[pointIdex+1];
+							const size_t newIndex = (pointIdex-offSet)*dimensions+dimIndex;
+
+							if(offSet == nextOffSet){
+								d_outData[newIndex] = theData4;
+							}
+						}
+					}
+				}
+			}
+		}
+
+
+	}
+
+
+
+}
+
+
 template<typename T>
 __global__ void gpuDeleteFromArrayTrasformed(T* d_outData,
 								             const unsigned int* d_delete_array,
@@ -718,6 +813,49 @@ void deleteFromArrayWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStr
 };
 
 
+/*
+ * This is take two of the fuction , i make different versions to keep track of performance changes
+ * this fuction takes the data , and an array of bools that is one longer than the data where the last bool is not relevant.
+ * return the list where entry i in the data is deleted if entry i in the bools array is 0.
+ * it also deletes from the indexes keeping track of what is what.
+ * but it does not resize the indexs , meaning that some if the indexs array can be garbage.
+ */
+void deleteFromArraySpecial(cudaStream_t stream,
+					        float* d_outData,
+					        bool* d_delete_array,
+					        const float* d_data,
+					        const unsigned long numElements,
+					        const unsigned int dimension,
+					        const bool inverted,
+					        float* time){
+	const unsigned int threadsUsed = 1024;
+	// Set up device-side memory for output
+	unsigned int* d_out_blelloch;
+	checkCudaErrors(cudaMalloc(&d_out_blelloch, sizeof(unsigned int) * (numElements+1)));
+
+	sum_scan_blelloch(stream, d_out_blelloch,d_delete_array,(numElements+1), inverted);
+
+	unsigned int blocksToUse = 1;
+	cudaEvent_t start, stop;
+
+	if(time != nullptr){
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaEventRecord(start);
+	}
+
+	gpuDeleteFromArraySpeical<<<blocksToUse,threadsUsed,0, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
+
+	cudaFree(d_out_blelloch);
+	if(time != nullptr){
+		cudaEventRecord(stop);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(time, start, stop);
+	}
+
+}
+
+
 
 /*
  * This fuction odes the same as the not transformed it just get the data in another formatting.
@@ -757,13 +895,14 @@ void deleteFromArrayTrasformedData(cudaStream_t stream,
 
 	gpuDeleteFromArrayTrasformed<float><<<blocksToUse,threadsUsed,0, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
 
-	cudaFree(d_out_blelloch);
+
 	if(time != nullptr){
 		cudaEventRecord(stop);
 		cudaEventSynchronize(stop);
 		cudaEventElapsedTime(time, start, stop);
 	}
 
+	cudaFree(d_out_blelloch);
 };
 
 
