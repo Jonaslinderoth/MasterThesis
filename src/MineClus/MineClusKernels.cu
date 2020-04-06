@@ -859,3 +859,147 @@ void andKernelWrapper(unsigned int dimGrid, unsigned int dimBlock,  cudaStream_t
 					  unsigned int numberOfElements, bool* a, bool* b){
 	andKernel<<<dimGrid, dimBlock, 0, stream>>>(numberOfElements, a, b);
 }
+
+
+
+__global__ void disjointClusters(unsigned int* centroids, float* scores, unsigned int* subspaces, float* data, const unsigned int numberOfClusters, unsigned int dim, float width, unsigned int* output){
+	extern __shared__ unsigned int out[];
+	unsigned int k = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int numberOfComparisons = (numberOfClusters*(numberOfClusters+1))/2 - numberOfClusters;
+	
+	// setting the output
+	if(k < numberOfClusters){
+		output[k] = true;
+	}
+	
+	
+	// setting the shared memory
+	for(unsigned int i = 0; i < ceilf((float)numberOfClusters/blockDim.x); i++){
+		if(threadIdx.x+blockDim.x*i < numberOfClusters){
+			out[threadIdx.x+blockDim.x*i] = 1;	
+		}
+	}
+		
+	if(k < numberOfComparisons){
+		unsigned int i = numberOfClusters - 2- floorf(sqrtf(-8*k + 4*numberOfClusters*(numberOfClusters-1)-7)/ 2.0 - 0.5);
+		unsigned int j = k + i + 1 - numberOfClusters*(numberOfClusters-1)/2 + (numberOfClusters-i)*((numberOfClusters-i)-1)/2;
+		bool isDisjoint = true;
+		unsigned int blockNr = 0;
+		unsigned int currentBlock = 0;
+		unsigned int centroidI = centroids[i];
+		unsigned int centroidJ = centroids[j];
+		unsigned int numberOfBlocks = ceilf((float)dim/32);
+		for(unsigned int a = 0; a < dim; a++){
+			if(a%32 == 0){
+				blockNr = a/32;
+				assert(i*numberOfBlocks+blockNr < numberOfBlocks*numberOfClusters);
+				assert(j*numberOfBlocks+blockNr < numberOfBlocks*numberOfClusters);
+				currentBlock = subspaces[i*numberOfBlocks+blockNr] & subspaces[j*numberOfBlocks+blockNr];
+			}
+
+			isDisjoint &= (!(currentBlock >> a%32) & 1) || ((abs(data[centroidI*dim+a] - data[centroidJ*dim+a]) > width));
+			
+		}
+		if(isDisjoint){
+			atomicAnd(&out[i], 1);
+			atomicAnd(&out[j], 1);
+		}else if(scores[i] < scores[j]){
+				atomicAnd(&out[i], 0);
+				atomicAnd(&out[j], 1);
+		}else if(scores[i] == scores[j]){
+			atomicAnd(&out[min(i,j)], 1);
+			atomicAnd(&out[max(i,j)], 0);
+		}else{
+			atomicAnd(&out[i], 1);				
+			atomicAnd(&out[j], 0);
+		}
+	}
+
+	
+	for(unsigned int i = 0; i < ceilf((float)numberOfClusters/blockDim.x); i++){
+		if(threadIdx.x+blockDim.x*i < numberOfClusters){
+			atomicAnd(&output[threadIdx.x+blockDim.x*i], out[threadIdx.x+blockDim.x*i]);	
+		}
+	}
+}
+
+void disjointClustersWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+							 unsigned int* centroids, float* scores, unsigned int* subspaces,
+							 float* data, unsigned int numberOfClusters, unsigned int dim,
+							 float width, unsigned int* output){
+
+
+	unsigned int smem = numberOfClusters*sizeof(bool);
+	disjointClusters<<<dimGrid, dimBlock, smem, stream>>>(centroids, scores, subspaces,
+														  data, numberOfClusters, dim,
+														  width, output);
+}
+
+std::vector<bool> disjointClustersTester(std::vector<std::vector<float>*>* data_v, std::vector<unsigned int> centroids_v, std::vector<unsigned int> subspaces_v, std::vector<float> scores_v){
+	unsigned int width = 10;
+	unsigned int dim = data_v->at(0)->size();
+	unsigned int numberOfPoints = data_v->size();
+	unsigned int smem = scores_v.size()*sizeof(unsigned int);
+	
+	float* data;
+	float* scores;
+	unsigned int* centroids;
+	unsigned int* subspaces;
+	unsigned int* output;
+
+	unsigned int numberOfComparisons = (scores_v.size()*(scores_v.size()+1))/2-scores_v.size();
+
+	unsigned int dimBlock = 1024;
+	unsigned int dimGrid = ceilf((float)numberOfComparisons/dimBlock);
+	assert(dimGrid <= 1);
+
+	size_t sizeofData = numberOfPoints*dim*sizeof(float);
+	size_t sizeofScores = scores_v.size()*sizeof(float);
+	size_t sizeofCentroids = centroids_v.size()*sizeof(unsigned int);
+	size_t sizeofSubspaces = subspaces_v.size()*sizeof(unsigned int);
+	size_t sizeofOutput = centroids_v.size()*sizeof(unsigned int);
+
+
+	cudaMallocManaged((void**) &data, sizeofData);
+	cudaMallocManaged((void**) &scores, sizeofScores);
+	cudaMallocManaged((void**) &centroids, sizeofCentroids);
+	cudaMallocManaged((void**) &subspaces, sizeofSubspaces);
+	cudaMallocManaged((void**) &output, sizeofOutput);
+
+	for(int i = 0; i < data_v->size(); i++){
+		for(int j = 0; j < dim; j++){
+			data[i*dim+j] = data_v->at(i)->at(j);	
+		}
+	}
+
+	for(int i = 0; i < scores_v.size(); i++){
+		scores[i] = scores_v.at(i);
+	}
+
+	for(int i = 0; i < subspaces_v.size(); i++){
+		subspaces[i] = subspaces_v.at(i);
+	}
+
+	for(int i = 0; i < centroids_v.size(); i++){
+		centroids[i] = centroids_v.at(i);
+	}
+
+	disjointClusters<<<dimGrid, dimBlock, smem>>>(centroids, scores, subspaces,
+														  data, scores_v.size(), dim,
+														  width, output);
+
+	cudaDeviceSynchronize();
+	std::vector<bool> output_v;
+
+	for(int i = 0; i < centroids_v.size(); i++){
+		output_v.push_back(output[i]);
+	}
+
+	cudaFree(data);
+	cudaFree(centroids);
+	cudaFree(scores);
+	cudaFree(subspaces);
+	cudaFree(output);
+	return output_v;
+	
+}
