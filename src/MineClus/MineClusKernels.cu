@@ -20,7 +20,7 @@ __global__ void createItemSet(float* data, unsigned int dim, unsigned int number
 			// for each bit in a block
 			for(unsigned int j = 0; j < 32; j++){
 				// break if the last block dont line up with 32 bits
-				if(i == numberOfOutputs-1 && j >= dim%32){
+				if(i == numberOfOutputs-1 && j == dim%32 && j != 0){
 					break;
 				}else{
 					assert(dim*centroidId+i*32+j < numberOfPoints*dim);
@@ -98,6 +98,7 @@ __global__ void createInitialCandidates(unsigned int dim, unsigned int* output){
 	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocksPrPoint = ceilf((float)dim/32);
 	unsigned int myBlock = candidate/32;
+	
 	if(candidate < dim){
 	
 		// make sure all are 0;
@@ -107,6 +108,7 @@ __global__ void createInitialCandidates(unsigned int dim, unsigned int* output){
 		}
 		// set the correct candidate
 		unsigned int output_block = (1 << (candidate%32));
+		//printf("candidat %u have value %u, writing output at position %u\n", candidate, output_block, candidate+dim*myBlock);
 		output[candidate+dim*myBlock] = output_block;
 	}
 }
@@ -159,6 +161,7 @@ __global__ void countSupport(unsigned int* candidates, unsigned int* itemSet,
 	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 
 	unsigned int numberOfBlocksPrItem = ceilf((float)dim/32);
+	
 	if(candidate < numberOfCandidates){
 		unsigned int count = 0;
 		for(unsigned int i = 0; i < numberOfItems; i++){
@@ -168,6 +171,9 @@ __global__ void countSupport(unsigned int* candidates, unsigned int* itemSet,
 				unsigned int candidateBlock = candidates[j*numberOfCandidates + candidate];
 				unsigned int candidateBlockCount = __popc(candidateBlock);
 				unsigned int unionCount = __popc(itemBlock&candidateBlock);
+				// if(candidate == 0){
+				// 	printf("candiate %u item value %u \n", candidate, itemBlock);
+				// }
 				isSubset &= candidateBlockCount == unionCount;
 			}
 			
@@ -182,6 +188,7 @@ __global__ void countSupport(unsigned int* candidates, unsigned int* itemSet,
 			subSpaceCount += __popc(candidateBlock);
 		}
 		outScore[candidate] = count*pow(((float) 1/beta),subSpaceCount) ; // calculate score and store
+		//printf("candidate %u, have score %f \n", candidate, outScore[candidate]);
 		outToBeDeleted[candidate] = count < minSupp;
 	}
 }
@@ -332,7 +339,7 @@ __global__ void mergeCandidates(unsigned int* candidates, unsigned int numberOfC
 	unsigned int j = k + i + 1 - numberOfCandidates*(numberOfCandidates-1)/2 + (numberOfCandidates-i)*((numberOfCandidates-i)-1)/2;
 	unsigned int numberOfNewCandidates = (numberOfCandidates*(numberOfCandidates+1))/2 - numberOfCandidates;
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
-
+	
 	assert(iterNr >= 2);
 	if(k < numberOfNewCandidates){
 		unsigned int interSectionCount=0;
@@ -436,6 +443,7 @@ __global__ void findDublicatesNaive(unsigned int* candidates, unsigned int numbe
 									bool* isAlreadyDeleted, bool* output){
 	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
+	
 	if(candidate < numberOfCandidates && !isAlreadyDeleted[candidate]){
 		for(unsigned int i = candidate+1; i < numberOfCandidates; i++){
 			bool equal = true;

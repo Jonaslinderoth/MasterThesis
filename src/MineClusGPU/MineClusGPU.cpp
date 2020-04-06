@@ -92,6 +92,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 	cudaDeviceGetAttribute(&maxBlock, 
 						   cudaDevAttrMaxThreadsPerBlock, 0); 
 
+	
 	// create streams
 	cudaStream_t stream1_1;
 	cudaStreamCreate(&stream1_1);
@@ -171,7 +172,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 		unsigned int oldNumberOfCandidates = dim;	
 		unsigned int numberOfCandidates = dim-sum_h[0];
 		
-		//std::cout << "numberOfCandidates: " << numberOfCandidates << std::endl;
+		// std::cout << "numberOfCandidates: " << numberOfCandidates << std::endl; 
 		//if there are any candidates left
 		if(numberOfCandidates > 0){
 			
@@ -182,6 +183,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			deleteFromArrayTransfomedDataWrapper(ceilf((float)dim/32), dimBlock, stream1_1,
 												 candidates_d, prefixSum_d, oldNumberOfCandidates, numberOfBlocksPrPoint, newCandidates_d);
 
+			// std::cout << "numberOfBlocksPrPoint: " << numberOfBlocksPrPoint << std::endl;
 			// delete the scores that matches the deleted candidates			
 			float* newScore_d;
 			sizeOfScore = dim*sizeof(unsigned int);
@@ -469,8 +471,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 				// 	checkCudaErrors(cudaMemcpyAsync(score_h, bestScore_d, 4, cudaMemcpyDeviceToHost, stream1_1));
 				// 	checkCudaErrors(cudaStreamSynchronize(stream1_1));		
 				// 	std::cout << "curret best: " << score_h[0] << std::endl;
-				// }
+				// }				
 				/**************************/
+				
 				checkCudaErrors(cudaFree(index_d));
 				checkCudaErrors(cudaFree(score_d));
 			}
@@ -571,14 +574,14 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 	for(unsigned int i = 0; i < numberOfBlocksPrPoint;i++){
 		for(unsigned int j = 0; j < 32; j++){
 			outputDim->push_back((bestCandidate_h[i] >> j) & (unsigned int)1);
-			//		std::cout << ((bestCandidate_h[i] >> j) & (unsigned int)1);
+			//std::cout << ((bestCandidate_h[i] >> j) & (unsigned int)1);
 			count++;
 			if(count >= dim){
 				break;
 			}
 		}
 	}
-	//std::cout << std::endl;
+	//	std::cout << std::endl;
 
 	result.push_back(std::make_pair(outputCluster,outputDim));
 	checkCudaErrors(cudaStreamSynchronize(stream1_2));

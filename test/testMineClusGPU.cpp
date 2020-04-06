@@ -277,7 +277,7 @@ TEST(testMineClusGPU, _SLOW_test66Dims){
 	}
 }
 
-TEST(testMineClusGPU, DISABLED_SLOW_test32Dims){
+TEST(testMineClusGPU, _SLOW_test32Dims){
 	std::default_random_engine gen;
 	gen.seed(0);
 	std::normal_distribution<float> cluster1(100.0,2.0);
@@ -304,7 +304,7 @@ TEST(testMineClusGPU, DISABLED_SLOW_test32Dims){
 		for(int i = 0; i < 100; i++){
 			auto point = new std::vector<float>;
 			for(int j = 0; j < 32; j++){
-				if(j % 10 == 0){
+				if(j % 11 == 0){
 					point->push_back(cluster2(gen));					
 				}else{
 					point->push_back(noise(gen));					
@@ -314,6 +314,9 @@ TEST(testMineClusGPU, DISABLED_SLOW_test32Dims){
 			data->push_back(point);
 		}
 	}
+
+	EXPECT_EQ(data->size(), 400);
+	EXPECT_EQ(data->at(0)->size(), 32);
 
 	auto c = MineClusGPU(data);
 	c.setSeed(2);
@@ -325,7 +328,11 @@ TEST(testMineClusGPU, DISABLED_SLOW_test32Dims){
 	EXPECT_EQ(res.at(0).first->size(),300);
 	EXPECT_EQ(res.at(0).second->size(),32);
 
-
+	// for(int j = 0; j < 32; j++){
+	// 	std::cout << res.at(0).second->at(j);
+	// }
+	// std::cout << std::endl;
+	
 	for(int j = 0; j < 32; j++){
 		if(j % 8 == 0){
 			EXPECT_EQ(res.at(0).second->at(j), 1) << "j: " << j;					

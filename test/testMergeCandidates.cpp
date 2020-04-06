@@ -163,3 +163,5 @@ TEST(testMergeCandidates, testWith44Dim_2){
 	EXPECT_EQ(readBit(result.first.at(5),11), 1);	
 }
 
+
+
