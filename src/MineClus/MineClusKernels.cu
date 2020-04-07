@@ -744,7 +744,7 @@ std::pair<std::vector<unsigned int>, float> extractMaxTester(std::vector<bool> o
 	}
 
 
-__global__ void findPointsInCluster(unsigned int* candidate, float* data, unsigned int* centroid, unsigned int dim, unsigned int numberOfPoints, float width, bool* pointsContained){
+__global__ void findPointsInCluster(unsigned int* candidate, float* data, float* centroid, unsigned int dim, unsigned int numberOfPoints, float width, bool* pointsContained){
 	unsigned int point = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
 	if(point < numberOfPoints){
@@ -754,7 +754,7 @@ __global__ void findPointsInCluster(unsigned int* candidate, float* data, unsign
 			for(unsigned int j = 0; j < 32; j++){
 				if(i*32+j < dim){
 					bool isDimChosen = (block >> j) & 1;
-					float cent = data[centroid[0]*dim+i*32+j];
+					float cent = centroid[i*32+j];
 					float poin = data[point*dim+i*32+j];
 					bool r = (not(isDimChosen)) || ((abs(cent - poin)) < width);
 					isContained &= r;
@@ -769,7 +769,7 @@ __global__ void findPointsInCluster(unsigned int* candidate, float* data, unsign
 
 
 void findPointInClusterWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
-							   unsigned int* candidate, float* data, unsigned int* centroid, unsigned int dim,
+							   unsigned int* candidate, float* data, float* centroid, unsigned int dim,
 							   unsigned int numberOfPoints, float width, bool* pointsContained){
 	findPointsInCluster<<<dimGrid, dimBlock, 0, stream>>>(candidate, data, centroid, dim, numberOfPoints, width, pointsContained);
 }
@@ -782,12 +782,12 @@ std::vector<bool> findPointsInClusterTester(std::vector<bool> candidate, std::ve
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
 	
 	size_t sizeOfCandidate = numberOfBlocks*sizeof(unsigned int);
-	size_t sizeOfCentroid = sizeof(unsigned int);
+	size_t sizeOfCentroid = dim*sizeof(float);
 	size_t sizeOfData = numberOfPoints * dim * sizeof(float);
 	size_t sizeOfPointsContained = numberOfPoints * sizeof(bool);
 	
 	unsigned int* candidate_h;
-	unsigned int* centroid_h;
+	float* centroid_h;
 	float* data_h;
 	bool* pointsContained_h;
 
@@ -797,7 +797,7 @@ std::vector<bool> findPointsInClusterTester(std::vector<bool> candidate, std::ve
 	cudaMallocHost((void**) &pointsContained_h, sizeOfPointsContained);
 
 	unsigned int* candidate_d;
-	unsigned int* centroid_d;
+	float* centroid_d;
 	float* data_d;
 	bool* pointsContained_d;
 
@@ -824,8 +824,11 @@ std::vector<bool> findPointsInClusterTester(std::vector<bool> candidate, std::ve
 		}
 	}
 
-	centroid_h[0] = centroid;
+	for(int i = 0; i < dim; i++){
+		centroid_h[i] = data->at(centroid)->at(i);
+	}
 
+	
 	
 	unsigned int dimBlock = 1024;
 	unsigned int dimGrid = ceilf((float)numberOfPoints/dimBlock);
@@ -866,6 +869,7 @@ __global__ void disjointClusters(unsigned int* centroids, float* scores, unsigne
 	extern __shared__ unsigned int out[];
 	unsigned int k = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfComparisons = (numberOfClusters*(numberOfClusters+1))/2 - numberOfClusters;
+
 	
 	// setting the output
 	if(k < numberOfClusters){
@@ -889,6 +893,7 @@ __global__ void disjointClusters(unsigned int* centroids, float* scores, unsigne
 		unsigned int centroidI = centroids[i];
 		unsigned int centroidJ = centroids[j];
 		unsigned int numberOfBlocks = ceilf((float)dim/32);
+
 		for(unsigned int a = 0; a < dim; a++){
 			if(a%32 == 0){
 				blockNr = a/32;
@@ -896,20 +901,23 @@ __global__ void disjointClusters(unsigned int* centroids, float* scores, unsigne
 				assert(j*numberOfBlocks+blockNr < numberOfBlocks*numberOfClusters);
 				currentBlock = subspaces[i*numberOfBlocks+blockNr] & subspaces[j*numberOfBlocks+blockNr];
 			}
-
-			isDisjoint &= (!(currentBlock >> a%32) & 1) || ((abs(data[centroidI*dim+a] - data[centroidJ*dim+a]) > width));
-			
+			isDisjoint &= (!(currentBlock >> a%32) & 1) || ((abs(data[centroidI*dim+a] - data[centroidJ*dim+a]) >= 2*width));	
 		}
+		
 		if(isDisjoint){
+			printf("k,i,j: %u, %u, %u are disjoint\n",k, i,j);
 			atomicAnd(&out[i], 1);
 			atomicAnd(&out[j], 1);
 		}else if(scores[i] < scores[j]){
-				atomicAnd(&out[i], 0);
-				atomicAnd(&out[j], 1);
+			printf("k,i,j: %u,  %u, %u; score %f < %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], j,i);
+			atomicAnd(&out[i], 0);
+			atomicAnd(&out[j], 1);
 		}else if(scores[i] == scores[j]){
+			printf("k,i,j: %u, %u, %u; score %f == %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], min(i,j),max(i,j));
 			atomicAnd(&out[min(i,j)], 1);
 			atomicAnd(&out[max(i,j)], 0);
 		}else{
+			printf("k,i,j: %u, %u, %u; score %f > %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], i,j);
 			atomicAnd(&out[i], 1);				
 			atomicAnd(&out[j], 0);
 		}
@@ -929,7 +937,7 @@ void disjointClustersWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaSt
 							 float width, unsigned int* output){
 
 
-	unsigned int smem = numberOfClusters*sizeof(bool);
+	unsigned int smem = numberOfClusters*sizeof(unsigned int);
 	disjointClusters<<<dimGrid, dimBlock, smem, stream>>>(centroids, scores, subspaces,
 														  data, numberOfClusters, dim,
 														  width, output);
@@ -1002,4 +1010,35 @@ std::vector<bool> disjointClustersTester(std::vector<std::vector<float>*>* data_
 	cudaFree(output);
 	return output_v;
 	
+}
+
+
+__global__ void unsignedIntToBoolArray(unsigned int* input, unsigned int numberOfElements, bool* output){
+	unsigned int k = blockIdx.x*blockDim.x+threadIdx.x;
+	if(k < numberOfElements){
+		output[k] = input[k];
+	}
+}
+
+
+void unsignedIntToBoolArrayWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+							unsigned int* input, unsigned int numberOfElements, bool* output){
+	unsignedIntToBoolArray<<<dimGrid, dimBlock, 0, stream>>>(input, numberOfElements, output);
+}
+
+
+__global__ void copyCentroid(unsigned int* centroids, float* data, unsigned int dim, unsigned int numberOfCentroids, float* centroidsOut){
+	unsigned int k = blockIdx.x*blockDim.x+threadIdx.x;
+	if(k < dim*numberOfCentroids){
+		unsigned int centroidToUse = k/dim;
+		unsigned int dimInCentroid = k%dim;
+		unsigned int centroidIndex = centroids[centroidToUse];
+		centroidsOut[centroidToUse*dim+dimInCentroid] = data[centroidIndex*dim+dimInCentroid];
+	}
+}
+
+void copyCentroidWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+						 unsigned int* centroids, float* data, unsigned int dim,
+						 unsigned int numberOfCentroids, float* centroidsOut){
+	copyCentroid<<<dimGrid, dimBlock, 0, stream>>>(centroids, data, dim, numberOfCentroids, centroidsOut);
 }

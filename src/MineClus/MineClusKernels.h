@@ -75,7 +75,7 @@ void extractMaxWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t
 
 
 void findPointInClusterWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
-							   unsigned int* candidate, float* data, unsigned int* centroid, unsigned int dim,
+							   unsigned int* candidate, float* data, float* centroid, unsigned int dim,
 							   unsigned int numberOfPoints, float width, bool* pointsContained);
 
 
@@ -86,7 +86,14 @@ void andKernelWrapper(unsigned int dimGrid, unsigned int dimBlock,  cudaStream_t
 void disjointClustersWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
 							 unsigned int* centroids, float* scores, unsigned int* subspaces,
 							 float* data, unsigned int numberOfClusters, unsigned int dim,
-							 float width, bool* output);
+							 float width, unsigned int* output);
+
+void unsignedIntToBoolArrayWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+							unsigned int* input, unsigned int numberOfElements, bool* output);
+
+void copyCentroidWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+						 unsigned int* centroids, float* data, unsigned int dim,
+						 unsigned int numberOfCentroids, float* centroidsOut);
 
 // Testing functions
 // ONLY FOR TESTING THE KERNELS
@@ -102,4 +109,5 @@ std::pair<std::vector<unsigned int>, float> extractMaxTester(std::vector<bool> o
 															 unsigned int index);
 std::vector<bool> findPointsInClusterTester(std::vector<bool> candidate, std::vector<std::vector<float>*>* data, unsigned int centroid, float width);
 std::vector<bool> disjointClustersTester(std::vector<std::vector<float>*>* data_v, std::vector<unsigned int> centroids_v, std::vector<unsigned int> subspaces_v, std::vector<float> scores_v);
+
 #endif

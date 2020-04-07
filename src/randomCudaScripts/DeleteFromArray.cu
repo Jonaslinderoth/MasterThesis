@@ -59,7 +59,7 @@ __global__ void gpu_prescan(unsigned int* const d_out,
 	unsigned int* const d_block_sums,
 	const unsigned int len,
 	const unsigned int shmem_sz,
-	const unsigned int max_elems_per_block)
+							const unsigned int max_elems_per_block)
 {
 	// Allocated on invocation
 	extern __shared__ unsigned int s_out[];
@@ -302,11 +302,11 @@ void sum_scan_blelloch(cudaStream_t stream,
 	// Sum scan data allocated to each block
 	//gpu_sum_scan_blelloch<<<grid_sz, block_sz, sizeof(unsigned int) * max_elems_per_block >>>(d_out, d_in, d_block_sums, numElems);
 	gpu_prescan<<<grid_sz, block_sz, sizeof(unsigned int) * shmem_sz, stream>>>(d_out,
-																	d_in,
-																	d_block_sums,
-																	numElems,
-																	shmem_sz,
-																	max_elems_per_block);
+																				d_in,
+																				d_block_sums,
+																				numElems,
+																				shmem_sz,
+																				max_elems_per_block);
 
 	// Sum scan total sums produced by each block
 	// Use basic implementation if number of total sums is <= 2 * block_sz
@@ -318,11 +318,11 @@ void sum_scan_blelloch(cudaStream_t stream,
 		checkCudaErrors(cudaMemsetAsync(d_dummy_blocks_sums, 0, sizeof(unsigned int), stream));
 		//gpu_sum_scan_blelloch<<<1, block_sz, sizeof(unsigned int) * max_elems_per_block>>>(d_block_sums, d_block_sums, d_dummy_blocks_sums, grid_sz);
 		gpu_prescan<<<1, block_sz, sizeof(unsigned int) * shmem_sz, stream>>>(d_block_sums,
-																	d_block_sums,
-																	d_dummy_blocks_sums,
-																	grid_sz,
-																	shmem_sz,
-																	max_elems_per_block);
+																			  d_block_sums,
+																			  d_dummy_blocks_sums,
+																			  grid_sz,
+																			  shmem_sz,
+																			  max_elems_per_block);
 		checkCudaErrors(cudaFree(d_dummy_blocks_sums));
 	}
 	// Else, recurse on this same function as you'll need the full-blown scan
@@ -429,9 +429,10 @@ __global__ void gpuDeleteFromArrayOld(float* d_outData,
 	}
 }
 
-__global__ void gpuDeleteFromArray(float* d_outData,
+template<typename T>
+__global__ void gpuDeleteFromArray(T* d_outData,
 								   const unsigned int* d_delete_array,
-								   const float* d_data,
+								   const T* d_data,
 								   const size_t numElements,
 								   const unsigned int dimensions){
 	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -443,7 +444,7 @@ __global__ void gpuDeleteFromArray(float* d_outData,
 		const size_t offSet = d_delete_array[pointIdex];
 		const size_t nextOffSet = d_delete_array[pointIdex+1];
 		const size_t newIndex = (pointIdex-offSet)*dimensions+dimIndex;
-		const float theData = d_data[idx];
+		const T theData = d_data[idx];
 		if(offSet == nextOffSet){
 			d_outData[newIndex] = theData;
 		}
@@ -627,7 +628,7 @@ void sum_scan_blelloch(cudaStream_t stream,
 																	d_dummy_blocks_sums,
 																	grid_sz,
 																	shmem_sz,
-																	max_elems_per_block);
+																			  max_elems_per_block);
 		checkCudaErrors(cudaFree(d_dummy_blocks_sums));
 	}
 	// Else, recurse on this same function as you'll need the full-blown scan
@@ -807,11 +808,20 @@ void deleteFromArrayWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStr
 							float* data, unsigned int* prefixSum, unsigned int numberOfElements,
 							unsigned int dim, float* output){
 	gpuDeleteFromArray<<<dimGrid, dimBlock, 0, stream>>>(output,
+														 prefixSum,
+														 data,
+														 numberOfElements, dim);
+};
+
+
+void deleteFromArrayWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+							unsigned int* data, unsigned int* prefixSum, unsigned int numberOfElements,
+							unsigned int dim, unsigned* output){
+	gpuDeleteFromArray<<<dimGrid, dimBlock, 0, stream>>>(output,
 																prefixSum,
 																data,
 																numberOfElements, dim);
 };
-
 
 /*
  * This is take two of the fuction , i make different versions to keep track of performance changes
