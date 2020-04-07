@@ -238,7 +238,7 @@ TEST(testMineClusGPU, test10Dims){
 
 TEST(testMineClusGPU, _SLOW_test66Dims){
 	std::default_random_engine gen;
-	gen.seed(0);
+	gen.seed(10);
 	std::normal_distribution<double> cluster1(100.0,2.0);
 	std::normal_distribution<double> cluster2(1000.0,2.0);
 	std::normal_distribution<double> noise(100.0,200000.0);
@@ -297,6 +297,125 @@ TEST(testMineClusGPU, _SLOW_test66Dims){
 	EXPECT_EQ(res.at(1).second->size(),66);
 	
 }
+
+
+TEST(testMineClusGPU, _SLOW_test66Dims_5clusters){
+	std::default_random_engine gen;
+	gen.seed(10);
+	std::normal_distribution<double> cluster1(100.0,2.0);
+	std::normal_distribution<double> cluster2(1000.0,2.0);
+	std::normal_distribution<double> cluster3(10000.0,2.0);
+	std::normal_distribution<double> cluster4(100000.0,2.0);
+	std::normal_distribution<double> cluster5(1000000.0,2.0);
+	std::normal_distribution<double> cluster6(10000000.0,2.0);
+	std::normal_distribution<double> noise(100.0,200000.0);
+	auto data = new std::vector<std::vector<float>*>;
+	{
+		for(int i = 0; i < 300; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 66; j++){
+				if(j % 6 == 0){
+					point->push_back(cluster1(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+
+
+	{
+		for(int i = 0; i < 200; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 66; j++){
+				if(j % 8 == 0){
+					point->push_back(cluster2(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+
+	{
+		for(int i = 0; i < 190; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 66; j++){
+				if(j % 8 == 0){
+					point->push_back(cluster3(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+	{
+		for(int i = 0; i < 180; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 66; j++){
+				if(j % 8 == 0){
+					point->push_back(cluster4(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+
+	{
+		for(int i = 0; i < 170; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 66; j++){
+				if(j % 8 == 0){
+					point->push_back(cluster5(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+	auto c = MineClusGPU(data);
+	c.setSeed(2);
+
+
+	auto res = c.findKClusters(5);
+
+	EXPECT_EQ(res.size(),5);
+	EXPECT_EQ(res.at(0).first->size(),300);
+	EXPECT_EQ(res.at(0).second->size(),66);
+
+
+	for(int j = 0; j < 66; j++){
+		if(j % 6 == 0){
+			EXPECT_EQ(res.at(0).second->at(j), 1) << "j: " << j;					
+		}else{
+			EXPECT_EQ(res.at(0).second->at(j), 0) << "j: " << j;
+		}
+	}
+
+	EXPECT_EQ(res.at(1).first->size(),170);
+	EXPECT_EQ(res.at(1).second->size(),66);
+
+	EXPECT_EQ(res.at(2).first->size(),190);
+	EXPECT_EQ(res.at(2).second->size(),66);
+
+	EXPECT_EQ(res.at(3).first->size(),180);
+	EXPECT_EQ(res.at(3).second->size(),66);
+
+	EXPECT_EQ(res.at(4).first->size(),200);
+	EXPECT_EQ(res.at(4).second->size(),66);
+}
+
 
 TEST(testMineClusGPU, _SLOW_test32Dims){
 	std::default_random_engine gen;

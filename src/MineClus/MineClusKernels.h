@@ -79,7 +79,7 @@ void findPointInClusterWrapper(unsigned int dimGrid, unsigned int dimBlock, cuda
 							   unsigned int numberOfPoints, float width, bool* pointsContained);
 
 
-void andKernelWrapper(unsigned int dimGrid, unsigned int dimBlock,  cudaStream_t stream,
+void orKernelWrapper(unsigned int dimGrid, unsigned int dimBlock,  cudaStream_t stream,
 					  unsigned int numberOfElements, bool* a, bool* b);
 
 

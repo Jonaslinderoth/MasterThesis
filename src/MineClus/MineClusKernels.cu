@@ -851,16 +851,16 @@ std::vector<bool> findPointsInClusterTester(std::vector<bool> candidate, std::ve
 }
 
 
-__global__ void andKernel(unsigned int numberOfElements, bool* a, bool* b){
+__global__ void orKernel(unsigned int numberOfElements, bool* a, bool* b){
 	unsigned int i = blockIdx.x*blockDim.x+threadIdx.x;
 	if(i < numberOfElements){
 		a[i] |= b[i];	
 	}
 }
 
-void andKernelWrapper(unsigned int dimGrid, unsigned int dimBlock,  cudaStream_t stream,
+void orKernelWrapper(unsigned int dimGrid, unsigned int dimBlock,  cudaStream_t stream,
 					  unsigned int numberOfElements, bool* a, bool* b){
-	andKernel<<<dimGrid, dimBlock, 0, stream>>>(numberOfElements, a, b);
+	orKernel<<<dimGrid, dimBlock, 0, stream>>>(numberOfElements, a, b);
 }
 
 
@@ -905,19 +905,19 @@ __global__ void disjointClusters(unsigned int* centroids, float* scores, unsigne
 		}
 		
 		if(isDisjoint){
-			printf("k,i,j: %u, %u, %u are disjoint\n",k, i,j);
+			//printf("k,i,j: %u, %u, %u are disjoint\n",k, i,j);
 			atomicAnd(&out[i], 1);
 			atomicAnd(&out[j], 1);
 		}else if(scores[i] < scores[j]){
-			printf("k,i,j: %u,  %u, %u; score %f < %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], j,i);
+			//printf("k,i,j: %u,  %u, %u; score %f < %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], j,i);
 			atomicAnd(&out[i], 0);
 			atomicAnd(&out[j], 1);
 		}else if(scores[i] == scores[j]){
-			printf("k,i,j: %u, %u, %u; score %f == %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], min(i,j),max(i,j));
+			//printf("k,i,j: %u, %u, %u; score %f == %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], min(i,j),max(i,j));
 			atomicAnd(&out[min(i,j)], 1);
 			atomicAnd(&out[max(i,j)], 0);
 		}else{
-			printf("k,i,j: %u, %u, %u; score %f > %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], i,j);
+			//printf("k,i,j: %u, %u, %u; score %f > %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], i,j);
 			atomicAnd(&out[i], 1);				
 			atomicAnd(&out[j], 0);
 		}
