@@ -6,7 +6,7 @@
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 
-enum dublicatesType { Naive, Breaking, MoreBreaking };
+enum dublicatesType { Naive, Breaking, MoreBreaking, Hash };
 
 void createItemSetWrapper(unsigned int dimGrid,
 						  unsigned int dimBlock,

@@ -44,7 +44,7 @@ float* MineClusGPU::transformData(){
 	uint dim = this->data->at(0)->size();
 	uint size_of_data = size*dim*sizeof(float);
 	float* data_h;
-	cudaMallocHost((void**) &data_h, size_of_data);
+	checkCudaErrors(cudaMallocHost((void**) &data_h, size_of_data));
 	
 	for(int i = 0; i < size; i++){
 		for(int j = 0; j < dim; j++){
@@ -92,9 +92,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 	
 	// create streams
 	cudaStream_t stream1_1;
-	cudaStreamCreate(&stream1_1);
+	checkCudaErrors(cudaStreamCreate(&stream1_1));
 	cudaStream_t stream1_2;
-	cudaStreamCreate(&stream1_2);
+	checkCudaErrors(cudaStreamCreate(&stream1_2));
 
 	// Transfer data the data
 	unsigned int sizeOfData = size*dim*sizeof(float);
@@ -102,20 +102,21 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 	float* data_d;
 	checkCudaErrors(cudaMalloc((void**) &data_d, sizeOfData));
 	checkCudaErrors(cudaMemcpyAsync(data_d, data_h, sizeOfData, cudaMemcpyHostToDevice, stream1_2));
-
+	//std::cout << "hello\n";
 	while(k > result.size()){
 		// Allocate the space for the best scores
 		float* bestScore_d;
 		unsigned int* bestCentroid_d;
 		unsigned int* bestCandidate_d;
-		cudaMalloc((void**) &bestScore_d, numberOfCentroids*sizeof(float));
-		cudaMalloc((void**) &bestCentroid_d, numberOfCentroids*sizeof(unsigned int));
-		cudaMalloc((void**) &bestCandidate_d, numberOfCentroids*numberOfBlocksPrPoint*sizeof(unsigned int));
+		checkCudaErrors(cudaMalloc((void**) &bestScore_d, numberOfCentroids*sizeof(float)));
+		checkCudaErrors(cudaMalloc((void**) &bestCentroid_d, numberOfCentroids*sizeof(unsigned int)));
+		checkCudaErrors(cudaMalloc((void**) &bestCandidate_d, numberOfCentroids*numberOfBlocksPrPoint*sizeof(unsigned int)));
 
 		// Create long living variables
 		unsigned int currentCentroidIndex = 0;
 	
 		for(unsigned int i = 0; i < numberOfCentroids; i++){
+			//std::cout << "hello\n";
 			// The current centroid index
 			currentCentroidIndex = this->randInt(0,numberOfPoints-1,1).at(0);
 	
@@ -174,7 +175,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			// std::cout << "numberOfCandidates: " << numberOfCandidates << std::endl; 
 			//if there are any candidates left
 			if(numberOfCandidates > 0){
-			
+				checkCudaErrors(cudaPeekAtLastError());
 				// delete all the small candidates
 				unsigned int* newCandidates_d;
 				sizeOfCandidates = dim*numberOfBlocksPrPoint*sizeof(unsigned int);
@@ -188,14 +189,14 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 				sizeOfScore = dim*sizeof(unsigned int);
 				checkCudaErrors(cudaMalloc((void**) &newScore_d, sizeOfScore));
 				deleteFromArrayTransfomedDataWrapper(ceilf((float)dim/32), dimBlock, stream1_1, score_d, prefixSum_d, oldNumberOfCandidates, 1, newScore_d);
-
+				checkCudaErrors(cudaPeekAtLastError());
 				// free all the memory that is not needed any more
 				checkCudaErrors(cudaFree(prefixSum_d));
 				checkCudaErrors(cudaFree(candidates_d));
 				checkCudaErrors(cudaFree(score_d));
 				checkCudaErrors(cudaFree(support_d));
 				checkCudaErrors(cudaFree(toBeDeleted_d));
-			
+				checkCudaErrors(cudaPeekAtLastError());
 				candidates_d = newCandidates_d;
 				score_d = newScore_d;
 
@@ -209,11 +210,11 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 				// If it is the first iteration set the current best score to 0
 				float* bestScore_h;
 				if(i == 0){
-					cudaMallocHost((void**) &bestScore_h, sizeof(float)*numberOfCentroids);
+					checkCudaErrors(cudaMallocHost((void**) &bestScore_h, sizeof(float)*numberOfCentroids));
 					for(int j = 0; j < numberOfCentroids; j++){
 						bestScore_h[j] = 0;
 					}
-					cudaMemcpy(bestScore_d, bestScore_h, sizeof(float)*numberOfCentroids, cudaMemcpyHostToDevice);				
+					checkCudaErrors(cudaMemcpy(bestScore_d, bestScore_h, sizeof(float)*numberOfCentroids, cudaMemcpyHostToDevice));				
 				}
 
 				// find the best score, then copy that score and the coresponding candidate and centroid to the result
@@ -228,6 +229,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 				//std::cout << "iteration number: " << iterationNr << std::endl;
 				while(numberOfCandidates > 1 && iterationNr <= dim+1){
 					iterationNr++;
+					checkCudaErrors(cudaPeekAtLastError());
 
 					// Merge candidates
 					oldNumberOfCandidates = numberOfCandidates;
@@ -251,14 +253,15 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 
 					checkCudaErrors(cudaMalloc((void**) &toBeDeleted_d, sizeOfToBeDeleted));
-				
+					checkCudaErrors(cudaPeekAtLastError());
 					// Find all the dublicate candidates 
 					checkCudaErrors(cudaMemsetAsync(toBeDeleted_d, 0, sizeOfToBeDeleted, stream1_1)); // not needed any more, it is handled by the merge kernel now
-					findDublicatesWrapper(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1, candidates_d, numberOfCandidates, dim, deletedFromCount_d, toBeDeleted_d, MoreBreaking);
+					std::cout << "number of candidates: " << numberOfCandidates << std::endl;
+					findDublicatesWrapper(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1, candidates_d, numberOfCandidates, dim, deletedFromCount_d, toBeDeleted_d, Hash);
 					orKernelWrapper(ceilf((float)numberOfCandidates+1/dimBlock), dimBlock, stream1_1, numberOfCandidates+1, toBeDeleted_d, deletedFromCount_d);
-
+					checkCudaErrors(cudaPeekAtLastError());
 					//toBeDeleted_d = deletedFromCount_d;
-
+					checkCudaErrors(cudaPeekAtLastError());
 
 					// Compute the prefix sum and then find the number of dublicates
 					sizeOfPrefixSum = (numberOfCandidates+1)*sizeof(unsigned int);
@@ -271,13 +274,15 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 				
 					// delete the dublicate candidates
 					checkCudaErrors(cudaStreamSynchronize(stream1_1));
-					oldNumberOfCandidates = numberOfCandidates;g
+					oldNumberOfCandidates = numberOfCandidates;
 					numberOfCandidates = numberOfCandidates-sum_h[0];
 					//std::cout << "number of candidates after deleted dublicates: " << numberOfCandidates << std::endl;
 					if(numberOfCandidates <= 0){
 						//	std::cout << "no more candidates, dublicates removed all" << std::endl;
 						break;
 					}
+					checkCudaErrors(cudaPeekAtLastError());
+										
 					// delete candidates
 					sizeOfCandidates = numberOfCandidates*numberOfBlocksPrPoint*sizeof(unsigned int);
 					checkCudaErrors(cudaMalloc((void**) &newCandidates_d, sizeOfCandidates));
@@ -291,6 +296,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 				
 					candidates_d = newCandidates_d;
 					score_d = newScore_d;
+					checkCudaErrors(cudaPeekAtLastError());
 
 
 					// Count support
@@ -306,6 +312,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 										candidates_d, itemSet_d, dim, numberOfPoints, numberOfCandidates, minSupp,
 										this->beta, support_d, score_d, toBeDeleted_d);
 
+					checkCudaErrors(cudaPeekAtLastError());
 
 				
 					// delete small candidates
@@ -330,12 +337,14 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 					checkCudaErrors(cudaMalloc((void**) &newCandidates_d, sizeOfCandidates));
 					checkCudaErrors(cudaMalloc((void**) &newScore_d, sizeOfScore));
-				
+					checkCudaErrors(cudaPeekAtLastError());
+									
 					deleteFromArrayTransfomedDataWrapper(ceilf((float)oldNumberOfCandidates*numberOfBlocksPrPoint/dimBlock), dimBlock, stream1_1,
 														 candidates_d, prefixSum_d, oldNumberOfCandidates, numberOfBlocksPrPoint, newCandidates_d);
 					deleteFromArrayTransfomedDataWrapper(ceilf((float)oldNumberOfCandidates*numberOfBlocksPrPoint/dimBlock), dimBlock, stream1_1,
 														 score_d, prefixSum_d, oldNumberOfCandidates, 1, newScore_d);
 
+					checkCudaErrors(cudaPeekAtLastError());
 
 					checkCudaErrors(cudaStreamSynchronize(stream1_1));
 					checkCudaErrors(cudaFree(support_d));
@@ -346,6 +355,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					candidates_d = newCandidates_d;
 					score_d = newScore_d;
 
+					checkCudaErrors(cudaPeekAtLastError());
 
 		
 					// find the best 
@@ -360,15 +370,16 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 					checkCudaErrors(cudaFree(index_d));
 					checkCudaErrors(cudaFree(score_d));
+					checkCudaErrors(cudaPeekAtLastError());
 				}
 			}
 		}
 
-
+		checkCudaErrors(cudaPeekAtLastError());
 	
 
 		unsigned int* disjointClustersToBeRemoved_d; 
-		cudaMalloc((void**) &disjointClustersToBeRemoved_d, sizeof(unsigned int)*(numberOfCentroids+1));
+		checkCudaErrors(cudaMalloc((void**) &disjointClustersToBeRemoved_d, sizeof(unsigned int)*(numberOfCentroids+1)));
 		unsigned int numberOfComparisons = (numberOfCentroids*(numberOfCentroids+1))/2 - numberOfCentroids;
 		unsigned int dimGrid_disj = ceilf((float)numberOfComparisons/dimBlock);
 		disjointClustersWrapper(dimGrid_disj, dimBlock, stream1_1, bestCentroid_d,
@@ -376,7 +387,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 								numberOfCentroids, dim, width, disjointClustersToBeRemoved_d);
 
 		bool* disjointClustersToBeRemoved_b_d; 
-		cudaMalloc((void**) &disjointClustersToBeRemoved_b_d, sizeof(bool)*(numberOfCentroids+1));
+		checkCudaErrors(cudaMalloc((void**) &disjointClustersToBeRemoved_b_d, sizeof(bool)*(numberOfCentroids+1)));
 		unsignedIntToBoolArrayWrapper(ceilf((float)numberOfCentroids/dimBlock), dimBlock, stream1_1, disjointClustersToBeRemoved_d, numberOfCentroids, disjointClustersToBeRemoved_b_d);
 	
 	
@@ -388,7 +399,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 		unsigned int* newNumberOfCentroids_h;
 		checkCudaErrors(cudaMallocHost((void**) &newNumberOfCentroids_h, sizeof(unsigned int)));
+		checkCudaErrors(cudaPeekAtLastError());
 		checkCudaErrors(cudaMemcpyAsync(newNumberOfCentroids_h, prefixSum_d+numberOfCentroids, sizeof(unsigned int), cudaMemcpyDeviceToHost,stream1_1));
+		checkCudaErrors(cudaPeekAtLastError());
 		checkCudaErrors(cudaStreamSynchronize(stream1_1));
 		assert(numberOfCentroids > newNumberOfCentroids_h[0]);
 		unsigned int finalNumberOfClusters = numberOfCentroids-newNumberOfCentroids_h[0];
@@ -411,26 +424,32 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 		float* outputCentroids_d;
 		checkCudaErrors(cudaMalloc((void**) &outputCentroids_d, dim*finalNumberOfClusters*sizeof(float)));
 		copyCentroidWrapper(ceilf((float)finalNumberOfClusters*dim/dimBlock),dimBlock ,stream1_1, finalCentroids_d, data_d, dim, finalNumberOfClusters, outputCentroids_d);
+		checkCudaErrors(cudaPeekAtLastError());
+		checkCudaErrors(cudaStreamSynchronize(stream1_1));
 		checkCudaErrors(cudaFree(finalCentroids_d));
 	
 
+		
 		for(unsigned int i = 0; i < finalNumberOfClusters; i++){
-		
 			bool* pointsContained_d;
-			cudaMalloc((void**) &pointsContained_d, (numberOfPoints+1)*sizeof(bool));
-		
+			checkCudaErrors(cudaPeekAtLastError());
+			checkCudaErrors(cudaMalloc((void**) &pointsContained_d, (numberOfPoints+1)*sizeof(bool)));
+			checkCudaErrors(cudaPeekAtLastError());
+			if(numberOfPoints == 0){
+				break;
+			}
 			findPointInClusterWrapper(ceilf((float)numberOfPoints/dimBlock), dimBlock, stream1_1,
 									  finalCandidates_d+i*numberOfBlocksPrPoint, data_d, outputCentroids_d+i*dim, dim,
 									  numberOfPoints, width, pointsContained_d);
-		
+			checkCudaErrors(cudaPeekAtLastError());
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));
-
+		checkCudaErrors(cudaPeekAtLastError());
 	
 			unsigned int* prefixSum_d;
 			size_t sizeOfPrefixSum = (numberOfPoints+1)*sizeof(unsigned int);
 			checkCudaErrors(cudaMalloc((void**) &prefixSum_d, sizeOfPrefixSum));
 			sum_scan_blelloch(stream1_1, prefixSum_d,pointsContained_d,(numberOfPoints+1), true);
-
+		checkCudaErrors(cudaPeekAtLastError());
 
 			unsigned int* sum_h;
 			checkCudaErrors(cudaMallocHost((void**) &sum_h, sizeof(unsigned int)));
@@ -439,7 +458,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));
 			unsigned int oldNumberOfPoints = numberOfPoints;
 			numberOfPoints = sum_h[0];
-
+		checkCudaErrors(cudaPeekAtLastError());
 
 			float* outputCluster_d;
 			float* outputCluster_h;
@@ -451,23 +470,23 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			deleteFromArrayWrapper(ceilf((float)(oldNumberOfPoints*dim)/dimBlock), dimBlock, stream1_1, data_d, prefixSum_d, oldNumberOfPoints, dim, outputCluster_d);
 		
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));
-		
+				checkCudaErrors(cudaPeekAtLastError());
 
 			float* newData_d;
 			size_t sizeOfNewData = numberOfPoints*dim*sizeof(unsigned int);
 			sum_scan_blelloch(stream1_1, prefixSum_d,pointsContained_d,(oldNumberOfPoints+1), false);	
 			checkCudaErrors(cudaMalloc((void**) &newData_d, sizeOfNewData));
 			deleteFromArrayWrapper(ceilf((float)oldNumberOfPoints*dim/dimBlock),  dimBlock, stream1_1, data_d, prefixSum_d, oldNumberOfPoints, dim, newData_d);
-
+		checkCudaErrors(cudaPeekAtLastError());
 			checkCudaErrors(cudaMallocHost((void**) &outputCluster_h, sizeOfOutputCluster));
-			cudaMemcpyAsync(outputCluster_h, outputCluster_d, sizeOfOutputCluster, cudaMemcpyDeviceToHost, stream1_1);
+			checkCudaErrors(cudaMemcpyAsync(outputCluster_h, outputCluster_d, sizeOfOutputCluster, cudaMemcpyDeviceToHost, stream1_1));
 
 			unsigned int* bestCandidate_h;
 			checkCudaErrors(cudaMallocHost((void**) &bestCandidate_h, numberOfBlocksPrPoint*sizeof(unsigned int)));
 			checkCudaErrors(cudaMemcpyAsync(bestCandidate_h, finalCandidates_d+i*numberOfBlocksPrPoint, numberOfBlocksPrPoint*sizeof(unsigned int), cudaMemcpyDeviceToHost, stream1_1));
 	
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));
-		
+				checkCudaErrors(cudaPeekAtLastError());
 			auto outputCluster = new std::vector<std::vector<float>*>;
 			for(unsigned int i = 0; i < oldNumberOfPoints - sum_h[0]; i++){
 				auto point = new std::vector<float>;
@@ -491,14 +510,16 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 			result.push_back(std::make_pair(outputCluster,outputDim));
 			checkCudaErrors(cudaStreamSynchronize(stream1_2));
-			cudaFree(data_d);
+			checkCudaErrors(cudaFree(data_d));
 			data_d = newData_d;
+			checkCudaErrors(cudaPeekAtLastError());
 		}
 	}
 
-	cudaStreamDestroy(stream1_1);
-	cudaStreamDestroy(stream1_2);
-
+	checkCudaErrors(cudaStreamDestroy(stream1_1));
+	checkCudaErrors(cudaStreamDestroy(stream1_2));
+	
+	checkCudaErrors(cudaPeekAtLastError());
 
 	return result;
 

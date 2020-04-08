@@ -795,7 +795,7 @@ void deleteFromArray(cudaStream_t stream,
 
 	gpuDeleteFromArray<<<blocksToUse,threadsUsed,0, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
 
-	cudaFree(d_out_blelloch);
+	checkCudaErrors(cudaFree(d_out_blelloch));
 	if(time != nullptr){
 		cudaEventRecord(stop);
 		cudaEventSynchronize(stop);
@@ -856,7 +856,7 @@ void deleteFromArraySpecial(cudaStream_t stream,
 
 	gpuDeleteFromArraySpeical<<<blocksToUse,threadsUsed,0, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
 
-	cudaFree(d_out_blelloch);
+	checkCudaErrors(cudaFree(d_out_blelloch));
 	if(time != nullptr){
 		cudaEventRecord(stop);
 		cudaEventSynchronize(stop);
@@ -912,7 +912,7 @@ void deleteFromArrayTrasformedData(cudaStream_t stream,
 		cudaEventElapsedTime(time, start, stop);
 	}
 
-	cudaFree(d_out_blelloch);
+	checkCudaErrors(cudaFree(d_out_blelloch));
 };
 
 

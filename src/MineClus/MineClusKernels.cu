@@ -3,6 +3,7 @@
 #include <iostream>
 #include <tuple>
 #include "../randomCudaScripts/Utils.h"
+#include "../MineClusGPU/HashTable.h"
 
 /*
   Naive kernel for creating the itemSet. 
@@ -518,6 +519,8 @@ void findDublicatesWrapper(unsigned int dimGrid,
 		findDublicatesBreaking<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, alreadyDeleted, output);			
 	}else if(version == MoreBreaking){
 		findDublicatesMoreBreaking<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, alreadyDeleted, output);			
+	}else if(version == Hash){
+		findDublicatesHashTableWrapper(dimGrid, dimBlock, stream, candidates, numberOfCandidates, dim, alreadyDeleted, output);		 
 	}
 };
 
@@ -578,6 +581,8 @@ std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates
 		findDublicatesBreaking<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, alreadyDeleted_d, output_d);		
 	}else if(version == MoreBreaking){
 		findDublicatesMoreBreaking<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, alreadyDeleted_d, output_d);		
+	}else if(version == Hash){
+		findDublicatesHashTableTester(dimGrid, dimBlock, candidates_d, numberOfCandidates, dim, alreadyDeleted_d, output_d);
 	}
 
 

@@ -789,3 +789,199 @@ TEST(testMineClusGPU, _SLOW_test30Dims){
 	}
 	EXPECT_EQ(count, 3);
 }
+
+
+TEST(testMineClusGPU, _SUPER_SLOW_test130Dims){
+	std::default_random_engine gen;
+	gen.seed(1000);
+	std::normal_distribution<float> cluster1(100.0,2.0);
+	std::normal_distribution<float> cluster2(1000.0,2.0);
+	std::normal_distribution<float> noise(10000.0,200000.0);
+	auto data = new std::vector<std::vector<float>*>;
+	{
+		for(int i = 0; i < 300; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 130; j++){
+				if(j % 8 == 0){
+					point->push_back(cluster1(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+
+
+	{
+		for(int i = 0; i < 100; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 130; j++){
+				if(j % 15 == 0){
+					point->push_back(cluster2(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+
+	auto c = MineClusGPU(data);
+	c.setSeed(3000);
+
+
+	auto res = c.findKClusters(1);
+
+	EXPECT_EQ(res.size(),2);
+	EXPECT_EQ(res.at(0).first->size(),300);
+	EXPECT_EQ(res.at(0).second->size(),130);
+
+	int count = 0;
+	for(int j = 0; j < 130; j++){
+		if(j % 8 == 0){
+			EXPECT_EQ(res.at(0).second->at(j), 1) << "j: " << j;
+			count++;
+		}else{
+			EXPECT_EQ(res.at(0).second->at(j), 0) << "j: " << j;
+		}
+	}
+	EXPECT_EQ(count, 17);
+
+
+	EXPECT_EQ(res.at(1).first->size(),100);
+	EXPECT_EQ(res.at(1).second->size(),130);
+
+	count = 0;
+	for(int j = 0; j < 130; j++){
+		if(j % 15 == 0){
+			EXPECT_EQ(res.at(1).second->at(j), 1) << "j: " << j;
+			count++;
+		}else{
+			EXPECT_EQ(res.at(1).second->at(j), 0) << "j: " << j;
+		}
+	}
+	EXPECT_EQ(count, 9);
+}
+
+
+
+
+TEST(testMineClusGPU, _SUPER_SLOW_test100Dims_5clusters){
+	std::default_random_engine gen;
+	gen.seed(10);
+	std::normal_distribution<double> cluster1(100.0,2.0);
+	std::normal_distribution<double> cluster2(1000.0,2.0);
+	std::normal_distribution<double> cluster3(10000.0,2.0);
+	std::normal_distribution<double> cluster4(100000.0,2.0);
+	std::normal_distribution<double> cluster5(1000000.0,2.0);
+	std::normal_distribution<double> cluster6(10000000.0,2.0);
+	std::normal_distribution<double> noise(100.0,200000.0);
+	auto data = new std::vector<std::vector<float>*>;
+	{
+		for(int i = 0; i < 300; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 100; j++){
+				if(j % 8 == 0){
+					point->push_back(cluster1(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+
+
+	{
+		for(int i = 0; i < 200; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 100; j++){
+				if(j % 10 == 0){
+					point->push_back(cluster2(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+
+	{
+		for(int i = 0; i < 190; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 100; j++){
+				if(j % 10 == 0){
+					point->push_back(cluster3(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+	{
+		for(int i = 0; i < 180; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 100; j++){
+				if(j % 10 == 0){
+					point->push_back(cluster4(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+
+	{
+		for(int i = 0; i < 170; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 100; j++){
+				if(j % 10 == 0){
+					point->push_back(cluster5(gen));					
+				}else{
+					point->push_back(noise(gen));					
+				}
+
+			}
+			data->push_back(point);
+		}
+	}
+	auto c = MineClusGPU(data);
+	c.setSeed(2);
+
+
+	auto res = c.findKClusters(5);
+
+	EXPECT_EQ(res.size(),5);
+	EXPECT_EQ(res.at(0).first->size(),300);
+	EXPECT_EQ(res.at(0).second->size(),100);
+
+
+	for(int j = 0; j < 100; j++){
+		if(j % 8 == 0){
+			EXPECT_EQ(res.at(0).second->at(j), 1) << "j: " << j;					
+		}else{
+			EXPECT_EQ(res.at(0).second->at(j), 0) << "j: " << j;
+		}
+	}
+
+	EXPECT_EQ(res.at(1).first->size(),170);
+	EXPECT_EQ(res.at(1).second->size(),100);
+
+	EXPECT_EQ(res.at(2).first->size(),190);
+	EXPECT_EQ(res.at(2).second->size(),100);
+
+	EXPECT_EQ(res.at(3).first->size(),180);
+	EXPECT_EQ(res.at(3).second->size(),66);
+
+	EXPECT_EQ(res.at(4).first->size(),200);
+	EXPECT_EQ(res.at(4).second->size(),100);
+}
