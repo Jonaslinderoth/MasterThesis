@@ -397,11 +397,21 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 					checkCudaErrors(cudaFree(index_d));
 					checkCudaErrors(cudaFree(score_d));
-				}
+				} // Apriori iterations
+			}else{ // Number of candidates > 0 for outer 
+				checkCudaErrors(cudaFree(prefixSum_d));
+				checkCudaErrors(cudaFreeHost(sum_h));
+				checkCudaErrors(cudaFree(support_d));
+				checkCudaErrors(cudaFree(score_d));
+				checkCudaErrors(cudaFree(toBeDeleted_d));
+
 			}
-		}
+			checkCudaErrors(cudaFree(itemSet_d));
+			checkCudaErrors(cudaFree(candidates_d));
+		}// for all centroids
 		// Now all the centroids have been looked at, and it is time to find the best scoring disjoint clusters.
 
+		
 		// Delete the non-disjoint clusters, and keeping the largest of them all. 
 		unsigned int* disjointClustersToBeRemoved_d; 
 		checkCudaErrors(cudaMalloc((void**) &disjointClustersToBeRemoved_d,
@@ -454,6 +464,10 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 							   stream1_1, bestCandidate_d, prefixSum_d,
 							   numberOfCentroids, numberOfBlocksPrPoint, finalCandidates_d);
 
+		checkCudaErrors(cudaFree(bestCentroid_d));
+		checkCudaErrors(cudaFree(bestScore_d));
+		checkCudaErrors(cudaFree(bestCandidate_d));
+		
 		// Copy the centroids to a new array, because the offsets will be scrambled after the first cluster is deleted.
 		float* outputCentroids_d;
 		checkCudaErrors(cudaMalloc((void**) &outputCentroids_d, dim*finalNumberOfClusters*sizeof(float)));
@@ -462,7 +476,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 
 		checkCudaErrors(cudaFree(finalCentroids_d));
-	
 
 		// For each of the clusters found
 		for(unsigned int i = 0; i < finalNumberOfClusters; i++){
@@ -524,7 +537,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			checkCudaErrors(cudaMemcpyAsync(bestCandidate_h, finalCandidates_d+i*numberOfBlocksPrPoint,
 											numberOfBlocksPrPoint*sizeof(unsigned int), cudaMemcpyDeviceToHost,
 											stream1_1));
-	
 
 			// Make the output vectors.
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));
@@ -555,15 +567,17 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			checkCudaErrors(cudaFree(data_d));
 			data_d = newData_d;
 		}
+		if(numberOfPoints == 0){
+			break;
+		}
 	}
 
+	checkCudaErrors(cudaFree(data_d));
 	checkCudaErrors(cudaStreamDestroy(stream1_1));
 	checkCudaErrors(cudaStreamDestroy(stream1_2));
 	
 	// Sort the result at the end, such that the highest scoring is first
 	// This is not guaranteed if the concurrent mode are enabled
-
-
 
 	std::sort(result.begin(), result.end(), [&](const std::pair<std::vector<
 											   std::vector<float>*>*, std::vector<bool>*>& lhs,

@@ -47,7 +47,6 @@ TEST(testMineClusGPU, testSetup){
 		EXPECT_EQ(res.at(1).first->at(i)->at(1), 2);		
 	}
 
-	
 }
 
 
@@ -104,6 +103,37 @@ TEST(testMineClusGPU, testSetup3){
 	
 }
 
+
+
+TEST(testMineClusGPU, testNoise){
+	std::default_random_engine gen;
+	gen.seed(100);
+	std::normal_distribution<double> noise(100.0,200000.0);
+	auto data = new std::vector<std::vector<float>*>;
+	{
+		for(int i = 0; i < 3000; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 66; j++){
+					point->push_back(noise(gen));					
+			}
+			data->push_back(point);
+		}
+	}
+
+
+	auto c = MineClusGPU(data);
+	c.setSeed(1);
+
+	auto res = c.findKClusters(10);
+
+	EXPECT_EQ(res.size(), 1);
+	EXPECT_EQ(res.at(0).first->size(),3000);
+	for(int i = 0; i < 66; i++){
+		EXPECT_EQ(res.at(0).second->at(i), 0);
+	}
+	
+	
+}
 
 
 TEST(testMineClusGPU, test3dims_1){
@@ -315,7 +345,7 @@ TEST(testMineClusGPU, _SLOW_test66Dims){
 
 TEST(testMineClusGPU, _SLOW_test66Dims_6clusters){
 	std::default_random_engine gen;
-	gen.seed(10);
+	gen.seed(100);
 	std::normal_distribution<double> cluster1(100.0,2.0);
 	std::normal_distribution<double> cluster2(1000.0,2.0);
 	std::normal_distribution<double> cluster3(10000.0,2.0);
