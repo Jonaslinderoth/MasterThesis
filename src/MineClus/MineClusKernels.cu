@@ -892,7 +892,7 @@ __global__ void disjointClusters(unsigned int* centroids, float* scores, unsigne
 	if(k < numberOfComparisons){
 		unsigned int i = numberOfClusters - 2- floorf(sqrtf(-8*k + 4*numberOfClusters*(numberOfClusters-1)-7)/ 2.0 - 0.5);
 		unsigned int j = k + i + 1 - numberOfClusters*(numberOfClusters-1)/2 + (numberOfClusters-i)*((numberOfClusters-i)-1)/2;
-		bool isDisjoint = true;
+		bool isDisjoint = false;
 		unsigned int blockNr = 0;
 		unsigned int currentBlock = 0;
 		unsigned int centroidI = centroids[i];
@@ -906,7 +906,7 @@ __global__ void disjointClusters(unsigned int* centroids, float* scores, unsigne
 				assert(j*numberOfBlocks+blockNr < numberOfBlocks*numberOfClusters);
 				currentBlock = subspaces[i*numberOfBlocks+blockNr] & subspaces[j*numberOfBlocks+blockNr];
 			}
-			isDisjoint &= (!(currentBlock >> a%32) & 1) || ((abs(data[centroidI*dim+a] - data[centroidJ*dim+a]) >= 2*width));	
+			isDisjoint |= ((currentBlock >> a%32) & 1) && ((abs(data[centroidI*dim+a] - data[centroidJ*dim+a]) >= 2*width));	
 		}
 		
 		if(isDisjoint){

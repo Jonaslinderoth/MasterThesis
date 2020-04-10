@@ -24,7 +24,7 @@ TEST(testDisjointClusters, testSetup){
 	auto res = disjointClustersTester(data, centroids, subspaces, scores);
 
 	EXPECT_EQ(res.size(),2);
-	EXPECT_EQ(res.at(0),1);
+	EXPECT_EQ(res.at(0),0);
 	EXPECT_EQ(res.at(1),1);	
 }
 
@@ -32,7 +32,7 @@ TEST(testDisjointClusters, testSimple){
 	auto data = new std::vector<std::vector<float>*>;
 	auto centroids = std::vector<unsigned int>{0,0};
 	auto subspaces = std::vector<unsigned int>{5, 2}; // 101, 010
-	auto scores = std::vector<float>{100,200};
+	auto scores = std::vector<float>{200,100};
 
 	{
 		auto point = new std::vector<float>{1,2,3};
@@ -48,7 +48,7 @@ TEST(testDisjointClusters, testSimple){
 
 	EXPECT_EQ(res.size(),2);
 	EXPECT_EQ(res.at(0),1);
-	EXPECT_EQ(res.at(1),1);	
+	EXPECT_EQ(res.at(1),0);	
 }
 
 

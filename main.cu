@@ -55,7 +55,7 @@ int main ()
 	}
 	std::cout << "data generated" << std::endl;	
 
-	auto gpu = new Fast_DOCGPU(data);
+	auto gpu = new MineClusGPU(data);//new Fast_DOCGPU(data);
 	gpu->setSeed(1);
 
 	auto res_gpu = gpu->findKClusters(2);

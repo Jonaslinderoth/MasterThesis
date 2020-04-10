@@ -148,7 +148,7 @@ TEST(testMineClusGPU, test3dims_2){
 
 	auto res = c.findKClusters(1);
 
-	EXPECT_EQ(res.size(), 1);
+	EXPECT_EQ(res.size(), 2);
 	EXPECT_EQ(res.at(0).second->size(), 3);
 	EXPECT_EQ(res.at(0).second->at(0), 1);
 	EXPECT_EQ(res.at(0).second->at(1), 1);
@@ -162,6 +162,20 @@ TEST(testMineClusGPU, test3dims_2){
 		EXPECT_EQ(res.at(0).first->at(i)->at(0), 1);
 		EXPECT_EQ(res.at(0).first->at(i)->at(1), 2);
 		EXPECT_EQ(res.at(0).first->at(i)->at(2), 9);		
+	}
+
+
+
+	EXPECT_EQ(res.at(1).second->size(), 3);
+	EXPECT_EQ(res.at(1).second->at(0), 1);
+	EXPECT_EQ(res.at(1).second->at(1), 1);
+	EXPECT_EQ(res.at(1).second->at(2), 1);
+
+	EXPECT_EQ(res.at(1).first->size(), 20);
+	for(int i = 0; i < 20; i++){
+		EXPECT_EQ(res.at(1).first->at(i)->at(0), 1);
+		EXPECT_EQ(res.at(1).first->at(i)->at(1), 2);
+		EXPECT_EQ(res.at(1).first->at(i)->at(2), 99999);		
 	}
 	
 
@@ -299,7 +313,7 @@ TEST(testMineClusGPU, _SLOW_test66Dims){
 }
 
 
-TEST(testMineClusGPU, _SLOW_test66Dims_5clusters){
+TEST(testMineClusGPU, _SLOW_test66Dims_6clusters){
 	std::default_random_engine gen;
 	gen.seed(10);
 	std::normal_distribution<double> cluster1(100.0,2.0);
@@ -403,7 +417,7 @@ TEST(testMineClusGPU, _SLOW_test66Dims_5clusters){
 		}
 	}
 
-	EXPECT_EQ(res.at(1).first->size(),170);
+	EXPECT_EQ(res.at(1).first->size(),200);
 	EXPECT_EQ(res.at(1).second->size(),66);
 
 	EXPECT_EQ(res.at(2).first->size(),190);
@@ -412,8 +426,9 @@ TEST(testMineClusGPU, _SLOW_test66Dims_5clusters){
 	EXPECT_EQ(res.at(3).first->size(),180);
 	EXPECT_EQ(res.at(3).second->size(),66);
 
-	EXPECT_EQ(res.at(4).first->size(),200);
+	EXPECT_EQ(res.at(4).first->size(),170);
 	EXPECT_EQ(res.at(4).second->size(),66);
+
 }
 
 
@@ -802,7 +817,7 @@ TEST(testMineClusGPU, _SUPER_SLOW_test130Dims){
 		for(int i = 0; i < 300; i++){
 			auto point = new std::vector<float>;
 			for(int j = 0; j < 130; j++){
-				if(j % 8 == 0){
+				if(j % 10 == 0){
 					point->push_back(cluster1(gen));					
 				}else{
 					point->push_back(noise(gen));					
@@ -841,14 +856,14 @@ TEST(testMineClusGPU, _SUPER_SLOW_test130Dims){
 
 	int count = 0;
 	for(int j = 0; j < 130; j++){
-		if(j % 8 == 0){
+		if(j % 10 == 0){
 			EXPECT_EQ(res.at(0).second->at(j), 1) << "j: " << j;
 			count++;
 		}else{
 			EXPECT_EQ(res.at(0).second->at(j), 0) << "j: " << j;
 		}
 	}
-	EXPECT_EQ(count, 17);
+	EXPECT_EQ(count, 13);
 
 
 	EXPECT_EQ(res.at(1).first->size(),100);
@@ -973,15 +988,15 @@ TEST(testMineClusGPU, _SUPER_SLOW_test100Dims_5clusters){
 		}
 	}
 
-	EXPECT_EQ(res.at(1).first->size(),170);
+	EXPECT_EQ(res.at(1).first->size(),200);
 	EXPECT_EQ(res.at(1).second->size(),100);
 
 	EXPECT_EQ(res.at(2).first->size(),190);
 	EXPECT_EQ(res.at(2).second->size(),100);
 
 	EXPECT_EQ(res.at(3).first->size(),180);
-	EXPECT_EQ(res.at(3).second->size(),66);
+	EXPECT_EQ(res.at(3).second->size(),100);
 
-	EXPECT_EQ(res.at(4).first->size(),200);
+	EXPECT_EQ(res.at(4).first->size(),170);
 	EXPECT_EQ(res.at(4).second->size(),100);
 }
