@@ -7,64 +7,64 @@
 #include "src/Clustering.h"
 #include "test/testData.h"
 #include <vector>
-#include <random>
+#include <assert.h>
 #include "src/dataReader/Cluster.h"
 #include "src/MineClusGPU/MineClusGPU.h"
+#include "src/Fast_DOC/Fast_DOC.h"
+#include "src/Fast_DOCGPU/Fast_DOCGPU.h"
 
 
 
 
 int main ()
 {
-	std::default_random_engine gen;
-	gen.seed(0);
-	std::normal_distribution<float> cluster1(100.0,2.0);
-	std::normal_distribution<float> cluster2(1000.0,2.0);
-	std::normal_distribution<float> noise(100.0,200000.0);
-	unsigned int dim = 100;
-	auto data = new std::vector<std::vector<float>*>;
-	{
-		for(int i = 0; i < 300; i++){
-			auto point = new std::vector<float>;
-			for(int j = 0; j < dim; j++){
-				if(j % 8 == 0){
-					point->push_back(cluster1(gen));					
-				}else{
-					point->push_back(noise(gen));					
-				}
+	unsigned int dim = 200;
+	unsigned int numPoints = 1000000;
+	auto data =  new std::vector<std::vector<float>*>();
 
-			}
-			data->push_back(point);
-		}
-	}
+	std::default_random_engine generator;
+	generator.seed(1);
+	std::normal_distribution<float> cluster1(5.0, 2.0);
+	std::normal_distribution<float> cluster2(500.0,2.0);
+	std::uniform_int_distribution<> outlier(-10000,10000);
 
-
-	{
-		for(int i = 0; i < 100; i++){
-			auto point = new std::vector<float>;
-			for(int j = 0; j < dim; j++){
-				if(j % 11 == 0){
-					point->push_back(cluster2(gen));					
-				}else{
-					point->push_back(noise(gen));					
-				}
-
-			}
-			data->push_back(point);
-		}
-	}
 	
-	auto c = MineClusGPU(data);
-	c.setSeed(2);
-
-
-	auto res = c.findKClusters(1);
-
-
-	for(int i = 0; i < res.size(); i++){
-		for(int j = 0; j < res.at(i).second->size(); j++){
-			std::cout << res.at(i).second->at(j);
+	for(int i = 0; i < numPoints/2; i++){
+		auto point = new std::vector<float>;
+		for(int j = 0; j < dim; j++){
+			if(j%5 == 0){
+				point->push_back(cluster1(generator));				
+			}else{
+				point->push_back(outlier(generator));
+			}
 		}
-		std::cout << std::endl;
+		data->push_back(point);
 	}
+	std::cout << "first cluster generated" << std::endl;
+
+	for(int i = data->size(); i < numPoints; i++){
+		auto point = new std::vector<float>;
+		for(int j = 0; j < dim; j++){
+			if(j%10 == 0){
+				point->push_back(cluster1(generator));				
+			}else{
+				point->push_back(outlier(generator));
+			}
+		}
+		data->push_back(point);
+	}
+	std::cout << "data generated" << std::endl;	
+
+	auto gpu = new Fast_DOCGPU(data);
+	gpu->setSeed(1);
+
+	auto res_gpu = gpu->findKClusters(2);
+
+	assert(res_gpu.size() == 2);
+
+	assert(res_gpu.at(0).first->size() == numPoints/2);
+	assert(res_gpu.at(0).second->size() == dim);
+		
+	assert(res_gpu.at(1).first->size() == 50);
+	assert(res_gpu.at(1).second->size() == numPoints/2);
 }

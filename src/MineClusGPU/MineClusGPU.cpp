@@ -40,15 +40,16 @@ std::vector<std::vector<float>*>* MineClusGPU::initDataReader(DataReader* dr){
  * and transform it from vectors to a single float array.
  */
 float* MineClusGPU::transformData(){
-	uint size = this->data->size();
-	uint dim = this->data->at(0)->size();
-	uint size_of_data = size*dim*sizeof(float);
+	unsigned int size = this->data->size();
+	unsigned int dim = this->data->at(0)->size();
+	size_t size_of_data = size*dim*sizeof(float);
 	float* data_h;
 	checkCudaErrors(cudaMallocHost((void**) &data_h, size_of_data));
 	
-	for(int i = 0; i < size; i++){
-		for(int j = 0; j < dim; j++){
-			data_h[i*dim+j] = data->at(i)->at(j);
+	for(unsigned int i = 0; i < size; i++){
+		for(unsigned int j = 0; j < dim; j++){
+			
+			data_h[(size_t)i*dim+j] = data->at(i)->at(j);
 		}
 	}
 	return data_h;
@@ -256,7 +257,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					checkCudaErrors(cudaPeekAtLastError());
 					// Find all the dublicate candidates 
 					checkCudaErrors(cudaMemsetAsync(toBeDeleted_d, 0, sizeOfToBeDeleted, stream1_1)); // not needed any more, it is handled by the merge kernel now
-					std::cout << "number of candidates: " << numberOfCandidates << std::endl;
+					//std::cout << "number of candidates: " << numberOfCandidates << std::endl;
 					findDublicatesWrapper(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1, candidates_d, numberOfCandidates, dim, deletedFromCount_d, toBeDeleted_d, Hash);
 					orKernelWrapper(ceilf((float)numberOfCandidates+1/dimBlock), dimBlock, stream1_1, numberOfCandidates+1, toBeDeleted_d, deletedFromCount_d);
 					checkCudaErrors(cudaPeekAtLastError());

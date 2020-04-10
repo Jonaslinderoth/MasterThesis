@@ -40,15 +40,16 @@ std::vector<std::vector<float>*>* Fast_DOCGPU::initDataReader(DataReader* dr){
  * and transform it from vectors to a single float array.
  */
 float* Fast_DOCGPU::transformData(){
-	uint size = this->data->size();
-	uint dim = this->data->at(0)->size();
-	uint size_of_data = size*dim*sizeof(float);
+	unsigned int size = this->data->size();
+	unsigned int dim = this->data->at(0)->size();
+	size_t size_of_data = size*dim*sizeof(float);
 	float* data_h;
-	cudaMallocHost((void**) &data_h, size_of_data);
+	checkCudaErrors(cudaMallocHost((void**) &data_h, size_of_data));
 	
-	for(int i = 0; i < size; i++){
-		for(int j = 0; j < dim; j++){
-			data_h[i*dim+j] = data->at(i)->at(j);
+	for(unsigned int i = 0; i < size; i++){
+		for(unsigned int j = 0; j < dim; j++){
+			
+			data_h[(size_t)i*dim+j] = data->at(i)->at(j);
 		}
 	}
 	return data_h;
