@@ -27,6 +27,8 @@ class MineClusGPU : public Clustering{
 	float getAlpha(){return this->alpha;};
 	float getBeta(){return this->beta;};
 	float getWidth(){return this->width;};
+	bool isConcurentVersion(){return this->concurentVersion;};
+	void setConcurentVersion(bool value){this->concurentVersion = value;};
 	
  private:
 	float alpha;
@@ -34,6 +36,7 @@ class MineClusGPU : public Clustering{
 	float width;
 	unsigned int size;
 	unsigned int dim;
+	bool concurentVersion = true;
 	std::vector<std::vector<float>*>* data;
 	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 	float* transformData();

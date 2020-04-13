@@ -899,32 +899,41 @@ __global__ void disjointClusters(unsigned int* centroids, float* scores, unsigne
 		unsigned int centroidJ = centroids[j];
 		unsigned int numberOfBlocks = ceilf((float)dim/32);
 
-		for(unsigned int a = 0; a < dim; a++){
-			if(a%32 == 0){
-				blockNr = a/32;
-				assert(i*numberOfBlocks+blockNr < numberOfBlocks*numberOfClusters);
-				assert(j*numberOfBlocks+blockNr < numberOfBlocks*numberOfClusters);
-				currentBlock = subspaces[i*numberOfBlocks+blockNr] & subspaces[j*numberOfBlocks+blockNr];
-			}
-			isDisjoint |= ((currentBlock >> a%32) & 1) && ((abs(data[centroidI*dim+a] - data[centroidJ*dim+a]) >= 2*width));	
-		}
-		
-		if(isDisjoint){
-			//printf("k,i,j: %u, %u, %u are disjoint\n",k, i,j);
-			atomicAnd(&out[i], 1);
-			atomicAnd(&out[j], 1);
-		}else if(scores[i] < scores[j]){
-			//printf("k,i,j: %u,  %u, %u; score %f < %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], j,i);
-			atomicAnd(&out[i], 0);
-			atomicAnd(&out[j], 1);
-		}else if(scores[i] == scores[j]){
-			//printf("k,i,j: %u, %u, %u; score %f == %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], min(i,j),max(i,j));
-			atomicAnd(&out[min(i,j)], 1);
-			atomicAnd(&out[max(i,j)], 0);
+				// if the score i 0, There can be no points in the cluster, thereby it can be deleted
+		if(scores[i] == 0 || scores[j] == 0){
+			atomicAnd(&out[i], scores[i] != 0);
+			atomicAnd(&out[j], scores[j] != 0);
 		}else{
-			//printf("k,i,j: %u, %u, %u; score %f > %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], i,j);
-			atomicAnd(&out[i], 1);				
-			atomicAnd(&out[j], 0);
+			for(unsigned int a = 0; a < dim; a++){
+				if(a%32 == 0){
+					blockNr = a/32;
+					assert(i*numberOfBlocks+blockNr < numberOfBlocks*numberOfClusters);
+					assert(j*numberOfBlocks+blockNr < numberOfBlocks*numberOfClusters);
+					currentBlock = subspaces[i*numberOfBlocks+blockNr] & subspaces[j*numberOfBlocks+blockNr];
+				}
+				float tempI = data[centroidI*dim+a];
+				float tempJ = data[centroidJ*dim+a];
+				isDisjoint |= ((currentBlock >> a%32) & 1) && ((abs(tempI - tempJ) >= 2*width));	
+			}
+
+
+			if(isDisjoint){
+				//printf("k,i,j: %u, %u, %u are disjoint\n",k, i,j);
+				atomicAnd(&out[i], 1);
+				atomicAnd(&out[j], 1);
+			}else if(scores[i] < scores[j]){
+				//printf("k,i,j: %u,  %u, %u; score %f < %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], j,i);
+				atomicAnd(&out[i], 0);
+				atomicAnd(&out[j], 1);
+			}else if(scores[i] == scores[j]){
+				//printf("k,i,j: %u, %u, %u; score %f == %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], min(i,j),max(i,j));
+				atomicAnd(&out[min(i,j)], 1);
+				atomicAnd(&out[max(i,j)], 0);
+			}else{
+				//printf("k,i,j: %u, %u, %u; score %f > %f, keeping %u, deleting %u\n",k, i,j,scores[i], scores[j], i,j);
+				atomicAnd(&out[i], 1);				
+				atomicAnd(&out[j], 0);
+			}
 		}
 	}
 
@@ -1039,6 +1048,7 @@ __global__ void copyCentroid(unsigned int* centroids, float* data, unsigned int 
 		unsigned int dimInCentroid = k%dim;
 		unsigned int centroidIndex = centroids[centroidToUse];
 		centroidsOut[centroidToUse*dim+dimInCentroid] = data[centroidIndex*dim+dimInCentroid];
+		
 	}
 }
 
@@ -1047,3 +1057,18 @@ void copyCentroidWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream
 						 unsigned int numberOfCentroids, float* centroidsOut){
 	copyCentroid<<<dimGrid, dimBlock, 0, stream>>>(centroids, data, dim, numberOfCentroids, centroidsOut);
 }
+
+
+__global__ void indexToBoolVector(unsigned int* index, unsigned int numberOfElements, bool* output){
+	unsigned int k = blockIdx.x*blockDim.x+threadIdx.x;
+	if(k < numberOfElements){
+		output[k] = index[0] == k;
+	}
+}
+
+void indexToBoolVectorWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+							  unsigned int* index, unsigned int numberOfElements, bool* output
+							  ){
+	indexToBoolVector<<<dimGrid, dimBlock, 0, stream>>>(index, numberOfElements, output);
+	
+};

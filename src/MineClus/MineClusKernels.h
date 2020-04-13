@@ -95,6 +95,10 @@ void copyCentroidWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream
 						 unsigned int* centroids, float* data, unsigned int dim,
 						 unsigned int numberOfCentroids, float* centroidsOut);
 
+void indexToBoolVectorWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
+							  unsigned int* index, unsigned int numberOfElements, bool* output
+							  );
+
 // Testing functions
 // ONLY FOR TESTING THE KERNELS
 std::vector<unsigned int> createItemSetTester(std::vector<std::vector<float>*>* data, unsigned int centroid, float width);

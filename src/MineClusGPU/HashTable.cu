@@ -58,8 +58,6 @@ KeyValue* create_hashtable(unsigned int size)
 __global__ void insertHashTable(KeyValue* hashTable, unsigned int* candidates, unsigned int hashTableSize, unsigned int numberOfCandidates, unsigned int dim, bool* alreadyDeleted){
 	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
-	unsigned int primes[10] = {3,5,7,11,13,17,19,23,27,31};
-	//unsigned int primes[10] = {1,2,3,4,5,6,7,8,9,10};
 	if(candidate < numberOfCandidates && !alreadyDeleted[candidate]){
 		unsigned int hash = 0;
 		unsigned long long int key = 0;
@@ -100,8 +98,6 @@ __global__ void insertHashTable(KeyValue* hashTable, unsigned int* candidates, u
 __global__ void lookupHashTable(KeyValue* hashTable, unsigned int* candidates, unsigned int hashTableSize, unsigned int numberOfCandidates, unsigned int dim, bool* output){
 	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
-	unsigned int primes[10] = {3,5,7,11,13,17,19,23,27,31};
-	//unsigned int primes[10] = {1,2,3,4,5,6,7,8,9,10};
 	if(candidate < numberOfCandidates){
 		unsigned int hash = 0;
 		unsigned long long int key = 0;
@@ -152,6 +148,5 @@ void findDublicatesHashTableWrapper(unsigned int dimGrid, unsigned int dimBlock,
 	auto hashTable = create_hashtable(sizeOfHashTable, stream);
 	insertHashTable<<<dimGrid, dimBlock, 0, stream>>>(hashTable, candidates, sizeOfHashTable, numberOfCandidates, dim, alreadyDeleted_d);
 	lookupHashTable<<<dimGrid, dimBlock, 0, stream>>>(hashTable, candidates, sizeOfHashTable, numberOfCandidates, dim, output_d);
-	checkCudaErrors(cudaStreamSynchronize(stream));
 	checkCudaErrors(cudaFree(hashTable));
 }
