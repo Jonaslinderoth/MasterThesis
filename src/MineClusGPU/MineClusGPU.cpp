@@ -432,75 +432,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 										  disjointClustersToBeRemoved_d, numberOfCentroids, 
 										  disjointClustersToBeRemoved_b_d);
 
-			// /*****ONLY FOR DEBUGGING*****/
-			// {
-			// 	unsigned int* a_h;
-			// 	checkCudaErrors(cudaMallocHost((void**) &a_h, (numberOfCentroids)*numberOfBlocksPrPoint*sizeof(unsigned int)));
-			// 	checkCudaErrors(cudaMemcpyAsync(a_h, bestCandidate_d, (numberOfCentroids)*numberOfBlocksPrPoint*sizeof(unsigned int) ,cudaMemcpyDeviceToHost,stream1_1));
-			// 	checkCudaErrors(cudaStreamSynchronize(stream1_1));
-			// 	for(unsigned int i = 0; i < (numberOfCentroids*numberOfBlocksPrPoint) ; i++){
-			// 		std::cout << a_h[i] << " ";
-			// 	}
-			// 	std::cout << std::endl;
-			// 	checkCudaErrors(cudaFreeHost(a_h));
-			// }
-			// /*****ONLY FOR DEBUGGING*****/
-			
-			// /*****ONLY FOR DEBUGGING*****/
-			// {
-			// 	float* a_h;
-			// 	checkCudaErrors(cudaMallocHost((void**) &a_h, (numberOfCentroids)*sizeof(float)));
-			// 	checkCudaErrors(cudaMemcpyAsync(a_h, bestScore_d, (numberOfCentroids)*sizeof(float) ,cudaMemcpyDeviceToHost,stream1_1));
-			// 	checkCudaErrors(cudaStreamSynchronize(stream1_1));
-			// 	for(unsigned int i = 0; i < (numberOfCentroids) ; i++){
-			// 		std::cout << a_h[i] << " ";
-			// 	}
-			// 	std::cout << std::endl;
-			// 	checkCudaErrors(cudaFreeHost(a_h));
-			// }
-			// /*****ONLY FOR DEBUGGING*****/
-			// /*****ONLY FOR DEBUGGING*****/
-			// {
-			// 	unsigned int* a_h;
-			// 	checkCudaErrors(cudaMallocHost((void**) &a_h, (numberOfCentroids)*sizeof(unsigned int)));
-			// 	checkCudaErrors(cudaMemcpyAsync(a_h, bestCentroid_d, (numberOfCentroids)*sizeof(unsigned int) ,cudaMemcpyDeviceToHost,stream1_1));
-			// 	checkCudaErrors(cudaStreamSynchronize(stream1_1));
-			// 	for(unsigned int i = 0; i < (numberOfCentroids) ; i++){
-			// 		std::cout << a_h[i] << " ";
-			// 	}
-			// 	std::cout << std::endl;
-			// 	checkCudaErrors(cudaFreeHost(a_h));
-			// }
-			// /*****ONLY FOR DEBUGGING*****/
-			
-			// /*****ONLY FOR DEBUGGING*****/
-			// {
-			// 	unsigned int* a_h;
-			// 	checkCudaErrors(cudaMallocHost((void**) &a_h, (numberOfCentroids)*sizeof(unsigned int)));
-			// 	checkCudaErrors(cudaMemcpyAsync(a_h, disjointClustersToBeRemoved_d, (numberOfCentroids)*sizeof(unsigned int) ,cudaMemcpyDeviceToHost,stream1_1));
-			// 	checkCudaErrors(cudaStreamSynchronize(stream1_1));
-			// 	for(unsigned int i = 0; i < (numberOfCentroids) ; i++){
-			// 		std::cout << a_h[i] << " ";
-			// 	}
-			// 	std::cout << std::endl;
-			// 	checkCudaErrors(cudaFreeHost(a_h));
-			// }
-			// /*****ONLY FOR DEBUGGING*****/
-			// /*****ONLY FOR DEBUGGING*****/
-			// {
-			// 	bool* a_h;
-			// 	checkCudaErrors(cudaMallocHost((void**) &a_h, (numberOfCentroids)*sizeof(bool)));
-			// 	checkCudaErrors(cudaMemcpyAsync(a_h, disjointClustersToBeRemoved_b_d, (numberOfCentroids)*sizeof(bool) ,cudaMemcpyDeviceToHost,stream1_1));
-			// 	checkCudaErrors(cudaStreamSynchronize(stream1_1));
-			// 	for(unsigned int i = 0; i < (numberOfCentroids) ; i++){
-			// 		std::cout << a_h[i] << " ";
-			// 	}
-			// 	std::cout << std::endl;
-			// 	checkCudaErrors(cudaFreeHost(a_h));
-			// }
-			// /*****ONLY FOR DEBUGGING*****/
-				
-
 			checkCudaErrors(cudaFree(disjointClustersToBeRemoved_d));
 			
 		}else{ // just find the best cluster of all
@@ -545,22 +476,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			checkCudaErrors(cudaFree(prefixSum_d));
 			break;
 		}
-
-		// /*****ONLY FOR DEBUGGING*****/
-		// {
-		// 	unsigned int* a_h;
-		// 	checkCudaErrors(cudaMallocHost((void**) &a_h, (numberOfCentroids+1)*sizeof(unsigned int)));
-		// 	checkCudaErrors(cudaMemcpyAsync(a_h, prefixSum_d, (numberOfCentroids+1)*sizeof(unsigned int) ,cudaMemcpyDeviceToHost,stream1_1));
-		// 	checkCudaErrors(cudaStreamSynchronize(stream1_1));
-		// 	for(unsigned int i = 0; i < (numberOfCentroids+1) ; i++){
-		// 		std::cout << a_h[i] << " ";
-		// 	}
-		// 	std::cout << std::endl;
-		// 	checkCudaErrors(cudaFreeHost(a_h));
-		// }
-		// /*****ONLY FOR DEBUGGING*****/
-				
-
 
 		// Allocate the space for the final clusters found
 		float* finalScore_d;
