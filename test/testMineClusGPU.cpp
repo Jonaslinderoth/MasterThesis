@@ -1186,5 +1186,11 @@ TEST(testMineClusGPU, _SUPER_SLOW_test100Dims_5clusters){
 
 	EXPECT_EQ(res.at(4).first->size(),170);
 	EXPECT_EQ(res.at(4).second->size(),100);
+
+
+	if(res.size()==6){
+		std::cout << res.at(5).first->size() << std::endl;
+		std::cout << res.at(5).second->size() << std::endl;
+	}
 }
 

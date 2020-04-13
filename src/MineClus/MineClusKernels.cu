@@ -881,14 +881,15 @@ __global__ void disjointClusters(unsigned int* centroids, float* scores, unsigne
 		output[k] = true;
 	}
 	
-	
 	// setting the shared memory
 	for(unsigned int i = 0; i < ceilf((float)numberOfClusters/blockDim.x); i++){
 		if(threadIdx.x+blockDim.x*i < numberOfClusters){
 			out[threadIdx.x+blockDim.x*i] = 1;	
 		}
 	}
-		
+	
+	__syncthreads();
+	
 	if(k < numberOfComparisons){
 		unsigned int i = numberOfClusters - 2- floorf(sqrtf(-8*k + 4*numberOfClusters*(numberOfClusters-1)-7)/ 2.0 - 0.5);
 		unsigned int j = k + i + 1 - numberOfClusters*(numberOfClusters-1)/2 + (numberOfClusters-i)*((numberOfClusters-i)-1)/2;
@@ -937,7 +938,7 @@ __global__ void disjointClusters(unsigned int* centroids, float* scores, unsigne
 		}
 	}
 
-	
+	__syncthreads();	
 	for(unsigned int i = 0; i < ceilf((float)numberOfClusters/blockDim.x); i++){
 		if(threadIdx.x+blockDim.x*i < numberOfClusters){
 			atomicAnd(&output[threadIdx.x+blockDim.x*i], out[threadIdx.x+blockDim.x*i]);	
