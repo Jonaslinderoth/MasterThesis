@@ -1,5 +1,6 @@
 #include "src/randomCudaScripts/arrayEqual.h"
 #include "src/DOC_GPU/DOCGPU_Kernels.h"
+#include "src/DOC_GPU/pointsContainedDevice.h"
 
 #include <iostream>
 

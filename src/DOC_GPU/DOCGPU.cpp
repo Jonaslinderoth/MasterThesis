@@ -7,6 +7,8 @@
 
 #include "DOCGPU.h"
 #include "DOCGPU_Kernels.h"
+#include "pointsContainedDevice.h"
+#include "ArgMax.h"
 #include <assert.h>
 #include "../randomCudaScripts/DeleteFromArray.h"
 #include "MemSolver.h"

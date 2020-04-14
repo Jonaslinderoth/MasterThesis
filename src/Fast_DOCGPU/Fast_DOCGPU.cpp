@@ -1,5 +1,6 @@
 #include "Fast_DOCGPU.h"
 #include "../DOC_GPU/DOCGPU_Kernels.h"
+#include "../DOC_GPU/ArgMax.h"
 #include <assert.h>
 #include "../randomCudaScripts/DeleteFromArray.h"
 #include "MemSolver_Fast_DOC.h"
