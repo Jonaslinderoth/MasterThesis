@@ -2,6 +2,7 @@
 #include <stdexcept>   // for exception, runtime_error, out_of_range
 #include "../MineClus/MineClusKernels.h"
 #include "../DOC_GPU/DOCGPU_Kernels.h"
+#include "../DOC_GPU/ArgMax.h"
 #include "../randomCudaScripts/DeleteFromArray.h"
 #include <algorithm>
 
