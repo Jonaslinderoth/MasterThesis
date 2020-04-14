@@ -18,12 +18,17 @@ class MineClusGPU : public Clustering{
 	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> findKClusters(int k);
 
 	virtual ~MineClusGPU();
+	float mu(int a, int b){
+		return a*pow(((float) 1/this->beta),b);
+	};
 	void setAlpha(float value){this->alpha = value;};
 	void setBeta(float value){this->beta = value;};
 	void setWidth(float value){this->width = value;};
 	float getAlpha(){return this->alpha;};
 	float getBeta(){return this->beta;};
 	float getWidth(){return this->width;};
+	bool isConcurentVersion(){return this->concurentVersion;};
+	void setConcurentVersion(bool value){this->concurentVersion = value;};
 	
  private:
 	float alpha;
@@ -31,6 +36,7 @@ class MineClusGPU : public Clustering{
 	float width;
 	unsigned int size;
 	unsigned int dim;
+	bool concurentVersion = true;
 	std::vector<std::vector<float>*>* data;
 	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 	float* transformData();

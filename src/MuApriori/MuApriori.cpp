@@ -22,7 +22,7 @@ std::vector<Candidate*>* MuApriori::createInitialCandidates(){
 		c->score = 0;
 		result->push_back(c);
 	}
-
+	
 	for(unsigned int i = 0; i<this->itemSet->size(); i++){
 		size_t index = this->itemSet->at(i).find_first();
 		while(index != boost::dynamic_bitset<>::npos){

@@ -41,15 +41,16 @@ std::vector<std::vector<float>*>* Fast_DOCGPU::initDataReader(DataReader* dr){
  * and transform it from vectors to a single float array.
  */
 float* Fast_DOCGPU::transformData(){
-	uint size = this->data->size();
-	uint dim = this->data->at(0)->size();
-	uint size_of_data = size*dim*sizeof(float);
+	unsigned int size = this->data->size();
+	unsigned int dim = this->data->at(0)->size();
+	size_t size_of_data = size*dim*sizeof(float);
 	float* data_h;
-	cudaMallocHost((void**) &data_h, size_of_data);
+	checkCudaErrors(cudaMallocHost((void**) &data_h, size_of_data));
 	
-	for(int i = 0; i < size; i++){
-		for(int j = 0; j < dim; j++){
-			data_h[i*dim+j] = data->at(i)->at(j);
+	for(unsigned int i = 0; i < size; i++){
+		for(unsigned int j = 0; j < dim; j++){
+			
+			data_h[(size_t)i*dim+j] = data->at(i)->at(j);
 		}
 	}
 	return data_h;
@@ -142,7 +143,15 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 	checkCudaErrors(cudaMemcpyAsync(data_d, data_h, sizes.size_of_data, cudaMemcpyHostToDevice, stream2));
 	cudaStreamSynchronize(stream2);
 	
+	float* outputCluster_d;
+	checkCudaErrors(cudaMalloc((void **) &outputCluster_d, sizes.size_of_data));
+
+	float* dataPointers_d[2];
+	dataPointers_d[0] = data_d;
+	dataPointers_d[1] = outputCluster_d;
+	
 	checkCudaErrors(cudaFreeHost(data_h)); // the data is not used on the host side any more
+
 
 
 	// allocating memory for findDim
@@ -278,20 +287,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 				unsigned int size_of_cluster = cluster_size_h[0]*dim*sizeof(float);
 
 				
-				float* cluster_d;
-				checkCudaErrors(cudaMalloc((void **) &cluster_d, size_of_cluster));
-				checkCudaErrors(cudaMemcpyAsync(bestDims_d, pointsContained_d,
-												number_of_points, cudaMemcpyDeviceToDevice, stream1));
-
-
-
-				// create output cluster
-				//notDevice(dimGrid, dimBlock, stream1, pointsContained_d, number_of_points);
-				cudaStreamSynchronize(stream1);
-								assert(sizes.size_of_data >= number_of_points*dim*sizeof(float));
-
-				deleteFromArray(stream1, cluster_d, pointsContained_d,
-								data_d, number_of_points, dim, true);
+				
 				
 				auto cluster = new std::vector<std::vector<float>*>;
 				auto dims = new std::vector<bool>;
@@ -299,10 +295,25 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 					// cluster is too small, return empty clusters, and try again....
 					// this might cause it to loop for the rest of the iterations and do nothing, maybe break here?
 				}else{
+					//float* cluster_d;
+					//checkCudaErrors(cudaMalloc((void **) &cluster_d, size_of_cluster));
+					checkCudaErrors(cudaMemcpyAsync(bestDims_d, pointsContained_d,
+													number_of_points, cudaMemcpyDeviceToDevice, stream1));
+
+
+
+					// create output cluster
+					//notDevice(dimGrid, dimBlock, stream1, pointsContained_d, number_of_points);
+					cudaStreamSynchronize(stream1);
+					assert(sizes.size_of_data >= number_of_points*dim*sizeof(float));
+
+					deleteFromArray(stream1, outputCluster_d, pointsContained_d,
+									data_d, number_of_points, dim, true);
+					
 					// copy the cluster to Host
 					float* cluster_h;
 					checkCudaErrors(cudaMallocHost((void**) &cluster_h, size_of_cluster));
-					checkCudaErrors(cudaMemcpyAsync(cluster_h, cluster_d, size_of_cluster, cudaMemcpyDeviceToHost, stream1));
+					checkCudaErrors(cudaMemcpyAsync(cluster_h, outputCluster_d, size_of_cluster, cudaMemcpyDeviceToHost, stream1));
 
 					// copy the used dimmensions to host.
 					bool* output_dims_h;
@@ -330,7 +341,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 					// deleting the variables used for cluster
 					checkCudaErrors(cudaFreeHost(cluster_h));
 					checkCudaErrors(cudaFreeHost(output_dims_h));
-					checkCudaErrors(cudaFree(cluster_d));
 				}
 				// build result & and delete old
 				delete res.first;
@@ -343,13 +353,18 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 			j++;
 
 		}
-
+		float* newData_d = outputCluster_d+res.first->size()*dim;
 		// Delete the extracted cluster from the data
 		assert(sizes.size_of_data >= number_of_points*dim*sizeof(float));
 		deleteFromArray(stream2, data_d, bestDims_d, data_d, number_of_points, dim);
 		size_t a = res.first->size(); // <<---- Seg fault
 		number_of_points -= a;
 		result.push_back(res);
+
+		data_d = newData_d;
+		assert(outputCluster_d != dataPointers_d[(i)%2]);
+		outputCluster_d = dataPointers_d[(i)%2];
+		
 		//break if there is no more points
 		if(number_of_points <= 0){
 			break;
@@ -363,7 +378,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 	checkCudaErrors(cudaFree(samples_d));
 	checkCudaErrors(cudaFree(centroids_d));
 	checkCudaErrors(cudaFree(randomStates_d));
-	checkCudaErrors(cudaFree(data_d));
+	checkCudaErrors(cudaFree(dataPointers_d[0]));
+	checkCudaErrors(cudaFree(dataPointers_d[1]));
 	checkCudaErrors(cudaFree(findDim_d));
 	checkCudaErrors(cudaFree(findDim_count_d));
 	checkCudaErrors(cudaFree(pointsContained_d));

@@ -69,7 +69,7 @@ class MuApriori{
 	float beta;
 	std::vector<boost::dynamic_bitset<>>* itemSet;
 	unsigned int minSupp;
-	unsigned int numberOfCandidates;
+	unsigned int numberOfCandidates = 1;
 	unsigned int centroidNr;
 	struct CustomCompare{
 		bool operator()(const OutputCandidate & a, const OutputCandidate & b){

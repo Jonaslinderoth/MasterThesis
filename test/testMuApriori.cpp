@@ -48,7 +48,7 @@ TEST(testMuApriori, testCreateInitialCandidates2){
 	itemSet->push_back(point);
 	auto a = MuApriori(itemSet, 1);
 	EXPECT_EQ(a.getBeta(), 0.25);
-		a.createInitialCandidates();
+	a.createInitialCandidates();
 	auto b = a.getBest();
 	EXPECT_EQ(b->size(), 1);
 	EXPECT_EQ(b->at(0)->support, 1);

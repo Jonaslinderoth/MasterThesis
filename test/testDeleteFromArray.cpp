@@ -198,3 +198,94 @@ TEST(testDeleteFromArray, SLOW_testTransform){
 
 }
 
+
+
+
+
+ TEST(testDeleteFromArray, oneDim){
+	 cudaStream_t stream;
+	 checkCudaErrors(cudaStreamCreate(&stream));
+
+	 bool* toBeDeleted_d;
+	 unsigned int* prefixSum_d;
+	 unsigned int* candidates_d;
+	 unsigned int* candidatesOut_d;
+
+	 bool* toBeDeleted_h;
+	 unsigned int* prefixSum_h;
+	 unsigned int* candidates_h;
+	 unsigned int* candidatesOut_h;
+
+	 unsigned int numberOfPoints = 100;
+	 checkCudaErrors(cudaMalloc((void**) &toBeDeleted_d, (numberOfPoints+1)*sizeof(bool)));
+	 checkCudaErrors(cudaMalloc((void**) &prefixSum_d, (numberOfPoints+1)*sizeof(unsigned int)));
+	 checkCudaErrors(cudaMalloc((void**) &candidates_d, numberOfPoints*sizeof(unsigned int)));
+	 checkCudaErrors(cudaMalloc((void**) &candidatesOut_d, 2*sizeof(unsigned int)));
+	 
+	 checkCudaErrors(cudaMallocHost((void**) &toBeDeleted_h, (numberOfPoints+1)*sizeof(bool)));
+	 checkCudaErrors(cudaMallocHost((void**) &prefixSum_h, (numberOfPoints+1)*sizeof(unsigned int)));
+	 checkCudaErrors(cudaMallocHost((void**) &candidates_h, numberOfPoints*sizeof(unsigned int)));
+	 checkCudaErrors(cudaMallocHost((void**) &candidatesOut_h, 2*sizeof(unsigned int)));
+	 
+	 int i = 0;
+	 for(; i < 10; i++){
+		 toBeDeleted_h[i] = true;
+	 }
+	 toBeDeleted_h[10] = false;
+	 i++;
+	 for(; i < 20; i++){
+		 toBeDeleted_h[i] = true;
+	 }
+	 toBeDeleted_h[20] = false;
+	 i++;
+	 for(; i < numberOfPoints; i++){
+		 toBeDeleted_h[i] = true;
+	 }
+	 
+
+	 for(int j = 0; j < numberOfPoints; j++){
+		 candidates_h[j] = j;
+	 }
+	 
+	 
+	 checkCudaErrors(cudaMemcpyAsync(toBeDeleted_d, toBeDeleted_h, (numberOfPoints+1)*sizeof(bool), cudaMemcpyHostToDevice,stream));
+	 checkCudaErrors(cudaMemcpyAsync(candidates_d, candidates_h, (numberOfPoints)*sizeof(unsigned int), cudaMemcpyHostToDevice,stream));	 
+	 
+	 sum_scan_blelloch(stream, prefixSum_d,toBeDeleted_d,(numberOfPoints+1), false);
+
+	 
+	 checkCudaErrors(cudaMemcpyAsync(prefixSum_h, prefixSum_d, (numberOfPoints+1)*sizeof(unsigned int), cudaMemcpyDeviceToHost,stream));
+	 checkCudaErrors(cudaStreamSynchronize(stream));
+
+	 int count = 0;
+	 i = 0;
+	 for(; i < 10; i++){
+		 EXPECT_EQ(prefixSum_h[i], count);
+		 count++;
+	 }
+	 i++;
+	 EXPECT_EQ(prefixSum_h[i], count);
+	 for(; i < 20; i++){
+		 EXPECT_EQ(prefixSum_h[i], count);
+		 count++;
+	 }
+	 i++;
+	 EXPECT_EQ(prefixSum_h[i], count);
+	 for(; i < numberOfPoints; i++){
+		 EXPECT_EQ(prefixSum_h[i], count);
+		 count++;
+	 }
+	 deleteFromArrayTransfomedDataWrapper(ceilf((float)numberOfPoints/1024), 1024, stream,
+													 candidates_d, prefixSum_d, numberOfPoints, 1, candidatesOut_d);
+
+
+	 
+	 checkCudaErrors(cudaMemcpyAsync(candidatesOut_h, candidatesOut_d, (2)*sizeof(unsigned int), cudaMemcpyDeviceToHost,stream));
+
+	 checkCudaErrors(cudaStreamSynchronize(stream));
+
+
+	 EXPECT_EQ(candidatesOut_h[0], 10);
+	 EXPECT_EQ(candidatesOut_h[1], 20);
+
+ }
