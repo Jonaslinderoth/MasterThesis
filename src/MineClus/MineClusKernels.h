@@ -101,7 +101,9 @@ void indexToBoolVectorWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaS
 
 // Testing functions
 // ONLY FOR TESTING THE KERNELS
-std::vector<unsigned int> createItemSetTester(std::vector<std::vector<float>*>* data, unsigned int centroid, float width);
+std::vector<unsigned int> createTransactionsTester(std::vector<std::vector<float>*>* data, unsigned int centroid, float width);
+std::vector<unsigned int> createTransactionsReducedReadsTester(std::vector<std::vector<float>*>* data, unsigned int medoid, float width, size_t smem_size);
+
 std::vector<unsigned int> createInitialCandidatesTester(unsigned int dim);
 std::tuple<std::vector<unsigned int>,std::vector<float>, std::vector<bool>> countSupportTester(std::vector<std::vector<bool>> candidates, std::vector<std::vector<bool>> itemSet, unsigned int minSupp, float beta);
 std::pair<std::vector<unsigned int>,std::vector<bool>> mergeCandidatesTester(std::vector<std::vector<bool>> candidates, unsigned int itrNr = 2);

@@ -860,3 +860,85 @@ TEST(testFindDublicates, _SUPER_SLOW_testLarge6Comparison){
 	}
 	EXPECT_EQ(count, deletedResult.size());
 }
+
+
+TEST(testFindDublicates, _SUPER_SLOW_testLarge6Comparison2){
+	unsigned int dim = 10000;
+	unsigned int copies = 50;
+	std::default_random_engine gen;
+	gen.seed(0);
+	std::normal_distribution<double> dist(1.0,1.0);
+
+	auto candidates = std::vector<std::vector<bool>>();
+	for(unsigned long long int k = 0; k < dim; k++){
+		auto point = std::vector<bool>();
+		for(int j = 0; j < dim; j++){
+			point.push_back(dist(gen) < -1.6);
+		}
+		for(unsigned long long int i = 0; i < copies; i++){
+			candidates.push_back(point);
+		}
+	}
+
+	
+	EXPECT_EQ(candidates.size(), dim*copies);
+	auto result = findDublicatesTester(candidates, MoreBreaking);
+	auto result2 = findDublicatesTester(candidates, Hash);
+	EXPECT_EQ(result.size(), copies*dim);
+	EXPECT_EQ(result2.size(), copies*dim);
+
+	std::cout << "data created" << std::endl;
+
+	auto deletedResult = std::vector<std::vector<bool>>();
+	for(unsigned long long int i = 0; i < copies*dim; i++){
+		if(!result.at(i)){
+			auto r = std::vector<bool>();
+			for(unsigned long long int j = 0; j < dim; j++){
+				r.push_back(candidates.at(i).at(j));
+			}
+			deletedResult.push_back(r);
+		}
+	}
+
+	std::cout << "delete results 1 are created" << std::endl;
+	
+	auto deletedResult2 = std::vector<std::vector<bool>>();
+	for(unsigned long long int i = 0; i < copies*dim; i++){
+		if(!result2.at(i)){
+			auto r = std::vector<bool>();
+			for(unsigned long long int j = 0; j < dim; j++){
+				r.push_back(candidates.at(i).at(j));
+			}
+			deletedResult2.push_back(r);
+		}
+	}
+
+	EXPECT_EQ(deletedResult.size(),deletedResult2.size());
+	EXPECT_EQ(deletedResult.size(),dim);
+
+	std::cout << "sizes are correct" << std::endl;
+	
+	std::cout << "delete results 2 are created" << std::endl;
+
+	unsigned int count = 0;
+	for(unsigned long long int i = 0; i < deletedResult.size(); i++){
+		for(unsigned long long int j = 0; j < deletedResult.size(); j++){
+			bool r3 = true;
+			for(unsigned long long int k = 0; k < dim; k++){
+				r3 &= deletedResult.at(i).at(k) == deletedResult2.at(j).at(k);
+			}
+			count += r3;
+			if(i != j){
+				bool r = false;
+				bool r2 = false;
+				for(unsigned long long int k = 0; k < dim; k++){
+					r |= (deletedResult.at(i).at(k) != deletedResult.at(j).at(k));
+					r2 |= (deletedResult2.at(i).at(k) != deletedResult2.at(j).at(k)); 
+				}
+				EXPECT_TRUE(r) << "i " << i << " j: " << j;
+				EXPECT_TRUE(r2) << "i " << i << " j: " << j;
+			}
+		}		
+	}
+	EXPECT_EQ(count, deletedResult.size());
+}

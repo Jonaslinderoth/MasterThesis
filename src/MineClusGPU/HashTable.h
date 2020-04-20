@@ -4,7 +4,6 @@
 struct KeyValue
 {
     unsigned long long int key;
-    unsigned int value;
 };
 
 KeyValue* create_hashtable(unsigned int sizeOfHashTable, cudaStream_t stream);

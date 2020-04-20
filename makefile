@@ -6,7 +6,7 @@ CXX = g++
 CXXFLAGS=-I. -nocudalib -O2 #-g -G  
 else
 CXX = nvcc
-CXXFLAGS=-I/usr/local/include/coin -I. -arch=sm_37 -DNDEBUG -O2 #-g -G #-DNDEBUG -O3 #-g -G # -DNDEBUG -g -G 
+CXXFLAGS=-I/usr/local/include/coin -I. -arch=sm_37 -g -G #-DNDEBUG -O3 #-g -G # -DNDEBUG -g -G 
 endif
 
 

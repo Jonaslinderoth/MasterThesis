@@ -11,7 +11,7 @@
   The items are stored with the points as columns, and the dimensions as rows, 
   and then a row major fasion
 */
-__global__ void createItemSet(float* data, unsigned int dim, unsigned int numberOfPoints, unsigned int centroidId, float width, unsigned int* output){
+__global__ void createTransactions(float* data, unsigned int dim, unsigned int numberOfPoints, unsigned int centroidId, float width, unsigned int* output){
 	unsigned int point = blockIdx.x*blockDim.x+threadIdx.x;
 	if(point < numberOfPoints){
 		unsigned int numberOfOutputs = ceilf((float)dim/32);
@@ -37,6 +37,82 @@ __global__ void createItemSet(float* data, unsigned int dim, unsigned int number
 	}
 }
 
+/*
+ This function should return the size of the dynamically allocated shared memory
+ https://docs.nvidia.com/cuda/parallel-thread-execution/#special-registers-dynamic-smem-size
+*/
+__device__ unsigned dynamic_smem_size ()
+{
+    unsigned ret; 
+    asm volatile ("mov.u32 %0, %dynamic_smem_size;" : "=r"(ret));
+    return ret;
+}
+
+/*
+  Reduced reads kernel for finding the initial candidates
+  Takes the data, and a index for a medoid, and creates the transaction set 
+  The transactions are stored with the points as columns, and the dimensions as rows, 
+  and then a row major fasion
+*/
+__global__ void createTransactionsReducedReads(float* data, unsigned int dim, unsigned int numberOfPoints, unsigned int medoidId, float width, unsigned int* output){
+	extern __shared__ float medoid[];
+
+	unsigned int number_of_dims_in_smem = dynamic_smem_size()/sizeof(float);
+	assert(min(number_of_dims_in_smem,dim) <= dim);
+	unsigned int number_of_iterations_for_smem = ceilf((float)dim/number_of_dims_in_smem);
+	unsigned int dims_processed = 0;
+	unsigned int dims_to_process = 0;
+	while(dims_processed < dim){
+		// compute how many iterations till done
+		if((dims_processed + number_of_dims_in_smem) < dim){
+			dims_to_process = number_of_dims_in_smem;
+			// rounding down to nearest mutple of 32;
+			dims_to_process = dims_to_process/32;
+			dims_to_process = dims_to_process*32;
+		}else{
+			dims_to_process = dim-dims_processed;
+		}
+		
+		// load the first chunck (up to 12000 floats) into shared memory
+		for(unsigned int i = 0; i < ceilf((float)dims_to_process/blockDim.x); i++){
+			size_t id = dims_processed+i*blockDim.x+threadIdx.x;
+			if(i*blockDim.x+threadIdx.x < dims_to_process){
+				medoid[i*blockDim.x+threadIdx.x] = data[dim*medoidId+id];
+			}
+		}
+
+		__syncthreads();
+		unsigned int point = blockIdx.x*blockDim.x+threadIdx.x;
+		if(point < numberOfPoints){
+			unsigned int numberOfOutputs = ceilf((float)dims_to_process/32);
+			// For each of the blocks in the output in this dimension
+			for(unsigned int i = 0; i < numberOfOutputs; i++){
+				unsigned int output_block = 0;
+				// for each bit in a block
+				for(unsigned int j = 0; j < 32; j++){
+					// break if the last block dont line up with 32 bits
+					if(dims_processed+i*32+j >= dim){
+						// a break is okay, since the block is set to 0 at initialisation
+						break;
+					}else{
+						assert(point*dim+dims_processed+i*32+j < numberOfPoints*dim);
+						assert(i*32+j < number_of_dims_in_smem);
+						// Check if the dimension are within the width, and write to block in register
+						output_block |= ((abs(medoid[i*32+j] - data[point*dim+dims_processed+i*32+j]) < width) << j);
+					}
+				}
+				// write block to global memory.
+				assert(numberOfPoints*(i+dims_processed/32)+point < numberOfPoints*ceilf((float)dim/32));
+				output[numberOfPoints*(i+dims_processed/32)+point] = output_block;
+			}	
+		}
+		dims_processed += dims_to_process;
+		__syncthreads();
+	}
+}
+
+
+
 /**
 Thin wrapper for createItemSet
 */
@@ -48,15 +124,16 @@ void createItemSetWrapper(unsigned int dimGrid,
 						  unsigned int numberOfPoints,
 						  unsigned int centroidId,
 						  float width,
-						  unsigned int* output){
-	createItemSet<<<dimGrid, dimBlock, 0, stream>>>(data, dim, numberOfPoints, centroidId, width, output);
+						  unsigned int* output
+						  ){
+	createTransactions<<<dimGrid, dimBlock, 0, stream>>>(data, dim, numberOfPoints, centroidId, width, output);
 }
 
 
 /**
    This function is only for testing that the kernel works correctly
 */
-std::vector<unsigned int> createItemSetTester(std::vector<std::vector<float>*>* data, unsigned int centroid, float width){
+std::vector<unsigned int> createTransactionsTester(std::vector<std::vector<float>*>* data, unsigned int centroid, float width){
 	uint size = data->size();
 	uint dim = data->at(0)->size();
 	uint size_of_data = size*dim*sizeof(float);
@@ -79,7 +156,7 @@ std::vector<unsigned int> createItemSetTester(std::vector<std::vector<float>*>* 
 
 	unsigned int dimBlock = 1024;
 	unsigned int dimGrid = ceilf((float)size/dimBlock);
-	createItemSet<<<dimGrid, dimBlock>>>(data_d, dim, size, centroid, width, output_d);
+	createTransactions<<<dimGrid, dimBlock>>>(data_d, dim, size, centroid, width, output_d);
 
 	
 	
@@ -90,6 +167,47 @@ std::vector<unsigned int> createItemSetTester(std::vector<std::vector<float>*>* 
 	}
 	return res;
 }
+
+/**
+   This function is only for testing that the kernel works correctly
+   This is for the reduced reads version
+*/
+std::vector<unsigned int> createTransactionsReducedReadsTester(std::vector<std::vector<float>*>* data, unsigned int centroid, float width,size_t smem_size){
+	uint size = data->size();
+	uint dim = data->at(0)->size();
+	uint size_of_data = size*dim*sizeof(float);
+	size_t size_of_output = size*ceilf((float)dim/32)*sizeof(unsigned int);
+	float* data_h;
+	unsigned int* output_h;
+	cudaMallocHost((void**) &data_h, size_of_data);
+	cudaMallocHost((void**) &output_h, size_of_output);
+	for(int i = 0; i < size; i++){
+		for(int j = 0; j < dim; j++){
+			data_h[i*dim+j] = data->at(i)->at(j);
+		}
+	}
+	float* data_d;
+	cudaMalloc((void**) &data_d, size_of_data);
+	cudaMemcpy(data_d, data_h, size_of_data, cudaMemcpyHostToDevice);
+		
+	unsigned int* output_d;
+	cudaMalloc((void**) &output_d, size_of_output);
+
+	unsigned int dimBlock = 1024;
+	unsigned int dimGrid = ceilf((float)size/dimBlock);
+	
+	createTransactionsReducedReads<<<dimGrid, dimBlock, smem_size>>>(data_d, dim, size, centroid, width, output_d);
+
+	
+	
+	cudaMemcpy(output_h, output_d, size_of_output, cudaMemcpyDeviceToHost);
+	std::vector<unsigned int> res;
+	for(int i = 0; i < ceilf((float)dim/32)*size;i++){
+		res.push_back(output_h[i]);
+	}
+	return res;
+}
+
 
 
 /**
@@ -528,12 +646,12 @@ void findDublicatesWrapper(unsigned int dimGrid,
    ONLY FOR TESTING
 */
 std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates, dublicatesType version){
-	unsigned int numberOfCandidates = candidates.size();
-	unsigned int dim = candidates.at(0).size();
-	unsigned int numberOfBlocks = ceilf((float)dim/32);
+	size_t numberOfCandidates = candidates.size();
+	size_t dim = candidates.at(0).size();
+	size_t numberOfBlocks = ceilf((float)dim/32);
 
-	unsigned int dimBlock = 1024;
-	unsigned int dimGrid = ceilf((float)numberOfCandidates/dimBlock);
+	size_t dimBlock = 1024;
+	size_t dimGrid = ceilf((float)numberOfCandidates/dimBlock);
 
 	size_t sizeOfCandidates = numberOfCandidates*numberOfBlocks*sizeof(unsigned int);
 	size_t sizeOfOutput = numberOfCandidates*sizeof(bool);
@@ -557,10 +675,10 @@ std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates
 	cudaMalloc((void**) &alreadyDeleted_d, numberOfCandidates*sizeof(bool));
 	cudaMemset(alreadyDeleted_d, 0, numberOfCandidates*sizeof(bool));
 
-	for(unsigned int i = 0; i < numberOfCandidates; i++){
-		unsigned int block = 0;
-		unsigned int blockNr = 0;
-		for(int j = 0; j < dim; j++){
+	for(size_t i = 0; i < numberOfCandidates; i++){
+		size_t block = 0;
+		size_t blockNr = 0;
+		for(size_t j = 0; j < dim; j++){
 			if (j % 32 == 0 && j != 0){
 				candidates_h[i+blockNr*numberOfCandidates] = block;
 				block = 0;
@@ -589,7 +707,7 @@ std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates
 	cudaMemcpy(output_h, output_d, sizeOfOutput, cudaMemcpyDeviceToHost);
 
 	auto result = std::vector<bool>();
-	for(int i = 0; i < numberOfCandidates; i++){
+	for(size_t i = 0; i < numberOfCandidates; i++){
 		result.push_back(output_h[i]);
 	}
 
