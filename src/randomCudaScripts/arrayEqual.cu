@@ -208,11 +208,38 @@ bool printArray(unsigned int* a_d , unsigned long lenght , unsigned long maxHowM
 	return true;
 }
 
+bool printArray(bool* a_d , unsigned long lenght , unsigned long maxHowMuch){
+
+	bool * a_h;
+
+	a_h = (bool*)malloc(lenght*sizeof(bool));
+
+	cudaMemcpy(a_h, a_d, lenght*sizeof(bool), cudaMemcpyDeviceToHost);
+
+	unsigned long min = lenght;
+
+	if(lenght > maxHowMuch ){
+		min = maxHowMuch;
+	}
+
+	for(int i = 0 ; i < min ; i++){
+		if(a_h[i]){
+			std::cout << "true ";
+		}else{
+			std::cout << "false ";
+		}
+
+	}
+	std::cout << std::endl;
+
+	return true;
+}
+
 bool printPair_h(std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> a_h , const unsigned long maxLenght){
 
 	std::vector<std::vector<bool>*>* a_first = a_h.first;
 
-
+	std::cout << "first" << std::endl;
 	unsigned long lenght = 0;
 	for(int i = 0 ; i < a_first->size() ; ++i){
 		for(int j = 0 ; j < a_first->at(i)->size() ; ++j){
@@ -229,7 +256,8 @@ bool printPair_h(std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned
 		std::cout << std::endl;
 	}
 	std::cout << std::endl;
-	/*
+
+	std::cout << "second" << std::endl;
 	std::vector<unsigned int>* a_second = a_h.second;
 	for(unsigned long i = 0 ; i < a_second->size() ; ++i){
 		if(maxLenght < lenght){
@@ -240,8 +268,7 @@ bool printPair_h(std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned
 	}
 	std::cout << std::endl;
 	return true;
-	*/
-	return true;
+
 }
 
 
@@ -404,6 +431,20 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 												 no_of_dims,
 												 m,
 												 no_of_centroids);
+	}else if(version == 4){
+		pointsContainedKernelFewPoints(ceil((no_of_dims)/(float)block_size),
+                                       block_size,
+                                       stream,
+                                       data_d,
+                                       centroids_d,
+                                       dims_d,
+                                       output_d,
+                                       output_count_d,
+                                       width,
+                                       point_dim,
+                                       no_of_points,
+                                       m,
+                                       no_of_centroids);
 	}
 
     (cudaStreamDestroy(stream));

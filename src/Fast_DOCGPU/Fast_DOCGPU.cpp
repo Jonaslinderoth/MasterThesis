@@ -3,6 +3,7 @@
 #include "../DOC_GPU/ArgMax.h"
 #include <assert.h>
 #include "../randomCudaScripts/DeleteFromArray.h"
+#include "../DOC_GPU/whatDataInCentroid.h"
 #include "MemSolver_Fast_DOC.h"
 
 Fast_DOCGPU::Fast_DOCGPU(std::vector<std::vector<float>*>* input, float alpha, float beta, float width) {

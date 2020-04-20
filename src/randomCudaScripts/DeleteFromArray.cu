@@ -575,7 +575,8 @@ __global__ void gpuDeleteFromArrayTrasformed(T* d_outData,
 void sum_scan_blelloch(cudaStream_t stream, 
 					   unsigned int* const d_out,
 					   bool* d_in,
-					   const size_t numElems, bool inverted)
+					   const size_t numElems,
+					   bool inverted)
 {
 	// Zero out d_out
 	checkCudaErrors(cudaMemsetAsync(d_out, 0, numElems * sizeof(unsigned int), stream));
@@ -689,10 +690,10 @@ void cpu_sum_scan(unsigned int* const h_out,
 
 
 void cpuDeleteFromArray(float* const h_outData,
-		const bool* h_delete_array,
-		const float* data,
-		const size_t numElements,
-		unsigned int dimension){
+						const bool* h_delete_array,
+						const float* data,
+						const size_t numElements,
+						unsigned int dimension){
 	unsigned int ammountNotDeleted = 0;
 	for(unsigned int i = 0 ; i < numElements ; ++i){
 		if(!h_delete_array[i]){
