@@ -1,7 +1,12 @@
 #include "pointsContainedDevice.h"
+#include "../randomCudaScripts/Utils.h"
+#include "../randomCudaScripts/DeleteFromArray.h"
+#include "whatDataInCentroid.h"
 #include <assert.h>
 #include <utility>
 #include <vector>
+#include <iostream>
+#include "../randomCudaScripts/arrayEqual.h"
 
 /*
  * This fuction returns if the points are in the hypercube made by the centroid by using a subset of the dimensions
@@ -41,6 +46,7 @@ __global__ void pointsContainedDeviceNaive(float* data, unsigned int* centroids,
 			Csum += d;
 		}
 		Csum_out[entry] = Csum;
+
 	}
 }
 
@@ -466,12 +472,161 @@ __global__ void pointsContainedDeviceSharedMemoryFewerBank(float* __restrict__ d
 
 }
 
+__global__ void gpuWhereThingsGo(unsigned int* d_outData,
+								const unsigned int* d_data,
+								const unsigned int size){
+	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
+	/*
+	if(idx == 0){
+		printf("size %u \n",size);
+	}*/
+	if(idx < size){
+		d_outData[idx] = size+2;
+		const unsigned int offset = d_data[idx];
+		unsigned int nextOffset = offset+1;
+		if(idx != size-1){
+			nextOffset = d_data[idx+1];
+		}
+
+		if(offset == nextOffset){
+			d_outData[idx] = idx-offset;
+		}
+	}
+
+}
 
 
-void pointsContainedKernelNaive(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
-						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
-						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
-						   unsigned int m){
+
+
+
+__global__ void gpuDimensionChanger(float* d_outData,
+								    const unsigned int* d_wereThingsGoArray,
+								    const float* d_data,
+								    const unsigned int numElements,
+								    const unsigned int dimensions,
+								    const unsigned int dimensionRemaning){
+	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
+	/*
+	if(idx == 0){
+		printf("numElements %u \n",numElements);
+		printf("dimensions %u \n",dimensions);
+		printf("dimensionRemaning %u \n",dimensionRemaning);
+	}*/
+	if(idx < numElements*dimensions){
+
+		const size_t pointIdex = idx/dimensions;
+		const size_t dimIndex = idx%dimensions;
+		const size_t newPointIdex = pointIdex*dimensionRemaning;
+		const size_t go = d_wereThingsGoArray[dimIndex];
+		if(go<dimensions){
+			const size_t newIndex = newPointIdex+go;
+			const float theData = d_data[idx];
+			d_outData[newIndex] = theData;
+		}
+	}
+
+}
+
+__global__ void gpuNotBoolArray(bool* inputAndOutPut,
+							 std::size_t lenght){
+	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
+	if(idx < lenght){
+		inputAndOutPut[idx] = not inputAndOutPut[idx];
+	}
+}
+
+
+/*
+ * This fuction returns if the points are in the hypercube made by the centroid by using a subset of the dimensions
+ * It does not use anything fancy.
+ */
+__global__ void pointsContainedDeviceNaiveFewPoints(float* data,
+													unsigned int* centroids,
+													bool* output,
+													unsigned int* Csum_out,
+													const float width,
+													const unsigned int point_dim,
+													const unsigned int no_data,
+													const unsigned int m,
+													const unsigned int numberOfCentroids){
+
+	const unsigned int idx = blockIdx.x*blockDim.x+threadIdx.x;
+	const unsigned int currentCentroid = idx/m;
+
+	//check that we are not going out of bound on the centroids array
+	if(idx < 1){
+		const unsigned int centroidIndex = centroids[currentCentroid];
+		const float* centroidArray = &data[centroidIndex*point_dim];
+		unsigned int Csum = 0;
+
+		for(unsigned int dataIndex = 0; dataIndex < no_data; ++dataIndex){
+
+			const float* pointArray = &data[dataIndex*point_dim];
+			bool d = true;
+			for(unsigned int dimensionIndex = 0; dimensionIndex < point_dim; ++dimensionIndex){
+				const float centroid_f = centroidArray[dimensionIndex];
+				const float data_f = pointArray[dimensionIndex];
+				const float diference = abs(centroid_f - data_f);
+				d &= (diference < width);
+			}
+			output[(size_t)idx*(size_t)no_data+(size_t)dataIndex] = d;
+			Csum += d;
+			//printf(" no_data: %u \n dataIndex: %u \n",no_data,dataIndex);
+		}
+
+		Csum_out[idx] = Csum;
+	}
+	/*
+	// one kernel for each hypercube
+	unsigned int entry = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int currentCentroid = entry/m;
+	if(entry < no_dims){
+		//assert(currentCentroid < no_of_ps);
+		// for each data point
+		unsigned int Csum = 0;
+		for(unsigned int j = 0; j < no_data; j++){
+			// for all dimmensions in each hypercube / point
+			bool d = true;
+			for(unsigned int i = 0; i < point_dim; i++){
+				//(not (dims[entry*point_dim+i])) ||
+				unsigned int centroid_index = centroids[currentCentroid];
+				//if(!(centroid_index < no_data)){
+				//    printf("num_data: %u, centroid_index: %u, currentCentroid: %u \n", no_data, centroid_index, currentCentroid);
+				//}
+				assert(centroid_index < no_data);
+				assert(entry*point_dim+i < no_dims*point_dim);
+				assert(centroid_index*point_dim+i < no_data*point_dim);
+				assert(j*point_dim+i < no_data*point_dim);
+				const unsigned long entryDims = entry*point_dim+i;
+				const float centro = data[centroid_index*point_dim+i];
+				const float punto = data[j*point_dim+i];
+				const float abss = abs(centro - punto);
+				d &= (not (dims[entryDims])) || (abss < width);
+			}
+			assert(entry < no_dims);
+			assert((size_t)entry*(size_t)no_data+(size_t)j < (size_t)no_dims*(size_t)no_data+(size_t)j);
+			output[(size_t)entry*(size_t)no_data+(size_t)j] = d;
+			Csum += d;
+		}
+		Csum_out[entry] = Csum;
+	}
+	*/
+}
+
+
+
+void pointsContainedKernelNaive(unsigned int dimGrid,
+							    unsigned int dimBlock,
+							    cudaStream_t stream,
+							    float* data,
+							    unsigned int* centroids,
+							    bool* dims, bool* output,
+							    unsigned int* Csum_out,
+							    float width,
+							    unsigned int point_dim,
+							    unsigned int no_data,
+							    unsigned int number_of_samples,
+							    unsigned int m){
 
 	pointsContainedDeviceNaive<<<dimGrid, dimBlock, 0, stream>>>(data, centroids, dims,
 												 output, Csum_out,
@@ -480,10 +635,20 @@ void pointsContainedKernelNaive(unsigned int dimGrid, unsigned int dimBlock, cud
 
 };
 
-void pointsContainedKernelSharedMemory(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
-						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
-						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
-						   unsigned int m, unsigned int numberOfCentroids){
+void pointsContainedKernelSharedMemory(unsigned int dimGrid,
+									   unsigned int dimBlock,
+									   cudaStream_t stream,
+									   float* data,
+									   unsigned int* centroids,
+									   bool* dims,
+									   bool* output,
+									   unsigned int* Csum_out,
+									   float width,
+									   unsigned int point_dim,
+									   unsigned int no_data,
+									   unsigned int number_of_samples,
+									   unsigned int m,
+									   unsigned int numberOfCentroids){
 
 	unsigned long maxSharedmemory = 48000; //48kb can probably go up to more but...
 	//we block takes care of only on centroid. a centroid is made of point_dim floats
@@ -521,10 +686,19 @@ void pointsContainedKernelSharedMemory(unsigned int dimGrid, unsigned int dimBlo
  * dimBlock needs to be multiple of 32.
  * dimBlock needs to be >= then point_dim
  */
-void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
-						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
-						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
-						   unsigned int m, unsigned int numberOfCentroids){
+void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid,
+											  unsigned int dimBlock,
+											  cudaStream_t stream,
+											  float* data, unsigned int* centroids,
+											  bool* dims,
+											  bool* output,
+											  unsigned int* Csum_out,
+											  float width,
+											  unsigned int point_dim,
+											  unsigned int no_data,
+											  unsigned int number_of_samples,
+											  unsigned int m,
+											  unsigned int numberOfCentroids){
 
 	unsigned long maxSharedmemory = 48000; //48kb can probably go up to more but...
 	//we block takes care of only on centroid. a centroid is made of point_dim floats
@@ -554,10 +728,20 @@ void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid, unsigned int
 	//std::cout << "done with kernel call" << std::endl;
 };
 
-void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
-						   float* data, unsigned int* centroids, bool* dims, bool* output, unsigned int* Csum_out,
-						   float width, unsigned int point_dim, unsigned int no_data, unsigned int number_of_samples,
-						   unsigned int m, unsigned int numberOfCentroids){
+void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid,
+												unsigned int dimBlock,
+												cudaStream_t stream,
+												float* data,
+												unsigned int* centroids,
+												bool* dims,
+												bool* output,
+												unsigned int* Csum_out,
+												float width,
+												unsigned int point_dim,
+												unsigned int no_data,
+												unsigned int number_of_samples,
+												unsigned int m,
+												unsigned int numberOfCentroids){
 
 	unsigned long maxSharedmemory = 48000; //48kb can probably go up to more but...
 	//we block takes care of only on centroid. a centroid is made of point_dim floats
@@ -586,6 +770,162 @@ void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid, unsigned i
 												 width, point_dim, no_data, number_of_samples, m, numberOfCentroids,centroidSharedMemorySize_f,dataSharedMemorySize_f,blocksWithSameCentroid);
 	//std::cout << "done with kernel call" << std::endl;
 };
+
+
+void pointsContainedKernelFewPoints(unsigned int dimGrid,
+									unsigned int dimBlock,
+									cudaStream_t stream,
+									float* data,
+									unsigned int* centroids,
+									bool* dims,
+									bool* output,
+									unsigned int* Csum_out,
+									float width,
+									unsigned int point_dim,
+									unsigned int no_data,
+									unsigned int m,
+									unsigned int numberOfCentroids){
+
+	/*
+	//test stuff
+	int size_of_dims = sizeof(bool)*point_dim;
+	bool* h_dims = (bool*)malloc(size_of_dims);
+	cudaMemcpy(h_dims, dims, size_of_dims, cudaMemcpyDeviceToHost);
+	std::cout << "dims not negated" << std::endl;
+	for(int i = 0 ; i < point_dim ; ++i){
+		std::cout << h_dims[i] << " ";
+	}
+	std::cout << std::endl;
+	*/
+
+	//i want a prefix sum of what dimensions are used.
+	int size_of_out_blelloch = sizeof(unsigned int)*(point_dim+1);
+
+
+	unsigned int* d_out_blelloch;
+	checkCudaErrors(cudaMalloc(&d_out_blelloch, size_of_out_blelloch));
+	/*
+	//we try to not that array
+	notBoolArray(dimBlock,stream,dims,point_dim);
+	*/
+	sum_scan_blelloch(stream, d_out_blelloch,dims,point_dim+1, true);
+
+	unsigned int* h_out_blelloch;
+	cudaMallocHost(&h_out_blelloch,sizeof(unsigned int));
+	cudaMemcpy(h_out_blelloch, d_out_blelloch+point_dim, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+	/*
+	//this was to test that it worked
+	unsigned int* h_out_blelloch_all;
+	cudaMallocHost(&h_out_blelloch_all,sizeof(unsigned int)*(point_dim+1));
+	cudaMemcpy(h_out_blelloch_all, d_out_blelloch, sizeof(unsigned int)*(point_dim+1), cudaMemcpyDeviceToHost);
+
+	std::cout << "out_blelloch" << std::endl;
+	for(int i = 0 ; i < point_dim+1 ; ++i){
+		std::cout << h_out_blelloch_all[i] << " ";
+	}
+	std::cout << std::endl;
+	*/
+
+	//std::cout << "h_out_blelloch[0] " << h_out_blelloch[0] << std::endl;
+	//std::cout << "point_dim " << point_dim << std::endl;
+
+	const unsigned int dimensionsLeft = point_dim-(h_out_blelloch[0]);
+	/*
+	std::cout << "h_out_blelloch[0] " << h_out_blelloch[0] << std::endl;
+	std::cout << "point_dim " << point_dim << std::endl;
+	std::cout << "dimensionsLeft " << dimensionsLeft << std::endl;
+	std::cout << "m " << m << std::endl;
+	*/
+
+
+	unsigned int* d_out_whereThingsGo;
+	checkCudaErrors(cudaMalloc(&d_out_whereThingsGo, size_of_out_blelloch));
+
+	const unsigned int dimBlockWhereThingsGo = dimBlock;
+	unsigned int dimGridWhereThingsGo = point_dim/dimBlock;
+	if(point_dim%dimBlock != 0){
+		dimGridWhereThingsGo++;
+	}
+
+	gpuWhereThingsGo<<<dimGridWhereThingsGo,dimBlockWhereThingsGo,0,stream>>>(d_out_whereThingsGo,d_out_blelloch,point_dim);
+
+	/*
+	//this is for testing that the output is the right one
+	unsigned int* h_out_whereThingsGo = (unsigned int*)malloc(size_of_out_blelloch);
+	cudaMemcpy(h_out_whereThingsGo, d_out_whereThingsGo, size_of_out_blelloch, cudaMemcpyDeviceToHost);
+	std::cout << "h_out_whereThingsGo" << std::endl;
+	for(int i = 0 ; i < point_dim ; ++i){
+		std::cout << h_out_whereThingsGo[i] << " ";
+	}
+	std::cout << std::endl;
+	*/
+
+	unsigned int size_of_reducedData = sizeof(float)*dimensionsLeft*no_data;
+	//std::cout << "reducedDimension*no_data " << reducedDimension*no_data << std::endl;
+
+	float* d_reducedData;
+	checkCudaErrors(cudaMalloc(&d_reducedData, size_of_reducedData));
+
+	const unsigned int dimBlockgpuDimensionChanger = dimBlock;
+	unsigned int dimGridgpuDimensionChanger = (no_data*point_dim)/dimBlock;
+	if((no_data*point_dim)%dimBlock != 0){
+		dimGridgpuDimensionChanger++;
+	}
+	//std::cout << "point_dim " << point_dim << std::endl;
+	gpuDimensionChanger<<<dimGridgpuDimensionChanger,dimBlockgpuDimensionChanger,0,stream>>>(d_reducedData,d_out_whereThingsGo,data,no_data,point_dim,dimensionsLeft);
+
+
+	/*
+	//this is for testing that the output is the right one
+	float* h_data = (float*)malloc(no_data*point_dim*sizeof(float));
+	cudaMemcpy(h_data, data, no_data*point_dim*sizeof(float), cudaMemcpyDeviceToHost);
+	std::cout << "dimensionsLeft " << dimensionsLeft << std::endl;
+	std::cout << "data" << std::endl;
+	for(int i = 0 ; i < no_data*point_dim ; ++i){
+		std::cout << h_data[i] << " ";
+	}
+	std::cout << std::endl;
+
+	float* h_out_gpuDimensionChanger = (float*)malloc(size_of_reducedData);
+	cudaMemcpy(h_out_gpuDimensionChanger, d_reducedData, size_of_reducedData, cudaMemcpyDeviceToHost);
+	std::cout << "h_out_gpuDimensionChanger" << std::endl;
+	for(int i = 0 ; i < dimensionsLeft*no_data; ++i){
+		std::cout << h_out_gpuDimensionChanger[i] << " ";
+	}
+	std::cout << std::endl;
+	*/
+
+	whatDataIsInCentroidFewPoints(stream,
+								  dimBlockgpuDimensionChanger,
+								  output,
+								  Csum_out,
+								  d_reducedData,
+								  centroids,
+								  width,
+								  dimensionsLeft,
+								  no_data);
+
+	//pointsContainedDeviceNaiveFewPoints<<<dimGrid,dimBlock,0,stream>>>(d_reducedData,centroids,output,Csum_out,width,dimensionsLeft,no_data,m,numberOfCentroids);
+
+
+
+};
+
+
+void notBoolArray(unsigned int dimBlock,
+				  cudaStream_t stream,
+				  bool* imputAndOutput,
+				  std::size_t lenght){
+
+	unsigned int dimGrid = lenght/dimBlock;
+	if(lenght%dimBlock != 0){
+		dimGrid++;
+	}
+
+	gpuNotBoolArray<<<dimGrid,dimBlock,0,stream>>>(imputAndOutput,lenght);
+}
+
+
 
 
 
