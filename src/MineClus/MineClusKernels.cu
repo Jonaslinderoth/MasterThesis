@@ -114,20 +114,26 @@ __global__ void createTransactionsReducedReads(float* data, unsigned int dim, un
 
 
 /**
-Thin wrapper for createItemSet
+Thin wrapper for createTransactions
 */
-void createItemSetWrapper(unsigned int dimGrid,
-						  unsigned int dimBlock,
-						  cudaStream_t stream,
-						  float* data,
-						  unsigned int dim,
-						  unsigned int numberOfPoints,
-						  unsigned int centroidId,
-						  float width,
-						  unsigned int* output
-						  ){
-	createTransactions<<<dimGrid, dimBlock, 0, stream>>>(data, dim, numberOfPoints, centroidId, width, output);
-}
+void createTransactionsWrapper(unsigned int dimGrid,
+							   unsigned int dimBlock,
+							   unsigned int smem,
+							   cudaStream_t stream,
+							   float* data,
+							   unsigned int dim,
+							   unsigned int numberOfPoints,
+							   unsigned int centroidId,
+							   float width,
+							   unsigned int* output,
+							   transactionsType version){
+	if(version == transactionsType::Naive_trans){
+		createTransactions<<<dimGrid, dimBlock, smem, stream>>>(data, dim, numberOfPoints, centroidId, width, output);
+	}else{
+		createTransactionsReducedReads<<<dimGrid, dimBlock, smem, stream>>>(data, dim, numberOfPoints, centroidId, width, output);		
+	}
+};
+
 
 
 /**

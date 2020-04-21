@@ -7,16 +7,23 @@
 #include <cuda_runtime_api.h>
 
 enum dublicatesType { Naive, Breaking, MoreBreaking, Hash };
+enum transactionsType { Naive_trans, ReducedReads};
 
-void createItemSetWrapper(unsigned int dimGrid,
-						  unsigned int dimBlock,
-						  cudaStream_t stream,
-						  float* data,
-						  unsigned int dim,
-						  unsigned int numberOfPoints,
-						  unsigned int centroidId,
-						  float width,
-						  unsigned int* output);
+void createTransactionsWrapper(unsigned int dimGrid,
+							   unsigned int dimBlock,
+							   unsigned int smem,
+							   cudaStream_t stream,
+							   float* data,
+							   unsigned int dim,
+							   unsigned int numberOfPoints,
+							   unsigned int centroidId,
+							   float width,
+							   unsigned int* output,
+							   transactionsType version = transactionsType::Naive_trans);
+
+
+
+
 
 void createInitialCandidatesWrapper(unsigned int dimGrid,
 									unsigned int dimBlock,
@@ -62,7 +69,7 @@ void findDublicatesWrapper(unsigned int dimGrid,
 						   unsigned int dim,
 						   bool* alreadyDeleted,
 						   bool* output,
-						   dublicatesType version = Naive
+						   dublicatesType version = dublicatesType::Naive
 						   );
 
 void extractMaxWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
@@ -107,7 +114,7 @@ std::vector<unsigned int> createTransactionsReducedReadsTester(std::vector<std::
 std::vector<unsigned int> createInitialCandidatesTester(unsigned int dim);
 std::tuple<std::vector<unsigned int>,std::vector<float>, std::vector<bool>> countSupportTester(std::vector<std::vector<bool>> candidates, std::vector<std::vector<bool>> itemSet, unsigned int minSupp, float beta);
 std::pair<std::vector<unsigned int>,std::vector<bool>> mergeCandidatesTester(std::vector<std::vector<bool>> candidates, unsigned int itrNr = 2);
-std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates, dublicatesType version = Naive);
+std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates, dublicatesType version = dublicatesType::Naive);
 std::pair<std::vector<unsigned int>, float> extractMaxTester(std::vector<bool> oldCandidate,
 															 unsigned int oldScore, unsigned int oldCentroid,
 															 std::vector<std::vector<bool>> newCandidates,

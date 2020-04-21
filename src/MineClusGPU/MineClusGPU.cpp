@@ -146,7 +146,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			size_t sizeOfItemSet = numberOfPoints*numberOfBlocksPrPoint*sizeof(unsigned int);
 			unsigned int* itemSet_d;
 			checkCudaErrors(cudaMalloc((void**) &itemSet_d,  sizeOfItemSet));
-			createItemSetWrapper(ceilf((float)size/dimBlock), dimBlock, stream1_2, data_d, dim,
+			createTransactionsWrapper(ceilf((float)size/dimBlock), dimBlock, smemSize ,stream1_2, data_d, dim,
 								 numberOfPoints, currentCentroidIndex, this->width, itemSet_d); 
 
 			// Create the initial candidates

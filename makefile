@@ -6,7 +6,7 @@ CXX = g++
 CXXFLAGS=-I. -nocudalib -O2 #-g -G  
 else
 CXX = nvcc
-CXXFLAGS=-I/usr/local/include/coin -I. -arch=sm_37 -g -G #-DNDEBUG -O3 #-g -G # -DNDEBUG -g -G 
+CXXFLAGS=-I/usr/local/include/coin -I. -arch=sm_37 -DNDEBUG -O2 #-g -G #-DNDEBUG -O3 #-g -G # -DNDEBUG -g -G 
 endif
 
 
@@ -37,6 +37,12 @@ BENCHMARKFILES = $(shell find $(BENCHMARKDIR) -name '*.cu') $(shell find $(BENCH
 BENCHMARKOBJS= $(patsubst %.cu, %.o, $(patsubst %.cpp, %.o, $(BENCHMARKFILES)))
 
 
+EXPERIMENTS = experiments
+EXPERIMENTSDIR = experiments
+EXPERIMENTSFILES = $(shell find $(EXPERIMENTSDIR) -name '*.cu') $(shell find $(EXPERIMENTSDIR) -name '*.cpp')
+EXPERIMENTSOBJS= $(patsubst %.cu, %.o, $(patsubst %.cpp, %.o, $(EXPERIMENTSFILES)))
+
+
 
 all: $(sources) $(EXE_DIR)/${EXE}  $(EXE_DIR)/${TEST}
 
@@ -57,6 +63,8 @@ b:
 test: $(EXE_DIR)/${TEST}
 	./$(EXE_DIR)/${TEST} --gtest_filter=-*_SUPER_SLOW_*
 
+experiments: $(EXE_DIR)/$(EXPERIMENTS)
+	./$(EXE_DIR)/$(EXPERIMENTS)
 
 benchmark: $(EXE_DIR)/$(BENCHMARK)
 	./$(EXE_DIR)/$(BENCHMARK) --benchmark_repetitions=10 --benchmark_report_aggregates_only=true
@@ -90,7 +98,8 @@ ${BUILD_DIR}/%.o: %.cpp
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(BUILD_DIR)/$(TESTDIR)
 	mkdir -p $(BUILD_DIR)/$(SOURCEDIR)
-	mkdir -p $(BUILD_DIR)/$(BENCHMARKDIR)	
+	mkdir -p $(BUILD_DIR)/$(BENCHMARKDIR)
+	mkdir -p $(BUILD_DIR)/$(EXPERIMENTSDIR)		
 	${CXX} $(CXXFLAGS) -c $(LIBS)  $^ -o $@
 
 
@@ -106,6 +115,11 @@ $(EXE_DIR)/$(BENCHMARK): $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD
 	$(CXX) $(CXXFLAGS) $(addprefix $(BUILD_DIR)/, $(BENCHMARKOBJS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -lbenchmark -lbenchmark_main -o $@
 
 
+#Target for benchmark 	
+$(EXE_DIR)/$(EXPERIMENTS): $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(addprefix $(BUILD_DIR)/, $(EXPERIMENTSOBJS))
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(addprefix $(BUILD_DIR)/, $(EXPERIMENTSOBJS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -ltermbox -o $@
+
 
 clean:
 	-rm -rf bin/
@@ -120,3 +134,7 @@ clean:
 # global install: https://github.com/coin-or/Rehearse/issues/7
 # 
 # cannot find shared lib => sudo ldconfig
+
+
+#install termbox
+# https://github.com/nsf/termbox.git
