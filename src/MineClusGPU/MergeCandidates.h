@@ -1,5 +1,5 @@
-#ifndef MERGECANDIDATES_H
-#define MERGECANDIDATES_H
+#ifndef MERGECANDIDATES2_H
+#define MERGECANDIDATES2_H
 #include <algorithm>
 #include <vector>
 #include <cuda.h>
@@ -18,6 +18,7 @@ void mergeCandidatesWrapper(unsigned int dimGrid,
 							bool* toBeDeleted,
 							mergeCandidatesType version = NaiveMerge
 							);
+
 
 std::pair<std::vector<unsigned int>,std::vector<bool>>
 	mergeCandidatesTester(std::vector<std::vector<bool>> candidates,

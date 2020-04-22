@@ -65,7 +65,7 @@ __global__ void mergeCandidatesEarlyStopping(unsigned int* candidates, unsigned 
 			assert(a*numberOfCandidates+j < numberOfCandidates*numberOfBlocks);
 			output[a*numberOfNewCandidates+t] = (candidates[a*numberOfCandidates+i] | candidates[a*numberOfCandidates+j]);
 			interSectionCount += __popc(candidates[a*numberOfCandidates+i] & candidates[a*numberOfCandidates+j]);
-			if((int)interSectionCount > (((int)iterNr)-2)){
+			if((int)interSectionCount > (((int)iterNr)-2)){ // if the intersection is too big, then break
 				break;
 			}
 		}
@@ -109,7 +109,6 @@ __global__ void mergeCandidatesSmem(unsigned int* candidates,
 				unsigned int numberOfOutput = numberOfPairs(numberOfCandidates);
 				for(unsigned int d = 0; d < numberOfBlocks; d++){
 					output[numberOfOutput*d+k*blockDim.x +threadIdx.x] = (chunkI[numberOfCandidates*d+a] | chunkI[numberOfCandidates*d+b]);
-					//					printf("accessing %u; d %u; \n", numberOfOutput*d+k*blockDim.x +threadIdx.x, d);
 					interSectionCount += __popc(chunkI[numberOfCandidates*d+a] & chunkI[numberOfCandidates*d+b]);
 				}
 				toBeDeleted[k*blockDim.x +threadIdx.x] = !((int)interSectionCount == (((int)iterNr)-2));				
@@ -149,7 +148,6 @@ __global__ void mergeCandidatesSmem(unsigned int* candidates,
 				unsigned int pos = computeK(i*chunkSize + a,j*chunkSize + b,numberOfCandidates);
 				unsigned int interSectionCount=0;
 				for(unsigned int d = 0; d < numberOfBlocks; d++){
-					//printf("Writing %u | %u  to %u from 1  | d %u\n", chunkI[chunkSizeI*d+a] , chunkI[chunkSizeJ*d+b], outCand*d+pos, d);
 					output[outCand*d+pos] = (chunkI[chunkSizeI*d+a] | chunkJ[chunkSizeJ*d+b]);
 					interSectionCount += __popc(chunkI[chunkSizeI*d+a] & chunkJ[chunkSizeJ*d+b]);
 				}
@@ -167,7 +165,6 @@ __global__ void mergeCandidatesSmem(unsigned int* candidates,
 					unsigned int pos = computeK(i*chunkSize + a, (j-1)*chunkSize+b,numberOfCandidates);
 					unsigned int interSectionCount=0;
 					for(unsigned int d = 0; d < numberOfBlocks; d++){
-						//printf("Writing %u | %u  to %u from 2  | d %u\n", chunkI[chunkSizeI*d+a] , chunkI[chunkSizeI*d+b], outCand*d+pos ,d);
 						output[outCand*d+pos] = (chunkI[chunkSizeI*d+a] | chunkI[chunkSizeI*d+b]);
 						interSectionCount += __popc(chunkI[chunkSizeI*d+a] & chunkI[chunkSizeI*d+b]);
 					}
@@ -187,7 +184,6 @@ __global__ void mergeCandidatesSmem(unsigned int* candidates,
 												(numberOfChunks-1)*chunkSize + b,numberOfCandidates);
 					unsigned int interSectionCount=0;
 					for(unsigned int d = 0; d < numberOfBlocks; d++){
-						//printf("Writing %u | %u  to %u from 3  | d %u\n", chunkI[chunkSizeJ*d+a] , chunkI[chunkSizeJ*d+b], outCand*d+pos ,d);
 						output[outCand*d+pos] = (chunkJ[chunkSizeJ*d+a] | chunkJ[chunkSizeJ*d+b]);
 						interSectionCount += __popc(chunkJ[chunkSizeJ*d+a] & chunkJ[chunkSizeJ*d+b]);
 					}
@@ -264,13 +260,13 @@ std::pair<std::vector<unsigned int>,std::vector<bool>> mergeCandidatesTester(std
 	bool* toBeDeleted_h;
 	bool* toBeDeleted_d;
 
-	cudaMallocHost((void**) &candidates_h, sizeOfCandidates);
-	cudaMallocHost((void**) &output_h, sizeOfOutput);
-	cudaMallocHost((void**) &toBeDeleted_h, sizeOfToBeDeleted);
+	checkCudaErrors(cudaMallocHost((void**) &candidates_h, sizeOfCandidates));
+	checkCudaErrors(cudaMallocHost((void**) &output_h, sizeOfOutput));
+	checkCudaErrors(cudaMallocHost((void**) &toBeDeleted_h, sizeOfToBeDeleted));
 
-	cudaMalloc((void**) &candidates_d, sizeOfCandidates);
-	cudaMalloc((void**) &output_d, sizeOfOutput);
-	cudaMalloc((void**) &toBeDeleted_d, sizeOfToBeDeleted);
+	checkCudaErrors(cudaMalloc((void**) &candidates_d, sizeOfCandidates));
+	checkCudaErrors(cudaMalloc((void**) &output_d, sizeOfOutput));
+	checkCudaErrors(cudaMalloc((void**) &toBeDeleted_d, sizeOfToBeDeleted));
 
 
 
@@ -287,7 +283,7 @@ std::pair<std::vector<unsigned int>,std::vector<bool>> mergeCandidatesTester(std
 		}
 		candidates_h[i+blockNr*numberOfCandidates] = block;
 	}
-	cudaMemcpy(candidates_d, candidates_h, sizeOfCandidates, cudaMemcpyHostToDevice);
+	checkCudaErrors(cudaMemcpy(candidates_d, candidates_h, sizeOfCandidates, cudaMemcpyHostToDevice));
 	if(version == NaiveMerge){
 		mergeCandidates<<<dimGrid, dimBlock>>>(candidates_d, numberOfCandidates, dim, itrNr, output_d, toBeDeleted_d);
 	}else if(version == EarlyStoppingMerge){
@@ -307,8 +303,8 @@ std::pair<std::vector<unsigned int>,std::vector<bool>> mergeCandidatesTester(std
 	}
 
 
-	cudaMemcpy(output_h, output_d, sizeOfOutput, cudaMemcpyDeviceToHost);
-	cudaMemcpy(toBeDeleted_h, toBeDeleted_d, sizeOfToBeDeleted, cudaMemcpyDeviceToHost);
+	checkCudaErrors(cudaMemcpy(output_h, output_d, sizeOfOutput, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(toBeDeleted_h, toBeDeleted_d, sizeOfToBeDeleted, cudaMemcpyDeviceToHost));
 
 	auto result = std::vector<unsigned int>();
 	for(size_t i = 0; i < numberOfNewCandidates*numberOfBlocks; i++){
@@ -320,6 +316,16 @@ std::pair<std::vector<unsigned int>,std::vector<bool>> mergeCandidatesTester(std
 	for(size_t i = 0; i < numberOfNewCandidates; i++){
 		
 		result2.push_back(toBeDeleted_h[i]);
+	}
+
+	if(numberOfCandidates > 2){
+		checkCudaErrors(cudaFreeHost(candidates_h));
+		checkCudaErrors(cudaFreeHost(output_h));
+		checkCudaErrors(cudaFreeHost(toBeDeleted_h));
+
+		checkCudaErrors(cudaFree(candidates_d));
+		checkCudaErrors(cudaFree(output_d));
+		checkCudaErrors(cudaFree(toBeDeleted_d));
 	}
 	return std::make_pair(result, result2);
 			   

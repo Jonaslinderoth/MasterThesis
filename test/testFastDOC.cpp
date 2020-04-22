@@ -436,6 +436,7 @@ TEST(testFastDOC, testFind2ClusterGPU){
 }
 
 
+
 TEST(testFastDOC, testFind2ClusterCPU){
 	unsigned int dim = 10;
 	unsigned int numPoints = 100;
