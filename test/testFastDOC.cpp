@@ -422,7 +422,7 @@ TEST(testFastDOC, testFind2ClusterGPU){
 	
 
 	auto gpu = new Fast_DOCGPU(data);
-	gpu->setSeed(1);
+	gpu->setSeed(10);
 
 	auto res_gpu = gpu->findKClusters(2);
 

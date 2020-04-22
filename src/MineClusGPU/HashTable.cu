@@ -58,9 +58,11 @@ KeyValue* create_hashtable(unsigned int size)
 __global__ void insertHashTable(KeyValue* hashTable, unsigned int* candidates, unsigned int hashTableSize, unsigned int numberOfCandidates, unsigned int dim, bool* alreadyDeleted, bool* toBeDeleted){
 	unsigned int candidate = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int numberOfBlocks = ceilf((float)dim/32);
-	if(alreadyDeleted[candidate]){
-		toBeDeleted[candidate] = true;
-	}else if(candidate < numberOfCandidates){
+	if(candidate < numberOfCandidates){
+		if(alreadyDeleted[candidate]){
+			toBeDeleted[candidate] = true;
+			return;
+		}
 		unsigned int hash = 0;
 		unsigned long long int key = 0;
 		unsigned int value = candidate;
