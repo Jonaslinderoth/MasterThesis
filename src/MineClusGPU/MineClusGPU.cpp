@@ -3,6 +3,7 @@
 #include "../MineClus/MineClusKernels.h"
 #include "../DOC_GPU/DOCGPU_Kernels.h"
 #include "../DOC_GPU/ArgMax.h"
+#include "MergeCandidates.h"
 #include "../randomCudaScripts/DeleteFromArray.h"
 #include <algorithm>
 

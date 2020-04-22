@@ -389,7 +389,7 @@ TEST(testCreateItemSet, testWith66Points65Dim_reducedReads){
 
 
 
-TEST(testCreateItemSet, testWith66666Points65Dim_reducedReads){
+TEST(testCreateItemSet, _SLOW_testWith66666Points65Dim_reducedReads){
 	auto data = new std::vector<std::vector<float>*>;
 	{
 		auto point = new std::vector<float>;
@@ -441,7 +441,7 @@ TEST(testCreateItemSet, testWith66666Points65Dim_reducedReads){
 
 
 
-TEST(testCreateItemSet, testWith66666Points65Dim){
+TEST(testCreateItemSet, _SLOW_testWith66666Points65Dim){
 	auto data = new std::vector<std::vector<float>*>;
 	{
 		auto point = new std::vector<float>;
@@ -493,7 +493,7 @@ TEST(testCreateItemSet, testWith66666Points65Dim){
 
 
 
-TEST(testCreateItemSet, testWith666666Points665Dim_reducedReads){
+TEST(testCreateItemSet, _SUPER_SLOW_testWith666666Points665Dim_reducedReads){
 	auto data = new std::vector<std::vector<float>*>;
 	{
 		auto point = new std::vector<float>;
@@ -545,7 +545,7 @@ TEST(testCreateItemSet, testWith666666Points665Dim_reducedReads){
 
 
 
-TEST(testCreateItemSet, testWith666666Points665Dim){
+TEST(testCreateItemSet, _SUPER_SLOW_testWith666666Points665Dim){
 	auto data = new std::vector<std::vector<float>*>;
 	{
 		auto point = new std::vector<float>;

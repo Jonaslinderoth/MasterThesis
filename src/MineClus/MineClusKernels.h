@@ -49,17 +49,6 @@ void countSupportWrapper(unsigned int dimGrid,
 						 );
 
 
-void mergeCandidatesWrapper(unsigned int dimGrid,
-							unsigned int dimBlock,
-							cudaStream_t stream,
-							unsigned int* candidates,
-							unsigned int numberOfCandidates,
-							unsigned int dim,
-							unsigned int itrNr,
-							unsigned int* output,
-							bool* toBeDeleted
-							);
-
 
 void findDublicatesWrapper(unsigned int dimGrid,
 						   unsigned int dimBlock,
@@ -113,7 +102,6 @@ std::vector<unsigned int> createTransactionsReducedReadsTester(std::vector<std::
 
 std::vector<unsigned int> createInitialCandidatesTester(unsigned int dim);
 std::tuple<std::vector<unsigned int>,std::vector<float>, std::vector<bool>> countSupportTester(std::vector<std::vector<bool>> candidates, std::vector<std::vector<bool>> itemSet, unsigned int minSupp, float beta);
-std::pair<std::vector<unsigned int>,std::vector<bool>> mergeCandidatesTester(std::vector<std::vector<bool>> candidates, unsigned int itrNr = 2);
 std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates, dublicatesType version = dublicatesType::Naive);
 std::pair<std::vector<unsigned int>, float> extractMaxTester(std::vector<bool> oldCandidate,
 															 unsigned int oldScore, unsigned int oldCentroid,
