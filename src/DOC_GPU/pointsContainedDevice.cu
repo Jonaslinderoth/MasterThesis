@@ -80,12 +80,22 @@ __global__ void pointsContainedDeviceSharedMemory(float* data,
 	const unsigned int indexOfCentroidToCentroids = blockIdx.x/blocksWithSameCentroid;
 	const unsigned int indexOfCentroidInDataNoDims_f = centroids[indexOfCentroidToCentroids]*point_dim;
 	//we want to move the centroid to shared memory.
-	if(threadIdx.x < point_dim){
-		const long offsetByDimension_f = threadIdx.x;
-		const unsigned long indexOfCentroidInData_f = indexOfCentroidInDataNoDims_f + offsetByDimension_f;
-		const float partOfACentroid_f = data[indexOfCentroidInData_f];
-		centroidSharedMemory[offsetByDimension_f] = partOfACentroid_f;
+	// if(threadIdx.x < point_dim){  // OBS... This kernel will not work for dims higher than the block size
+	// 	const long offsetByDimension_f = threadIdx.x;
+	// 	const unsigned long indexOfCentroidInData_f = indexOfCentroidInDataNoDims_f + offsetByDimension_f;
+	// 	const float partOfACentroid_f = data[indexOfCentroidInData_f];
+	// 	centroidSharedMemory[offsetByDimension_f] = partOfACentroid_f;
+	// }
+
+	for(unsigned int i = 0; i < ceilf((float)point_dim/blockDim.x); i++){
+		const unsigned int j = i*blockDim.x+threadIdx.x;
+		if(j < point_dim){
+			centroidSharedMemory[j] = data[indexOfCentroidInDataNoDims_f+j];
+		}
 	}
+
+	// it is okay to not have 
+	
 
 	const unsigned long howLongOnM_p = ( blockIdx.x % blocksWithSameCentroid ) * blockDim.x + threadIdx.x;
 	const unsigned long whatM = blockIdx.x / blocksWithSameCentroid;
@@ -97,52 +107,21 @@ __global__ void pointsContainedDeviceSharedMemory(float* data,
 	// times the threads will need to copy data from global to shared memory.
 	const unsigned long no_data_f = no_data_p*point_dim;
 	const unsigned long dataSharedMemorySize_p = dataSharedMemorySize_f/point_dim;
-	//assert(dataSharedMemorySize_f%point_dim == 0);
-	//testing variables
-	//const unsigned long i = 1;
-	//const unsigned long j = 414;
 
 
 	for(unsigned long i_p = 0 ; i_p < no_data_p ; i_p += dataSharedMemorySize_p){
 		//copy the data from global to shared memory
 		for(unsigned long indexCopy_f = 0 ; indexCopy_f < dataSharedMemorySize_f ; indexCopy_f+=blockDim.x){
-
 			const unsigned long indexInSharedMemory_f = indexCopy_f + threadIdx.x;
-
 			const unsigned long indexInData_f = i_p*point_dim + indexCopy_f +threadIdx.x;
-
 			if(indexInData_f < no_data_f and indexInSharedMemory_f < dataSharedMemorySize_f ){
 				dataSharedMemory[indexInSharedMemory_f] = data[indexInData_f];
-				/*
-				if(indexInSharedMemory_f >= j*point_dim and indexInSharedMemory_f < j*point_dim+4 and blockIdx.x == 0 ){
-					printf("data[indexInData_f] %f \n indexInData_f: %lu \n indexInSharedMemory_f %lu \n whatM %lu \n ammountOfSamplesThatUseSameCentroid: %u \n",
-																								data[indexInData_f],
-																								indexInData_f,
-																								indexInSharedMemory_f,
-																								whatM,
-																								ammountOfSamplesThatUseSameCentroid);
-				}*/
-
 			}
 		}
 		__syncthreads();
-		/*
-		if(offEntry_p == i){
-			printf("done with movinf data from global dataSharedMemorySize_p %lu \n" , dataSharedMemorySize_p);
-		}*/
 
 		const unsigned long ammountOfPointsLeft = no_data_p-i_p;
-		for(unsigned long indexDataSM_p = 0 ; indexDataSM_p < dataSharedMemorySize_p ; indexDataSM_p++)
-		{
-			/*
-			if(offEntry_p == i and indexDataSM_p == j){
-				printf("in the for loop i_p: %lu \n" , i_p);
-			}
-
-			if(offEntry_p == i and indexDataSM_p == j){
-				printf("before if statement \n");
-			}*/
-
+		for(unsigned long indexDataSM_p = 0 ; indexDataSM_p < dataSharedMemorySize_p ; indexDataSM_p++){
 			const unsigned long indexDimsNoDimension_f = offEntry_p * point_dim;
 			const unsigned long indexPointDataSM_p = indexDataSM_p;
 			const unsigned long indexOutput_p = offEntry_p * no_data_p + i_p + indexDataSM_p;
@@ -157,44 +136,14 @@ __global__ void pointsContainedDeviceSharedMemory(float* data,
 
 					const unsigned long indexDataSM_f = indexPointDataSM_p*point_dim + dimensionIndex_f;
 					const unsigned long indexDims_f = indexDimsNoDimension_f + dimensionIndex_f;
-					//assert(indexDims_f < no_dims*point_dim);
 					const bool dim = dims[indexDims_f];
 					const float cen = centroidSharedMemory[dimensionIndex_f];
-					//assert(indexDataSM_f < dataSharedMemorySize_f);
 					const float dat = dataSharedMemory[indexDataSM_f];
 					d &= (not (dim)) || (abs(cen - dat) < width);
 
 				}
-
-				//assert(indexOutput_p < ammountOfSamplesThatUseSameCentroid*numberOfCentroids*no_data_p);
-
 				output[indexOutput_p] = d;
 				Csum += d;
-				/*
-				assert(Csum == csum2 or Csum == csum2+1);
-
-				if(offEntry_p == i and i_p + indexDataSM_p == j){
-					printf(" fancy: %d \n indexDimsNoDimension_f %lu \n indexPointDataSM_p: %lu \n indexOutput_p: %lu \n centroidSharedMemory %f %f %f %f \n dataSharedMemory %f %f %f %f \n idexesInSharedMemory: %lu %lu %lu %lu \n threadId: %u \n blockId: %u \n dataSharedMemorySize_f: %u \n" , d ,
-																		   indexDimsNoDimension_f,
-																		   indexPointDataSM_p,
-																		   indexOutput_p,
-																		   centroidSharedMemory[0],
-																		   centroidSharedMemory[1],
-																		   centroidSharedMemory[2],
-																		   centroidSharedMemory[3],
-																		   dataSharedMemory[indexPointDataSM_p*point_dim+0],
-																		   dataSharedMemory[indexPointDataSM_p*point_dim+1],
-																		   dataSharedMemory[indexPointDataSM_p*point_dim+2],
-																		   dataSharedMemory[indexPointDataSM_p*point_dim+3],
-																		   indexPointDataSM_p*point_dim + 0,
-																		   indexPointDataSM_p*point_dim + 1,
-																		   indexPointDataSM_p*point_dim + 2,
-																		   indexPointDataSM_p*point_dim + 3,
-																		   threadIdx.x,
-																		   blockIdx.x,
-																		   dataSharedMemorySize_f);
-				}
-				*/
 			}
 
 		}
@@ -204,17 +153,6 @@ __global__ void pointsContainedDeviceSharedMemory(float* data,
 
 	if(offEntry_p < no_dims and howLongOnM_p < ammountOfSamplesThatUseSameCentroid){
 		Csum_out[offEntry_p] = Csum;
-		/*
-		if(offEntry_p == 1 and false){
-
-			printf("howLongOnM_p: %lu \n blockIdx.x: %u \n blocksWithSameCentroid: %u \n ammountOfSamplesThatUseSameCentroid: %u \n Csum %u \n",howLongOnM_p,
-																																	 	 	 	blockIdx.x,
-																																	 	 	 	blocksWithSameCentroid,
-																																	 	 	 	ammountOfSamplesThatUseSameCentroid,
-																																	 	 	 	Csum);
-
-
-		}*/
 
 	}
 
@@ -244,11 +182,21 @@ __global__ void pointsContainedDeviceSharedMemoryFewBank(float* __restrict__ dat
 	const unsigned int indexOfCentroidToCentroids = blockIdx.x/blocksWithSameCentroid;
 	const unsigned int indexOfCentroidInDataNoDims_f = centroids[indexOfCentroidToCentroids]*point_dim;
 	//we want to move the centroid to shared memory.
-	if(threadIdx.x < point_dim){
-		const long offsetByDimension_f = threadIdx.x;
-		const unsigned long indexOfCentroidInData_f = indexOfCentroidInDataNoDims_f + offsetByDimension_f;
-		const float partOfACentroid_f = data[indexOfCentroidInData_f];
-		centroidSharedMemory[offsetByDimension_f] = partOfACentroid_f;
+
+	// // This only allows for medoids of upt to block
+	// if(threadIdx.x < point_dim){
+	// 	const long offsetByDimension_f = threadIdx.x;
+	// 	const unsigned long indexOfCentroidInData_f = indexOfCentroidInDataNoDims_f + offsetByDimension_f;
+	// 	const float partOfACentroid_f = data[indexOfCentroidInData_f];
+	// 	centroidSharedMemory[offsetByDimension_f] = partOfACentroid_f;
+	// }
+
+	
+	for(unsigned int i = 0; i < ceilf((float)point_dim/blockDim.x); i++){
+		const unsigned int j = i*blockDim.x+threadIdx.x;
+		if(j < point_dim){
+			centroidSharedMemory[j] = data[indexOfCentroidInDataNoDims_f+j];
+		}
 	}
 	//now i have the centroid in shared memory. but its going to cause bank conflicts :( , TODO fix this.
 

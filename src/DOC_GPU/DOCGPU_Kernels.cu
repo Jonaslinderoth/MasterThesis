@@ -7,6 +7,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
+/*
+ * Finds the hypercube the for each medoid - discriminating set combination
+*/
 __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d, unsigned int* Dsum_out,
 									  unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps, unsigned int m, float width, unsigned int no_data){
 	unsigned int entry = blockIdx.x*blockDim.x+threadIdx.x;
@@ -17,7 +20,7 @@ __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, fl
 		// for each dimension
 		for(int i = 0; i < point_dim; i++){
 			bool d = true;
-			unsigned int tmp = ps_d[pNo];
+			unsigned int tmp = ps_d[pNo]; // tmp is the index of the medoid in the dataset
 			assert(tmp < no_data);
 			float p_tmp = data[tmp*point_dim+i];
 			// for each point in sample
@@ -36,6 +39,103 @@ __global__ void findDimmensionsDevice(unsigned int* Xs_d, unsigned int* ps_d, fl
 	}
 }
 
+
+
+// Hack
+struct floatArray{
+	float f0;
+	float f1;
+	float f2;
+	float f3;
+	float f4;
+	float f5;
+	// float f6;
+	// float f7;
+};
+
+/*
+ * Finds the hypercube the for each medoid - discriminating set combination
+ * From simple testing and nvprof, this kernel gets around twice the memory throughput as the naive version. 
+ * 6 in a chunk allows for oly use 32 registers, 8 will give somewhat better memory perfomance
+*/
+__global__ void findDimmensionsLoadChunks(unsigned int* Xs_d, unsigned int* ps_d, float* data, bool* res_d, unsigned int* Dsum_out,
+									  unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps, unsigned int m, float width, unsigned int no_data){
+	unsigned int entry = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int pNo = entry/m;
+	floatArray p_tmp;
+	floatArray x_tmp;
+	bool d [6];
+	if(entry < no_of_samples){
+		assert(pNo < no_of_ps);
+		unsigned int Dsum = 0;
+		// for each dimension
+		for(int i = 0; i < point_dim; i +=6){
+			unsigned int tmp = ps_d[pNo]; // tmp is the index of the medoid in the dataset
+			assert(tmp < no_data);
+			if(i+8 > point_dim){
+				for(; i < point_dim; i++){
+					// if(threadIdx.x + blockIdx.x*blockDim.x == 0) printf("i %u  point_dim %u\n", i, point_dim);
+					bool d = true;
+					unsigned int tmp = ps_d[pNo]; // tmp is the index of the medoid in the dataset
+					assert(tmp < no_data);
+					float p_tmp = data[tmp*point_dim+i];
+					// for each point in sample
+					for(unsigned j = 0; j < no_in_sample; j++){
+						assert(entry*no_in_sample+j < no_of_samples*no_in_sample);
+						unsigned int sampleNo = Xs_d[entry*no_in_sample+j];
+						assert(entry*no_in_sample+j < no_of_samples*no_in_sample);
+						assert(sampleNo < no_data);
+						float point = data[sampleNo*point_dim+i];
+						d &= abs(p_tmp-point) < width;
+					}
+					res_d[entry*point_dim+i] = d;
+					Dsum += d;
+				}
+				break;
+			}else{
+				p_tmp = *((floatArray*) (data+tmp*point_dim+i));// data[tmp*point_dim+i];
+				// for each point in sample
+				d[0] = true;
+				d[1] = true;
+				d[2] = true;
+				d[3] = true;
+				d[4] = true;
+				d[5] = true;
+				// d[6] = true;
+				// d[7] = true;
+				for(unsigned j = 0; j < no_in_sample; j++){
+					unsigned int sampleNo = Xs_d[entry*no_in_sample+j];
+					x_tmp = *((floatArray*)(data+sampleNo*point_dim+i));// data[tmp*point_dim+i];
+					d[0] &= abs(p_tmp.f0-x_tmp.f0) < width;
+					d[1] &= abs(p_tmp.f1-x_tmp.f1) < width;
+					d[2] &= abs(p_tmp.f2-x_tmp.f2) < width;
+					d[3] &= abs(p_tmp.f3-x_tmp.f3) < width;
+					d[4] &= abs(p_tmp.f4-x_tmp.f4) < width;
+					d[5] &= abs(p_tmp.f5-x_tmp.f5) < width;
+					// d[6] &= abs(p_tmp.f6-x_tmp.f6) < width;
+					// d[7] &= abs(p_tmp.f7-x_tmp.f7) < width;
+
+					// if(threadIdx.x == 0) printf("i %u j %u p %f x %f from %u\n", i+0, j, p_tmp.f0, x_tmp.f0, data+sampleNo*point_dim+i);
+					// if(threadIdx.x == 0) printf("i %u j %u p %f x %f from %u\n", i+1, j, p_tmp.f1, x_tmp.f1, data+sampleNo*point_dim+i+1);
+					// if(threadIdx.x == 0) printf("i %u j %u p %f x %f from %u\n", i+2, j, p_tmp.f2, x_tmp.f2, data+sampleNo*point_dim+i+2);
+					// if(threadIdx.x == 0) printf("i %u j %u p %f x %f from %u\n", i+3, j, p_tmp.f3, x_tmp.f3, data+sampleNo*point_dim+i+3);
+
+					
+				}
+				res_d[entry*point_dim+i  ] = d[0];
+				res_d[entry*point_dim+i+1] = d[1];
+				res_d[entry*point_dim+i+2] = d[2];
+				res_d[entry*point_dim+i+3] = d[3];
+				res_d[entry*point_dim+i+4] = d[4];
+				res_d[entry*point_dim+i+5] = d[5];
+				// res_d[entry*point_dim+i+5] = d[6];
+				// res_d[entry*point_dim+i+5] = d[7];
+				Dsum += d[0] + d[1] + d[2] +d[3] +d[4] +d[5];// +d[6] +d[7];
+			}
+		}
+		Dsum_out[entry] = Dsum;
+	}
+}
 
 
 
@@ -278,6 +378,113 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimme
 	return std::make_pair(output, count);
 }
 
+
+
+
+std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> findDimmensionsChunk(std::vector<std::vector<float>*>* data,
+																					   std::vector<unsigned int>* centroids,
+																					   std::vector<std::vector<unsigned int>*>* samples,
+																					   int m, float width){
+
+	int no_of_samples = samples->size();	
+	int no_in_sample = samples->at(0)->size();
+	int no_of_centroids = centroids->size();
+
+	int no_of_points = data->size();
+	int point_dim = data->at(0)->size();
+   
+	int sizeOfData = no_of_points*point_dim*sizeof(unsigned int);
+	int sizeOfSamples = no_of_samples*no_in_sample*sizeof(unsigned int);
+	int sizeOfCentroids = point_dim*no_of_centroids*sizeof(unsigned int);
+	
+	
+	unsigned int* centroids_h = (unsigned int*) malloc(sizeOfCentroids);
+	unsigned int* samples_h = (unsigned int*) malloc(sizeOfSamples);
+	float* data_h = (float*) malloc(sizeOfData);
+	
+
+	for(int i = 0; i < no_of_points; i++){
+		for(int j = 0; j < point_dim; j++){
+			data_h[i*point_dim+j] = data->at(i)->at(j);
+		}
+	}
+
+	for(int i = 0; i < no_of_samples; i++){
+		for(int j = 0;  j < no_in_sample; j++){
+			samples_h[i*no_in_sample+j] = samples->at(i)->at(j);
+		}
+	}
+
+	for(int i = 0; i < no_of_centroids; i++){
+		centroids_h[i] = centroids->at(i);
+	}
+
+	unsigned int size_of_count = (no_of_samples)*sizeof(unsigned int);
+	
+	int outputDim = no_of_samples*point_dim;		
+	int outputSize = outputDim*sizeof(bool);
+	bool* result_h = (bool*) malloc(outputSize);
+	unsigned int* count_h = (unsigned int*) malloc(size_of_count);
+
+
+	unsigned int* samples_d;
+	unsigned int* centroids_d;
+	float* data_d;
+	bool* result_d;
+	unsigned int* count_d;
+	
+	cudaMalloc((void **) &samples_d, sizeOfSamples);
+	cudaMalloc((void **) &centroids_d, sizeOfCentroids);
+	cudaMalloc((void **) &data_d, sizeOfData);
+	cudaMalloc((void **) &result_d, outputSize);
+	cudaMalloc((void **) &count_d, size_of_count);
+
+	cudaMemcpy( samples_d, samples_h, sizeOfSamples, cudaMemcpyHostToDevice);
+    cudaMemcpy( centroids_d, centroids_h, sizeOfCentroids, cudaMemcpyHostToDevice);
+	cudaMemcpy( data_d, data_h, sizeOfData, cudaMemcpyHostToDevice);
+
+	findDimmensionsLoadChunks<<<ceil((no_of_samples)/256.0), 256>>>(samples_d, centroids_d,
+																data_d, result_d, count_d,
+																point_dim, no_of_samples,
+																no_in_sample, no_of_centroids,
+																m, width,no_of_points );
+
+
+
+   
+	cudaMemcpy(result_h, result_d, outputSize, cudaMemcpyDeviceToHost);
+	cudaMemcpy(count_h, count_d, size_of_count, cudaMemcpyDeviceToHost);
+
+
+	
+
+	auto output =  new std::vector<std::vector<bool>*>;
+	
+	for(int i = 0; i < no_of_samples; i++){
+		auto a =  new std::vector<bool>;
+		for(int j = 0; j < point_dim; j++){
+			a->push_back(result_h[i*point_dim+j]);
+		}
+		output->push_back(a);
+	}
+
+
+	auto count = new std::vector<unsigned int>;
+	for(int i = 0; i < (no_of_samples); i++){
+		count->push_back(count_h[i]);
+	}
+
+	cudaFree(samples_d);
+	cudaFree(centroids_d);
+	cudaFree(result_d);
+	cudaFree(count_d);
+	free(result_h);
+	free(count_h);
+	free(centroids_h);
+	free(samples_h);
+	
+	return std::make_pair(output, count);
+}
 
 
 
