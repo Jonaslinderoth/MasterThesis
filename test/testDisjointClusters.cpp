@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "testingTools.h"
 #include <random>
-#include "../src/MineClus/MineClusKernels.h"
+#include "../src/MineClusGPU/MineClusKernels.h"
 #include <vector>
 
 

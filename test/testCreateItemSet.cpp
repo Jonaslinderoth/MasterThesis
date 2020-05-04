@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../src/MineClus/MineClusKernels.h"
+#include "../src/MineClusGPU/CreateTransactions.h"
 #include "testingTools.h"
 
 

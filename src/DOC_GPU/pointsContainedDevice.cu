@@ -1,7 +1,7 @@
 #include "pointsContainedDevice.h"
 #include "../randomCudaScripts/Utils.h"
 #include "../randomCudaScripts/DeleteFromArray.h"
-#include "whatDataInCentroid.h"
+#include "../Fast_DOCGPU/whatDataInCentroid.h"
 #include <assert.h>
 #include <utility>
 #include <vector>

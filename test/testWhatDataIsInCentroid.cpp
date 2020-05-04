@@ -2,7 +2,7 @@
 #include <vector>
 #include <random>
 #include "../src/randomCudaScripts/Utils.h"
-#include "../src/DOC_GPU/whatDataInCentroid.h"
+#include "../src/Fast_DOCGPU/whatDataInCentroid.h"
 
 
 TEST(testWhatDataIsInCentroid, testSetupNaive){
@@ -38,6 +38,21 @@ TEST(testWhatDataIsInCentroid, testSetupChunks){
 }
 
 
+TEST(testWhatDataIsInCentroid, testSetupFew){
+
+	std::vector<bool>* dims = new std::vector<bool>{0,0,1};
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+
+	auto point1 = new std::vector<float>{1,1,1};
+	auto point2 = new std::vector<float>{1,1,999};
+	data->push_back(point1);
+	data->push_back(point2);
+
+	auto res = whatDataIsInCentroidTester(dims, data,0, 10, FewDimsContained);
+	EXPECT_EQ(res->at(0), true);
+	EXPECT_EQ(res->at(1), false);
+}
+
 TEST(testWhatDataIsInCentroid, test4DimsChunks){
 
 	std::vector<bool>* dims = new std::vector<bool>{0,0,1,1};
@@ -53,6 +68,20 @@ TEST(testWhatDataIsInCentroid, test4DimsChunks){
 	EXPECT_EQ(res->at(1), false);
 }
 
+TEST(testWhatDataIsInCentroid, test4DimsFew){
+
+	std::vector<bool>* dims = new std::vector<bool>{0,0,1,1};
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+
+	auto point1 = new std::vector<float>{1,1,1,1};
+	auto point2 = new std::vector<float>{1,1,999,1};
+	data->push_back(point1);
+	data->push_back(point2);
+
+	auto res = whatDataIsInCentroidTester(dims, data,0, 10, FewDimsContained);
+	EXPECT_EQ(res->at(0), true);
+	EXPECT_EQ(res->at(1), false);
+}
 
 TEST(testWhatDataIsInCentroid, test7DimsChunks){
 
@@ -194,9 +223,12 @@ TEST(testWhatDataIsInCentroid, testRandom100points10dims){
 
 	auto resNaive = whatDataIsInCentroidTester(dims, data,0, 10);
 	auto resChunk = whatDataIsInCentroidTester(dims, data,0, 10,ChunksContained);
+	auto resFew = whatDataIsInCentroidTester(dims, data,0, 10,FewDimsContained);
 	EXPECT_EQ(resNaive->size(), resChunk->size());
+	EXPECT_EQ(resNaive->size(), resFew->size());
 	for(unsigned int i = 0; i < resNaive->size(); i++){
 		EXPECT_EQ(resNaive->at(i), resChunk->at(i));
+		EXPECT_EQ(resNaive->at(i), resFew->at(i));
 	}
 }
 
@@ -227,9 +259,12 @@ TEST(testWhatDataIsInCentroid, testRandom1000points100dims){
 
 	auto resNaive = whatDataIsInCentroidTester(dims, data,0, 10);
 	auto resChunk = whatDataIsInCentroidTester(dims, data,0, 10,ChunksContained);
+	auto resFew = whatDataIsInCentroidTester(dims, data,0, 10,FewDimsContained);
 	EXPECT_EQ(resNaive->size(), resChunk->size());
+	EXPECT_EQ(resNaive->size(), resFew->size());
 	for(unsigned int i = 0; i < resNaive->size(); i++){
 		EXPECT_EQ(resNaive->at(i), resChunk->at(i));
+		EXPECT_EQ(resNaive->at(i), resFew->at(i));
 	}
 }
 
@@ -260,8 +295,11 @@ TEST(testWhatDataIsInCentroid, testRandom2000points100dims){
 
 	auto resNaive = whatDataIsInCentroidTester(dims, data,0, 10);
 	auto resChunk = whatDataIsInCentroidTester(dims, data,0, 10,ChunksContained);
+	auto resFew = whatDataIsInCentroidTester(dims, data,0, 10,FewDimsContained);
 	EXPECT_EQ(resNaive->size(), resChunk->size());
+	EXPECT_EQ(resNaive->size(), resFew->size());
 	for(unsigned int i = 0; i < resNaive->size(); i++){
 		EXPECT_EQ(resNaive->at(i), resChunk->at(i));
+		EXPECT_EQ(resNaive->at(i), resFew->at(i));
 	}
 }

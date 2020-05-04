@@ -3,7 +3,7 @@
 #include "../src/DOC_GPU/DOCGPU_Kernels.h"
 #include "../src/DOC/HyperCube.h"
 #include "../src/randomCudaScripts/arrayEqual.h"
-#include "../src/DOC_GPU/whatDataInCentroid.h"
+#include "../src/Fast_DOCGPU/whatDataInCentroid.h"
 #include <random>
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }

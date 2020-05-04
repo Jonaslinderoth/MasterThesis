@@ -9,7 +9,7 @@
 #define WHATDATAINCENTROID_H_
 #include <vector>
 
-enum containedType {NaiveContained, ChunksContained};
+enum containedType {NaiveContained, ChunksContained, FewDimsContained};
 
 bool whatDataIsInCentroid(size_t dimGrid,
 						  size_t dimBlock,

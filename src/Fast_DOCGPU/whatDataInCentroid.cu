@@ -102,9 +102,25 @@ __global__ void whatDataIsInCentroidChunks(bool* output,
 		// process remaining in chunks of 4
 		for(; indexDim < (point_dim/8)*8 +((point_dim%8)/4)*4 ; indexDim+=4){
 			const size_t indexData_f = indexDataNoDim_f + indexDim;
-			pointBuffer = *(floatArray8*)((floatArray4*)(data+indexData_f));
-			centroidBuffer = *(floatArray8*)((floatArray4*)(data+centroid_f+indexDim));
-			dimBuffer = *(boolArray8*)((boolArray4*)(dimensions+indexDim));
+			{
+				floatArray4 tmp = *((floatArray4*)(data+indexData_f));
+				pointBuffer.f0 = tmp.f0;
+				pointBuffer.f1 = tmp.f1;
+				pointBuffer.f2 = tmp.f2;
+				pointBuffer.f3 = tmp.f3;
+				tmp = *((floatArray4*)(data+centroid_f+indexDim));
+				centroidBuffer.f0 = tmp.f0;
+				centroidBuffer.f1 = tmp.f1;
+				centroidBuffer.f2 = tmp.f2;
+				centroidBuffer.f3 = tmp.f3;
+			}
+			{
+				boolArray4 tmp = *((boolArray4*)(dimensions+indexDim));
+				dimBuffer.b0 = tmp.b0;
+				dimBuffer.b1 = tmp.b1;
+				dimBuffer.b2 = tmp.b2;
+				dimBuffer.b3 = tmp.b3;
+			}
 			
 			d &= (not (dimBuffer.b0)) || (abs(centroidBuffer.f0 - pointBuffer.f0) < width);
 			d &= (not (dimBuffer.b1)) || (abs(centroidBuffer.f1 - pointBuffer.f1) < width);
@@ -225,14 +241,13 @@ __global__ void gpuWhereThingsGo(unsigned int* d_outData,
 								const unsigned int size){
 	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
 
-	if(idx < size){
+	if(idx <= size){
 		d_outData[idx] = size+2;
 		const unsigned int offset = d_data[idx];
 		unsigned int nextOffset = offset+1;
-		if(idx != size-1){
+		if(idx != size){
 			nextOffset = d_data[idx+1];
 		}
-
 		if(offset == nextOffset){
 			d_outData[idx] = idx-offset;
 		}
@@ -255,6 +270,7 @@ __global__ void gpuDimensionChanger(float* d_outData,
 		const size_t dimIndex = idx%dimensions;
 		const size_t newPointIdex = pointIdex*dimensionRemaning;
 		const size_t go = d_wereThingsGoArray[dimIndex];
+		// printf("try writing to %u\n",go);
 		if(go<dimensions){
 			const size_t newIndex = newPointIdex+go;
 			const float theData = d_data[idx];
@@ -282,10 +298,10 @@ void whatDataIsInCentroidKernelFewPointsKernel(
 	checkCudaErrors(cudaMalloc(&d_out_blelloch, size_of_out_blelloch));
 	sum_scan_blelloch(stream, d_out_blelloch,dims,point_dim+1, true);
 	unsigned int* h_out_blelloch;
-	cudaMallocHost(&h_out_blelloch,sizeof(unsigned int));
-	cudaMemcpy(h_out_blelloch, d_out_blelloch+point_dim, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+	cudaMallocHost(&h_out_blelloch,4*sizeof(unsigned int));
+	cudaMemcpyAsync(h_out_blelloch, d_out_blelloch+point_dim, sizeof(unsigned int), cudaMemcpyDeviceToHost, stream);
 
-	
+	cudaStreamSynchronize(stream);
 	const unsigned int dimensionsLeft = point_dim-(h_out_blelloch[0]);
    
 	unsigned int* d_out_whereThingsGo;
@@ -310,11 +326,10 @@ void whatDataIsInCentroidKernelFewPointsKernel(
 	if((no_data*point_dim)%dimBlock != 0){
 		dimGridgpuDimensionChanger++;
 	}
-	//std::cout << "point_dim " << point_dim << std::endl;
 	gpuDimensionChanger<<<dimGridgpuDimensionChanger,dimBlockgpuDimensionChanger,0,stream>>>(d_reducedData,d_out_whereThingsGo,data,no_data,point_dim,dimensionsLeft);
 
-	whatDataIsInCentroidFewPoints(no_data*dimensionsLeft,
-								  dimBlockgpuDimensionChanger,
+	whatDataIsInCentroidFewPoints(dimGrid,
+								  dimBlock,
 								  stream,
 								  output,
 								  d_reducedData,
@@ -346,7 +361,7 @@ std::vector<bool>* whatDataIsInCentroidTester(std::vector<bool>* dims,
 	unsigned int bools_in_output = no_of_points;
 
 	unsigned int size_of_data = floats_in_data*sizeof(float);
-	unsigned int size_of_dims = bools_in_dims*sizeof(bool);
+	unsigned int size_of_dims = (bools_in_dims+1)*sizeof(bool);
 	unsigned int size_of_centroids = no_of_centroids*sizeof(unsigned int);
 	unsigned int size_of_output = bools_in_output*sizeof(bool);
 
@@ -400,6 +415,22 @@ std::vector<bool>* whatDataIsInCentroidTester(std::vector<bool>* dims,
 	}else if(type == ChunksContained){
 		whatDataIsInCentroidChunks<<<ceilf((float)no_of_points/1024), 1024>>>(output_d, data_d, dims_d, centroids_d,
 																			  no_of_points, point_dim, width);
+	}else if(type == FewDimsContained){
+		cudaStream_t stream;
+		cudaStreamCreate ( &stream);
+		whatDataIsInCentroidKernelFewPointsKernel(ceilf((float)no_of_points/1024),
+												  1024,
+												  stream,
+												  output_d,
+												  data_d,
+												  centroids_d,
+												  dims_d,
+												  width,
+												  point_dim,
+												  no_of_points
+												  );
+	cudaStreamSynchronize(stream);
+		cudaStreamDestroy(stream);
 	}
 
 

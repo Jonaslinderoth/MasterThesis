@@ -1,6 +1,9 @@
 #include "MineClusGPU.h"
 #include <stdexcept>   // for exception, runtime_error, out_of_range
-#include "../MineClus/MineClusKernels.h"
+#include "MineClusKernels.h"
+#include "CountSupport.h"
+#include "CreateTransactions.h"
+#include "FindDublicates.h"
 #include "../DOC_GPU/DOCGPU_Kernels.h"
 #include "../DOC_GPU/ArgMax.h"
 #include "MergeCandidates.h"
