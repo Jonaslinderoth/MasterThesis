@@ -98,7 +98,6 @@ TEST(testFastDOCKernels, testSmall){
 	whatDataIsInCentroid(stream1,
 						 1024,
 						 output_d,
-						 count_d,
 						 data_d,
 						 centroid_d,
 						 dim_d,
@@ -113,14 +112,11 @@ TEST(testFastDOCKernels, testSmall){
 		EXPECT_EQ(output_h[i], desired_output_h[i]) << "at index: " << i;
 	}
 	//count_h[0] = 0;
-	gpuErrchk(cudaMemcpy(count_h, count_d, size_of_count, cudaMemcpyDeviceToHost));
 
 	//if(count_h[0] != desired_count_h[0]){
 	//	std::cout << "count wrong is: " << count_h[0] << " shoud be " << desired_count_h[0] << std::endl;
 	//}
 
-
-	EXPECT_EQ(count_h[0] , desired_count_h[0]);
 
 }
 
@@ -234,7 +230,6 @@ TEST(testFastDOCKernels, _SUPER_SLOW_testMedium){
 			whatDataIsInCentroid(stream1,
 								 1024,
 								 output_d,
-								 count_d,
 								 data_d,
 								 centroid_d,
 								 dim_d,
@@ -255,7 +250,6 @@ TEST(testFastDOCKernels, _SUPER_SLOW_testMedium){
 				indexData++;
 			}
 
-			gpuErrchk((cudaMemcpy(count_h, count_d, size_of_count, cudaMemcpyDeviceToHost)));
 
 
 

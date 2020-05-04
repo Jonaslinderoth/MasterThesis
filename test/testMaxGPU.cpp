@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <iostream>
-#include "../src/DOC_GPU/DOCGPU_Kernels.h"
+#include "../src/DOC_GPU/ArgMax.h"
 #include "../src/DOC/DOC.h"
 #include <random>
 #include <cstdlib>      // std::rand, std::srand
@@ -134,4 +134,28 @@ TEST(testArgMaxGPU, testLarge6){
 	
 	auto c = argMax(scores);
 	EXPECT_EQ(c, max_idx);
+}
+
+
+
+TEST(testArgMaxGPU, testWidthBound){
+	std::vector<float>* scores = new std::vector<float>;
+	int n = 4096*2;
+	for(int i = 0; i < n; i++){
+		scores->push_back(i);
+	}
+	auto c = argMaxBound(scores, 100);
+	EXPECT_EQ(c, 100);
+}
+
+
+
+TEST(testArgMaxGPU, testWidthBound2){
+	std::vector<float>* scores = new std::vector<float>;
+	int n = 4096*2;
+	for(int i = 0; i < n; i++){
+		scores->push_back(i);
+	}
+	auto c = argMaxBound(scores, 99999999);
+	EXPECT_EQ(c, n-1);
 }

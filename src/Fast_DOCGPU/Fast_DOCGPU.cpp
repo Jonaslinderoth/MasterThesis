@@ -6,13 +6,23 @@
 #include "../DOC_GPU/whatDataInCentroid.h"
 #include "MemSolver_Fast_DOC.h"
 
-Fast_DOCGPU::Fast_DOCGPU(std::vector<std::vector<float>*>* input, float alpha, float beta, float width) {
+Fast_DOCGPU::Fast_DOCGPU(std::vector<std::vector<float>*>* input, float alpha, float beta, float width, unsigned int d0) {
 	this->data = input;
 	this->alpha = alpha;
 	this->width = width;
 	this->beta = beta;
 	this->size = data->size();
 	this->dim = data->at(0)->size();
+	if(d0 == 0){
+		if(input->size() > 0){
+			this->d0 = input->at(0)->size();		
+		}else{
+			this->d0 = 1;
+		}
+
+	}else{
+		this->d0 = d0;
+	}
 }
 
 
@@ -154,7 +164,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 	checkCudaErrors(cudaFreeHost(data_h)); // the data is not used on the host side any more
 
 
-
 	// allocating memory for findDim
 	bool* findDim_d;
 	unsigned int* findDim_count_d;
@@ -163,15 +172,19 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 
 	// allocating memory for pointsContained
 	bool* pointsContained_d;
-	unsigned int* pointsContained_count_d;
 	checkCudaErrors(cudaMalloc((void **) &pointsContained_d, sizes.size_of_pointsContained));
-	checkCudaErrors(cudaMalloc((void **) &pointsContained_count_d, sizes.size_of_pointsContained_count));
 
 
 	//allocating memory for index
 	unsigned int* index_d;
 	checkCudaErrors(cudaMalloc((void **) &index_d, sizes.size_of_index));
 
+
+	// allocate for deletion
+	size_t sizeOfPrefixSum = (number_of_points+1)*sizeof(unsigned int); // +1 because of the prefixSum
+	unsigned int* prefixSum_d;
+	checkCudaErrors(cudaMalloc((void**) &prefixSum_d,   sizeOfPrefixSum));
+	
 	// Declaring variables used in the loop
 	double number_of_centroids_sample;
 	double number_of_centroids_max;
@@ -243,8 +256,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 
 			
 			// Find highest scoring
-			argMaxKernel(dimGrid, dimBlock, sharedMemSize, stream1, findDim_count_d, index_d, arr_sizes.number_of_samples);
-		
+			argMaxKernelWidthUpperBound(dimGrid, dimBlock, sharedMemSize, stream1, findDim_count_d, index_d, arr_sizes.number_of_samples, this->d0);
+
+			
 			// Output Points in that cluster, along with the dimensions and centroid
 			unsigned int* best_index_h = (unsigned int*) malloc(sizeof(unsigned int));
 			checkCudaErrors(cudaMemcpyAsync(best_index_h, index_d, sizeof(unsigned int), cudaMemcpyDeviceToHost, stream1));
@@ -268,22 +282,25 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 				
 				whatDataIsInCentroid(stream1,dimBlock,
 									 pointsContained_d,
-									 pointsContained_count_d,
 									 data_d,
 									 centroids_d+(((size_t)(best_index_h[0]/m))),
 									 findDim_d+(best_index_h[0]*dim),
 									 width,
 									 dim,
 									 number_of_points);
+
+				//prefixsum....
 												 
 
 				// Allocate space for the size of the cluster
+				sum_scan_blelloch(stream1, prefixSum_d,pointsContained_d,(number_of_points+1), true);
 				unsigned int* cluster_size_h = (unsigned int*) malloc(sizeof(unsigned int));
-				checkCudaErrors(cudaMemcpyAsync(cluster_size_h, pointsContained_count_d,
+				checkCudaErrors(cudaMemcpyAsync(cluster_size_h, prefixSum_d+number_of_points,
 												sizeof(unsigned int), cudaMemcpyDeviceToHost, stream1));
 
 				// make sure that the size have arrived on the host side
 				cudaStreamSynchronize(stream1);
+				cluster_size_h[0] = number_of_points-cluster_size_h[0];
 				// allocate space for the cluster on host side, and copy it.
 				unsigned int size_of_cluster = cluster_size_h[0]*dim*sizeof(float);
 
@@ -308,8 +325,12 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 					cudaStreamSynchronize(stream1);
 					assert(sizes.size_of_data >= number_of_points*dim*sizeof(float));
 
-					deleteFromArray(stream1, outputCluster_d, pointsContained_d,
-									data_d, number_of_points, dim, true);
+					// deleteFromArray(stream1, outputCluster_d, pointsContained_d,
+					// 				data_d, number_of_points, dim, true);
+
+					deleteFromArrayWrapper(ceilf((float)(number_of_points*dim)/dimBlock), dimBlock,
+										   stream1, data_d, prefixSum_d, 
+										   number_of_points, dim, outputCluster_d);
 					
 					// copy the cluster to Host
 					float* cluster_h;
@@ -357,8 +378,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 		float* newData_d = outputCluster_d+res.first->size()*dim;
 		// Delete the extracted cluster from the data
 		assert(sizes.size_of_data >= number_of_points*dim*sizeof(float));
-		deleteFromArray(stream2, data_d, bestDims_d, data_d, number_of_points, dim);
-		size_t a = res.first->size(); // <<---- Seg fault
+		deleteFromArray(stream2, newData_d, bestDims_d, data_d, number_of_points, dim);
+		size_t a = res.first->size();
 		number_of_points -= a;
 		result.push_back(res);
 
@@ -384,7 +405,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 	checkCudaErrors(cudaFree(findDim_d));
 	checkCudaErrors(cudaFree(findDim_count_d));
 	checkCudaErrors(cudaFree(pointsContained_d));
-	checkCudaErrors(cudaFree(pointsContained_count_d));
 	checkCudaErrors(cudaFree(index_d));
 	
 

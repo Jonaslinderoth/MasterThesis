@@ -846,7 +846,6 @@ void pointsContainedKernelFewPoints(unsigned int dimGrid,
 	whatDataIsInCentroidFewPoints(stream,
 								  dimBlockgpuDimensionChanger,
 								  output,
-								  Csum_out,
 								  d_reducedData,
 								  centroids,
 								  width,
@@ -946,8 +945,12 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 
 
 	// Call kernel
-	pointsContainedDeviceNaive<<<ceil((no_of_dims)/256.0), 256>>>(data_d, centroids_d, dims_d, output_d, output_count_d,
-															 width, point_dim, no_of_points, no_of_dims, m);
+	pointsContainedDeviceNaive<<<ceil((no_of_dims)/256.0), 256>>>(data_d,
+																  centroids_d,
+																  dims_d,
+																  output_d,
+																  output_count_d,
+																  width, point_dim, no_of_points, no_of_dims, m);
 
 
 	// copy from device
