@@ -280,7 +280,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 										   width, dim, number_of_points, 1, 1);
 				*/
 				
-				whatDataIsInCentroid(stream1,dimBlock,
+				whatDataIsInCentroid(dimGrid,
+									 dimBlock,
+									 stream1,
 									 pointsContained_d,
 									 data_d,
 									 centroids_d+(((size_t)(best_index_h[0]/m))),

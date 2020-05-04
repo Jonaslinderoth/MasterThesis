@@ -26,7 +26,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
 					    int m,  float width = 10.0);
 */
 
-int argMax(std::vector<float>* scores);
+
 
 
 //std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>

@@ -79,19 +79,6 @@ void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid,
 												unsigned int numberOfCentroids);
 
 
-void pointsContainedKernelFewPoints(unsigned int dimGrid,
-									unsigned int dimBlock,
-									cudaStream_t stream,
-									float* data,
-									unsigned int* centroids,
-									bool* dims,
-									bool* output,
-									unsigned int* Csum_out,
-									float width,
-									unsigned int point_dim,
-									unsigned int no_data,
-									unsigned int m,
-									unsigned int numberOfCentroids);
 
 void notBoolArray(unsigned int dimBlock,
 				  cudaStream_t stream,

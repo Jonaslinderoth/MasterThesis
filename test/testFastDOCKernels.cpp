@@ -95,8 +95,9 @@ TEST(testFastDOCKernels, testSmall){
 	cudaStream_t stream1;
 	cudaStreamCreate(&stream1);
 
-	whatDataIsInCentroid(stream1,
+	whatDataIsInCentroid(1,
 						 1024,
+						 stream1,
 						 output_d,
 						 data_d,
 						 centroid_d,
@@ -227,8 +228,9 @@ TEST(testFastDOCKernels, _SUPER_SLOW_testMedium){
 			cudaStream_t stream1;
 			cudaStreamCreate(&stream1);
 
-			whatDataIsInCentroid(stream1,
+			whatDataIsInCentroid(5,
 								 1024,
+								 stream1,
 								 output_d,
 								 data_d,
 								 centroid_d,
