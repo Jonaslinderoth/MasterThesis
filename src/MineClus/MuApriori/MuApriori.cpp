@@ -6,14 +6,13 @@ MuApriori::MuApriori(std::vector<boost::dynamic_bitset<>>* itemSet, unsigned int
 	this->minSupp = minSupp;
 	this->beta = beta;
 
-	this->bestCandidates = new std::priority_queue<OutputCandidate, std::vector<OutputCandidate>,  CustomCompare>;
+	this->bestCandidate = nullptr;
 	this->centroidNr = 0;
 };
 
 std::vector<Candidate*>* MuApriori::createInitialCandidates(){
 	std::vector<Candidate*>* result = new std::vector<Candidate*>;
 	size_t dim = this->itemSet->at(0).size();
-
 	for(unsigned int i = 0; i<dim; i++){
 		Candidate* c = new Candidate;
 		c->item = boost::dynamic_bitset<>(dim,0);
@@ -22,7 +21,6 @@ std::vector<Candidate*>* MuApriori::createInitialCandidates(){
 		c->score = 0;
 		result->push_back(c);
 	}
-	
 	for(unsigned int i = 0; i<this->itemSet->size(); i++){
 		size_t index = this->itemSet->at(i).find_first();
 		while(index != boost::dynamic_bitset<>::npos){
@@ -30,24 +28,15 @@ std::vector<Candidate*>* MuApriori::createInitialCandidates(){
 			index = this->itemSet->at(i).find_next(index);
 		}
 	}
-
 	unsigned int i = 0;
 	while(i< result->size()){
 		if(result->at(i)->support < this->minSupp){
 			result->erase(result->begin()+i); // todo better delete
 		}else{
 			result->at(i)->score = this->mu(result->at(i)->support, result->at(i)->item.count());
-			if(this->bestCandidates->size() < this->numberOfCandidates){
-				auto cand = (OutputCandidate)(*(result->at(i)));
-				cand.centroidNr = this->centroidNr;
-				this->bestCandidates->push(cand);
-			}else{
-				if(this->bestCandidates->top().score < result->at(i)->score){
-					this->bestCandidates->pop();
-					auto cand = (OutputCandidate)(*(result->at(i)));
-					cand.centroidNr = this->centroidNr;
-					this->bestCandidates->push(cand);
-				}
+			if(this->bestCandidate == nullptr || this->bestCandidate->score < result->at(i)->score){
+				auto cand = new OutputCandidate(*(result->at(i)));
+				this->bestCandidate = cand;
 			}
 
 			
@@ -69,7 +58,7 @@ std::vector<Candidate*>* MuApriori::createKthCandidates(unsigned int k, std::vec
 			boost::dynamic_bitset<> intersection = boost::dynamic_bitset<>(prevCandidates->at(i)->item);
 			intersection &= (prevCandidates->at(j)->item);
 			size_t intersection_count = intersection.count();
-			if(intersection_count >= k-2){ 
+			if(intersection_count == k-2){ 
 				boost::dynamic_bitset<> union2 = boost::dynamic_bitset<>(prevCandidates->at(i)->item);
 				union2 |= prevCandidates->at(j)->item;
 				size_t union_count = union2.count();
@@ -112,17 +101,11 @@ std::vector<Candidate*>* MuApriori::createKthCandidates(unsigned int k, std::vec
 			result->erase(result->begin()+i); // todo better delete
 		}else{
 			result->at(i)->score = this->mu(result->at(i)->support, result->at(i)->item.count());
-			if(this->bestCandidates->size() < this->numberOfCandidates){
-				auto cand = (OutputCandidate)(*(result->at(i)));
-				cand.centroidNr = this->centroidNr;
-				this->bestCandidates->push(cand);
-			}else{
-				if(this->bestCandidates->top().score < result->at(i)->score){
-					this->bestCandidates->pop();
-					auto cand = (OutputCandidate)(*(result->at(i)));
-					cand.centroidNr = this->centroidNr;
-					this->bestCandidates->push(cand);
-				}
+			
+			if(this->bestCandidate == nullptr || this->bestCandidate->score < result->at(i)->score){
+				auto cand = new OutputCandidate(*(result->at(i)));
+				cand->centroidNr = this->centroidNr;
+				this->bestCandidate = cand;
 			}
 			i++;
 		}
@@ -151,3 +134,6 @@ void MuApriori::findBest(unsigned int numberOfBest){
 	}
 
 };
+
+
+
