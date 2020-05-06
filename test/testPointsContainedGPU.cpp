@@ -592,8 +592,8 @@ TEST_F(testPointsContainedGPU, _SUPER_SLOW_testIfDifferentPointContainedDeviceKe
 	static std::random_device rand;
 	std::uniform_int_distribution<int> distSmall(6, 20);
 	std::uniform_int_distribution<int> distBig(400, 4000);
-	unsigned long small = distSmall(rand);
-	unsigned long big = distBig(rand);
+	unsigned long small = 20;
+	unsigned long big = 4000;
 
 
 	for(unsigned long point_dim = 10 ; point_dim < 400-small ; point_dim += small){
@@ -648,15 +648,35 @@ TEST_F(testPointsContainedGPU, _SUPER_SLOW_testIfDifferentPointContainedDeviceKe
 				auto c1 = pointsContained(dims, data, centroids,m,10,1);
 				auto c2 = pointsContained(dims, data, centroids,m,10,2);
 				auto c3 = pointsContained(dims, data, centroids,m,10,3);
-				auto c4 = pointsContained(dims, data, centroids,m,10,4);
+				//auto c4 = pointsContained(dims, data, centroids,m,10,4);
+				auto c5 = pointsContained(dims, data, centroids,m,10,5,2);
 
-
+				std::cout << "done with gpu" << std::endl;
+				if(not areTheyEqual_h(c1,c0)){
+					std::cout << "error c1" << std::endl;
+				}
+				if(not areTheyEqual_h(c2,c0)){
+					std::cout << "error c2" << std::endl;
+				}
+				if(not areTheyEqual_h(c3,c0)){
+					std::cout << "error c3" << std::endl;
+				}
+				/*
+				if(not areTheyEqual_h(c4,c0)){
+					std::cout << "error c4" << std::endl;
+				}
+				*/
+				if(not areTheyEqual_h(c5,c0)){
+					std::cout << "error c5" << std::endl;
+				}
 
 				EXPECT_TRUE(areTheyEqual_h(c1,c0)) << "c1 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
 				EXPECT_TRUE(areTheyEqual_h(c2,c0)) << "c2 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
 				EXPECT_TRUE(areTheyEqual_h(c3,c0)) << "c3 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
-				EXPECT_TRUE(areTheyEqual_h(c4,c0)) << "c4 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
+				//EXPECT_TRUE(areTheyEqual_h(c4,c0)) << "c4 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
+				EXPECT_TRUE(areTheyEqual_h(c5,c0)) << "c5 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
 
+				std::cout << "deleting now" << std::endl;
                 for(int i = 0; i < c1.first->size(); i++){
                     delete c1.first->at(i);
                 }
@@ -670,11 +690,17 @@ TEST_F(testPointsContainedGPU, _SUPER_SLOW_testIfDifferentPointContainedDeviceKe
 				for(int i = 0; i < c3.first->size(); i++){
 					delete c3.first->at(i);
 				}
+				/*
 				delete c3.second;
 				for(int i = 0; i < c4.first->size(); i++){
 					delete c4.first->at(i);
 				}
 				delete c4.second;
+				*/
+				for(int i = 0; i < c5.first->size(); i++){
+					delete c5.first->at(i);
+				}
+				delete c5.second;
 
 				for(int i = 0; i < data->size(); i++){
 				    delete data->at(i);
@@ -687,7 +713,7 @@ TEST_F(testPointsContainedGPU, _SUPER_SLOW_testIfDifferentPointContainedDeviceKe
                 }
 				delete dims;
 
-				//EXPECT_TRUE(areTheyEqual_h(c3,c0)) << " point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
+				EXPECT_TRUE(areTheyEqual_h(c3,c0)) << " point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
 
 
 			}

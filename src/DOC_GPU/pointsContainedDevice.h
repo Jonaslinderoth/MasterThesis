@@ -27,6 +27,25 @@ void pointsContainedKernelNaive(unsigned int dimGrid,
 								unsigned int m);
 
 /*
+ * this does not have data in shared memory
+ */
+void pointsContainedKernelNaiveBreak(unsigned int dimGrid,
+									 unsigned int dimBlock,
+									 cudaStream_t stream,
+									 float* data,
+									 unsigned int* centroids,
+									 bool* dims,
+									 bool* output,
+									 unsigned int* Csum_out,
+									 float width,
+									 unsigned int point_dim,
+									 unsigned int no_data,
+									 unsigned int no_dims,
+									 unsigned int m,
+									 unsigned int breakingIntervall);
+
+
+/*
  * this fuction has the data and the centroids in Shared Memory
  * the centroid and at least one data points need to be able to fit into shared memory to being able to work
  */
