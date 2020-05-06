@@ -55,6 +55,10 @@ std::vector<OutputCandidate*>* MineClus::findClusterCandidates(){
 std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> MineClus::findCluster(){
 
 	auto clusterCandidates = this->findClusterCandidates();
+	if(clusterCandidates->size() < 1){
+		auto tmp = std::make_pair(new std::vector<std::vector<float>*>, new std::vector<bool>);
+		return tmp;
+	}
 	OutputCandidate* best = nullptr;
 	for(unsigned int i = 0; i <clusterCandidates->size(); i++){
 		if(clusterCandidates->at(i) != nullptr && (best == nullptr || best->score < clusterCandidates->at(i)->score)){
@@ -106,6 +110,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 	while(res.size() < k){
 		if(this->data->size() <= 0) {break;}
 		auto clusterCandidates = this->findClusterCandidates();
+		if(clusterCandidates->size() < 1){
+			break;
+		}
 		std::vector<OutputCandidate*>* clusters = new std::vector<OutputCandidate*>();
 		if (this->concurent == true){
 			std::sort(clusterCandidates->begin(), clusterCandidates->end(),

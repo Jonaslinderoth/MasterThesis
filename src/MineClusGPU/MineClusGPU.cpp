@@ -66,8 +66,12 @@ float* MineClusGPU::transformData(){
  * Find a single cluster, uses the function to find multiple clusters
  */
 std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> MineClusGPU::findCluster(){
-	auto result = findKClusters(1).at(0);
-	return result;
+	auto result = findKClusters(1);
+	if (result.size() == 0){
+		return std::make_pair(new std::vector<std::vector<float>*>, new std::vector<bool>);
+	}else{
+		return result.at(0);	
+	}
 };
 
 /**
@@ -619,7 +623,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 	
 	// Sort the result at the end, such that the highest scoring is first
 	// This is not guaranteed if the concurrent mode are enabled
-
 	std::sort(result.begin(), result.end(), [&](const std::pair<std::vector<
 												std::vector<float>*>*, std::vector<bool>*>& lhs,
 												const std::pair<std::vector<std::vector<float>*>*,

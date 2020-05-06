@@ -65,8 +65,12 @@ float* MineClusGPUnified::transformData(){
  * Find a single cluster, uses the function to find multiple clusters
  */
 std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> MineClusGPUnified::findCluster(){
-	auto result = findKClusters(1).at(0);
-	return result;
+	auto result = findKClusters(1);
+	if (result.size() == 0){
+		return std::make_pair(new std::vector<std::vector<float>*>, new std::vector<bool>);
+	}else{
+		return result.at(0);	
+	}
 };
 
 /**

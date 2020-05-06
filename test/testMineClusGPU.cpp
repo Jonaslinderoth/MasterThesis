@@ -1255,10 +1255,74 @@ TEST(testMineClusCompare, testNoise){
 	auto res = c.findKClusters(10);
 
 	EXPECT_EQ(res.size(), 0);
+	std::cout << "gpu done" <<std::endl;
+
+	auto cCPU = MineClus(data);
+	cCPU.setSeed(1);
+	auto resCPU = cCPU.findKClusters(1);
+	EXPECT_EQ(resCPU.size(), 0);	
+}
+
+
+
+TEST(testMineClusCompare, testNoise2){
+	std::default_random_engine gen;
+	gen.seed(100);
+	std::normal_distribution<double> noise(100.0,200000.0);
+	auto data = new std::vector<std::vector<float>*>;
+	{
+		for(int i = 0; i < 3000; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 66; j++){
+					point->push_back(noise(gen));					
+			}
+			data->push_back(point);
+		}
+	}
+
+
+	auto c = MineClusGPU(data);
+	c.setSeed(1);
+
+	auto res = c.findCluster();
+
+	EXPECT_EQ(res.first->size(), 0);
+	std::cout << "gpu done" <<std::endl;
+
+	auto cCPU = MineClus(data);
+	cCPU.setSeed(1);
+	auto resCPU = cCPU.findCluster();
+	EXPECT_EQ(resCPU.first->size(), 0);	
+}
+
+
+TEST(testMineClusCompare, testNoise3){
+	std::default_random_engine gen;
+	gen.seed(100);
+	std::normal_distribution<double> noise(100.0,200000.0);
+	auto data = new std::vector<std::vector<float>*>;
+	{
+		for(int i = 0; i < 3000; i++){
+			auto point = new std::vector<float>;
+			for(int j = 0; j < 66; j++){
+					point->push_back(noise(gen));					
+			}
+			data->push_back(point);
+		}
+	}
+
+
+	auto c = MineClusGPU(data);
+	c.setSeed(1);
+	c.setConcurentVersion(true);
+	auto res = c.findKClusters(10);
+
+	EXPECT_EQ(res.size(), 0);
 
 
 	auto cCPU = MineClus(data);
 	cCPU.setSeed(1);
+	cCPU.setConcurentVersion(true);
 	auto resCPU = cCPU.findKClusters(1);
 	EXPECT_EQ(resCPU.size(), 0);	
 }
