@@ -11,6 +11,13 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
 					std::vector<std::vector<unsigned int>*>* samples,
 					int m, float width = 10.0);
 
+
+
+std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
+	findDimmensionsChunk(std::vector<std::vector<float>*>* data,
+					std::vector<unsigned int>* centroids,
+					std::vector<std::vector<unsigned int>*>* samples,
+					int m, float width = 10.0);
 /*
 std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
 	pointsContainedSharedMemoryFewBank(std::vector<std::vector<bool>*>* dims,
@@ -19,7 +26,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*>
 					    int m,  float width = 10.0);
 */
 
-int argMax(std::vector<float>* scores);
+
 
 
 //std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>

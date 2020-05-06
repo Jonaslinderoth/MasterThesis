@@ -3,7 +3,7 @@
 #include "../src/DOC_GPU/DOCGPU_Kernels.h"
 #include "../src/DOC/HyperCube.h"
 #include "../src/randomCudaScripts/arrayEqual.h"
-#include "../src/DOC_GPU/whatDataInCentroid.h"
+#include "../src/Fast_DOCGPU/whatDataInCentroid.h"
 #include <random>
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
@@ -95,10 +95,10 @@ TEST(testFastDOCKernels, testSmall){
 	cudaStream_t stream1;
 	cudaStreamCreate(&stream1);
 
-	whatDataIsInCentroid(stream1,
+	whatDataIsInCentroid(1,
 						 1024,
+						 stream1,
 						 output_d,
-						 count_d,
 						 data_d,
 						 centroid_d,
 						 dim_d,
@@ -113,14 +113,11 @@ TEST(testFastDOCKernels, testSmall){
 		EXPECT_EQ(output_h[i], desired_output_h[i]) << "at index: " << i;
 	}
 	//count_h[0] = 0;
-	gpuErrchk(cudaMemcpy(count_h, count_d, size_of_count, cudaMemcpyDeviceToHost));
 
 	//if(count_h[0] != desired_count_h[0]){
 	//	std::cout << "count wrong is: " << count_h[0] << " shoud be " << desired_count_h[0] << std::endl;
 	//}
 
-
-	EXPECT_EQ(count_h[0] , desired_count_h[0]);
 
 }
 
@@ -231,10 +228,10 @@ TEST(testFastDOCKernels, _SUPER_SLOW_testMedium){
 			cudaStream_t stream1;
 			cudaStreamCreate(&stream1);
 
-			whatDataIsInCentroid(stream1,
+			whatDataIsInCentroid(5,
 								 1024,
+								 stream1,
 								 output_d,
-								 count_d,
 								 data_d,
 								 centroid_d,
 								 dim_d,
@@ -255,7 +252,6 @@ TEST(testFastDOCKernels, _SUPER_SLOW_testMedium){
 				indexData++;
 			}
 
-			gpuErrchk((cudaMemcpy(count_h, count_d, size_of_count, cudaMemcpyDeviceToHost)));
 
 
 

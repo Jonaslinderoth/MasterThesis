@@ -71,7 +71,7 @@ __global__ void countSupportSharedMemory(unsigned int* candidates, unsigned int*
 	//unsigned int nPoints = 62;
 	//unsigned int chunkSize = 6; // time 32 dimensions
 
-
+	bool firstIter = true;
 
 	unsigned int transactionsProcessed = 0;
 	unsigned int dimsProcessed = 0; 
@@ -119,7 +119,7 @@ __global__ void countSupportSharedMemory(unsigned int* candidates, unsigned int*
 			//if(blockIdx.x == 0) printf("tid %u transactionsProcessed < numberOfTransactions %u < %u | %u | %u\n", threadIdx.x, transactionsProcessed , numberOfTransactions, currentTransactionChunkSize, dimsProcessed);
 
 			// Load candidate into registers			
-			{
+			if(dim > 6*32 || firstIter){ // To avoid reloading the transactions if they do not change
 				unsigned int id = threadIdx.x%32 + blockIdx.x*32; /*the index of the candidate*/
 				if(id < numberOfCandidates){
 					for(unsigned int i = 0; i < currentDimChunkSize; i++){ // loads a candidate into registers
@@ -135,6 +135,7 @@ __global__ void countSupportSharedMemory(unsigned int* candidates, unsigned int*
 					}				
 				}
 			}
+			firstIter = false;
 
 			__syncthreads();
 			

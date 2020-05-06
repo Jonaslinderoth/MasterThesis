@@ -48,22 +48,9 @@ class MuApriori{
 		this->itemSet = itemSet;
 	};
 
-	std::vector<OutputCandidate*>* getBest(){
-		auto output = new std::vector<OutputCandidate*>;
-		auto numberOfCandidates = this->bestCandidates->size();
-		for(int i = 0; i < numberOfCandidates; i++){
-			OutputCandidate* c = new OutputCandidate;
-			c->item = (this->bestCandidates->top().item);
-			c->support = this->bestCandidates->top().support;
-			c->score = this->bestCandidates->top().score;
-			c->centroidNr = this->bestCandidates->top().centroidNr;
-			output->push_back(c);
-			this->bestCandidates->pop();
-		}
-		std::reverse(output->begin(),output->end());
-	 
-		return output;
-	}
+	OutputCandidate* getBest(){
+		return bestCandidate;
+	};
 	
  private:
 	float beta;
@@ -78,7 +65,7 @@ class MuApriori{
 	};
 
 	
-	std::priority_queue<OutputCandidate, std::vector<OutputCandidate>,  CustomCompare>* bestCandidates;
+	OutputCandidate* bestCandidate = nullptr;
 
 
 };

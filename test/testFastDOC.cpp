@@ -67,6 +67,11 @@ TEST(testFastDOC, testFindClusterSimple1GPU){
 	auto res = c->findCluster();
 
 	EXPECT_EQ(res.first->size(), 4);
+	EXPECT_EQ(res.first->at(0)->size(), 2);
+	EXPECT_EQ(res.first->at(1)->size(), 2);
+	EXPECT_EQ(res.first->at(2)->size(), 2);
+	EXPECT_EQ(res.first->at(3)->size(), 2);
+	
 	EXPECT_EQ(res.first->at(0)->at(0), 1);
 	EXPECT_EQ(res.first->at(1)->at(0), 2);
 	EXPECT_EQ(res.first->at(2)->at(0), 3);

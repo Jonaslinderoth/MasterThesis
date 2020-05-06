@@ -1,7 +1,7 @@
 #include "pointsContainedDevice.h"
 #include "../randomCudaScripts/Utils.h"
 #include "../randomCudaScripts/DeleteFromArray.h"
-#include "whatDataInCentroid.h"
+#include "../Fast_DOCGPU/whatDataInCentroid.h"
 #include <assert.h>
 #include <utility>
 #include <vector>
@@ -135,12 +135,22 @@ __global__ void pointsContainedDeviceSharedMemory(float* data,
 	const unsigned int indexOfCentroidToCentroids = blockIdx.x/blocksWithSameCentroid;
 	const unsigned int indexOfCentroidInDataNoDims_f = centroids[indexOfCentroidToCentroids]*point_dim;
 	//we want to move the centroid to shared memory.
-	if(threadIdx.x < point_dim){
-		const long offsetByDimension_f = threadIdx.x;
-		const unsigned long indexOfCentroidInData_f = indexOfCentroidInDataNoDims_f + offsetByDimension_f;
-		const float partOfACentroid_f = data[indexOfCentroidInData_f];
-		centroidSharedMemory[offsetByDimension_f] = partOfACentroid_f;
+	// if(threadIdx.x < point_dim){  // OBS... This kernel will not work for dims higher than the block size
+	// 	const long offsetByDimension_f = threadIdx.x;
+	// 	const unsigned long indexOfCentroidInData_f = indexOfCentroidInDataNoDims_f + offsetByDimension_f;
+	// 	const float partOfACentroid_f = data[indexOfCentroidInData_f];
+	// 	centroidSharedMemory[offsetByDimension_f] = partOfACentroid_f;
+	// }
+
+	for(unsigned int i = 0; i < ceilf((float)point_dim/blockDim.x); i++){
+		const unsigned int j = i*blockDim.x+threadIdx.x;
+		if(j < point_dim){
+			centroidSharedMemory[j] = data[indexOfCentroidInDataNoDims_f+j];
+		}
 	}
+
+	// it is okay to not have 
+	
 
 	const unsigned long howLongOnM_p = ( blockIdx.x % blocksWithSameCentroid ) * blockDim.x + threadIdx.x;
 	const unsigned long whatM = blockIdx.x / blocksWithSameCentroid;
@@ -152,52 +162,21 @@ __global__ void pointsContainedDeviceSharedMemory(float* data,
 	// times the threads will need to copy data from global to shared memory.
 	const unsigned long no_data_f = no_data_p*point_dim;
 	const unsigned long dataSharedMemorySize_p = dataSharedMemorySize_f/point_dim;
-	//assert(dataSharedMemorySize_f%point_dim == 0);
-	//testing variables
-	//const unsigned long i = 1;
-	//const unsigned long j = 414;
 
 
 	for(unsigned long i_p = 0 ; i_p < no_data_p ; i_p += dataSharedMemorySize_p){
 		//copy the data from global to shared memory
 		for(unsigned long indexCopy_f = 0 ; indexCopy_f < dataSharedMemorySize_f ; indexCopy_f+=blockDim.x){
-
 			const unsigned long indexInSharedMemory_f = indexCopy_f + threadIdx.x;
-
 			const unsigned long indexInData_f = i_p*point_dim + indexCopy_f +threadIdx.x;
-
 			if(indexInData_f < no_data_f and indexInSharedMemory_f < dataSharedMemorySize_f ){
 				dataSharedMemory[indexInSharedMemory_f] = data[indexInData_f];
-				/*
-				if(indexInSharedMemory_f >= j*point_dim and indexInSharedMemory_f < j*point_dim+4 and blockIdx.x == 0 ){
-					printf("data[indexInData_f] %f \n indexInData_f: %lu \n indexInSharedMemory_f %lu \n whatM %lu \n ammountOfSamplesThatUseSameCentroid: %u \n",
-																								data[indexInData_f],
-																								indexInData_f,
-																								indexInSharedMemory_f,
-																								whatM,
-																								ammountOfSamplesThatUseSameCentroid);
-				}*/
-
 			}
 		}
 		__syncthreads();
-		/*
-		if(offEntry_p == i){
-			printf("done with movinf data from global dataSharedMemorySize_p %lu \n" , dataSharedMemorySize_p);
-		}*/
 
 		const unsigned long ammountOfPointsLeft = no_data_p-i_p;
-		for(unsigned long indexDataSM_p = 0 ; indexDataSM_p < dataSharedMemorySize_p ; indexDataSM_p++)
-		{
-			/*
-			if(offEntry_p == i and indexDataSM_p == j){
-				printf("in the for loop i_p: %lu \n" , i_p);
-			}
-
-			if(offEntry_p == i and indexDataSM_p == j){
-				printf("before if statement \n");
-			}*/
-
+		for(unsigned long indexDataSM_p = 0 ; indexDataSM_p < dataSharedMemorySize_p ; indexDataSM_p++){
 			const unsigned long indexDimsNoDimension_f = offEntry_p * point_dim;
 			const unsigned long indexPointDataSM_p = indexDataSM_p;
 			const unsigned long indexOutput_p = offEntry_p * no_data_p + i_p + indexDataSM_p;
@@ -212,44 +191,14 @@ __global__ void pointsContainedDeviceSharedMemory(float* data,
 
 					const unsigned long indexDataSM_f = indexPointDataSM_p*point_dim + dimensionIndex_f;
 					const unsigned long indexDims_f = indexDimsNoDimension_f + dimensionIndex_f;
-					//assert(indexDims_f < no_dims*point_dim);
 					const bool dim = dims[indexDims_f];
 					const float cen = centroidSharedMemory[dimensionIndex_f];
-					//assert(indexDataSM_f < dataSharedMemorySize_f);
 					const float dat = dataSharedMemory[indexDataSM_f];
 					d &= (not (dim)) || (abs(cen - dat) < width);
 
 				}
-
-				//assert(indexOutput_p < ammountOfSamplesThatUseSameCentroid*numberOfCentroids*no_data_p);
-
 				output[indexOutput_p] = d;
 				Csum += d;
-				/*
-				assert(Csum == csum2 or Csum == csum2+1);
-
-				if(offEntry_p == i and i_p + indexDataSM_p == j){
-					printf(" fancy: %d \n indexDimsNoDimension_f %lu \n indexPointDataSM_p: %lu \n indexOutput_p: %lu \n centroidSharedMemory %f %f %f %f \n dataSharedMemory %f %f %f %f \n idexesInSharedMemory: %lu %lu %lu %lu \n threadId: %u \n blockId: %u \n dataSharedMemorySize_f: %u \n" , d ,
-																		   indexDimsNoDimension_f,
-																		   indexPointDataSM_p,
-																		   indexOutput_p,
-																		   centroidSharedMemory[0],
-																		   centroidSharedMemory[1],
-																		   centroidSharedMemory[2],
-																		   centroidSharedMemory[3],
-																		   dataSharedMemory[indexPointDataSM_p*point_dim+0],
-																		   dataSharedMemory[indexPointDataSM_p*point_dim+1],
-																		   dataSharedMemory[indexPointDataSM_p*point_dim+2],
-																		   dataSharedMemory[indexPointDataSM_p*point_dim+3],
-																		   indexPointDataSM_p*point_dim + 0,
-																		   indexPointDataSM_p*point_dim + 1,
-																		   indexPointDataSM_p*point_dim + 2,
-																		   indexPointDataSM_p*point_dim + 3,
-																		   threadIdx.x,
-																		   blockIdx.x,
-																		   dataSharedMemorySize_f);
-				}
-				*/
 			}
 
 		}
@@ -259,17 +208,6 @@ __global__ void pointsContainedDeviceSharedMemory(float* data,
 
 	if(offEntry_p < no_dims and howLongOnM_p < ammountOfSamplesThatUseSameCentroid){
 		Csum_out[offEntry_p] = Csum;
-		/*
-		if(offEntry_p == 1 and false){
-
-			printf("howLongOnM_p: %lu \n blockIdx.x: %u \n blocksWithSameCentroid: %u \n ammountOfSamplesThatUseSameCentroid: %u \n Csum %u \n",howLongOnM_p,
-																																	 	 	 	blockIdx.x,
-																																	 	 	 	blocksWithSameCentroid,
-																																	 	 	 	ammountOfSamplesThatUseSameCentroid,
-																																	 	 	 	Csum);
-
-
-		}*/
 
 	}
 
@@ -299,11 +237,21 @@ __global__ void pointsContainedDeviceSharedMemoryFewBank(float* __restrict__ dat
 	const unsigned int indexOfCentroidToCentroids = blockIdx.x/blocksWithSameCentroid;
 	const unsigned int indexOfCentroidInDataNoDims_f = centroids[indexOfCentroidToCentroids]*point_dim;
 	//we want to move the centroid to shared memory.
-	if(threadIdx.x < point_dim){
-		const long offsetByDimension_f = threadIdx.x;
-		const unsigned long indexOfCentroidInData_f = indexOfCentroidInDataNoDims_f + offsetByDimension_f;
-		const float partOfACentroid_f = data[indexOfCentroidInData_f];
-		centroidSharedMemory[offsetByDimension_f] = partOfACentroid_f;
+
+	// // This only allows for medoids of upt to block
+	// if(threadIdx.x < point_dim){
+	// 	const long offsetByDimension_f = threadIdx.x;
+	// 	const unsigned long indexOfCentroidInData_f = indexOfCentroidInDataNoDims_f + offsetByDimension_f;
+	// 	const float partOfACentroid_f = data[indexOfCentroidInData_f];
+	// 	centroidSharedMemory[offsetByDimension_f] = partOfACentroid_f;
+	// }
+
+	
+	for(unsigned int i = 0; i < ceilf((float)point_dim/blockDim.x); i++){
+		const unsigned int j = i*blockDim.x+threadIdx.x;
+		if(j < point_dim){
+			centroidSharedMemory[j] = data[indexOfCentroidInDataNoDims_f+j];
+		}
 	}
 	//now i have the centroid in shared memory. but its going to cause bank conflicts :( , TODO fix this.
 
@@ -527,60 +475,6 @@ __global__ void pointsContainedDeviceSharedMemoryFewerBank(float* __restrict__ d
 
 }
 
-__global__ void gpuWhereThingsGo(unsigned int* d_outData,
-								const unsigned int* d_data,
-								const unsigned int size){
-	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
-	/*
-	if(idx == 0){
-		printf("size %u \n",size);
-	}*/
-	if(idx < size){
-		d_outData[idx] = size+2;
-		const unsigned int offset = d_data[idx];
-		unsigned int nextOffset = offset+1;
-		if(idx != size-1){
-			nextOffset = d_data[idx+1];
-		}
-
-		if(offset == nextOffset){
-			d_outData[idx] = idx-offset;
-		}
-	}
-
-}
-
-
-
-
-
-__global__ void gpuDimensionChanger(float* d_outData,
-								    const unsigned int* d_wereThingsGoArray,
-								    const float* d_data,
-								    const unsigned int numElements,
-								    const unsigned int dimensions,
-								    const unsigned int dimensionRemaning){
-	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
-	/*
-	if(idx == 0){
-		printf("numElements %u \n",numElements);
-		printf("dimensions %u \n",dimensions);
-		printf("dimensionRemaning %u \n",dimensionRemaning);
-	}*/
-	if(idx < numElements*dimensions){
-
-		const size_t pointIdex = idx/dimensions;
-		const size_t dimIndex = idx%dimensions;
-		const size_t newPointIdex = pointIdex*dimensionRemaning;
-		const size_t go = d_wereThingsGoArray[dimIndex];
-		if(go<dimensions){
-			const size_t newIndex = newPointIdex+go;
-			const float theData = d_data[idx];
-			d_outData[newIndex] = theData;
-		}
-	}
-
-}
 
 __global__ void gpuNotBoolArray(bool* inputAndOutPut,
 							 std::size_t lenght){
@@ -856,145 +750,6 @@ void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid,
 };
 
 
-void pointsContainedKernelFewPoints(unsigned int dimGrid,
-									unsigned int dimBlock,
-									cudaStream_t stream,
-									float* data,
-									unsigned int* centroids,
-									bool* dims,
-									bool* output,
-									unsigned int* Csum_out,
-									float width,
-									unsigned int point_dim,
-									unsigned int no_data,
-									unsigned int m,
-									unsigned int numberOfCentroids){
-
-	/*
-	//test stuff
-	int size_of_dims = sizeof(bool)*point_dim;
-	bool* h_dims = (bool*)malloc(size_of_dims);
-	cudaMemcpy(h_dims, dims, size_of_dims, cudaMemcpyDeviceToHost);
-	std::cout << "dims not negated" << std::endl;
-	for(int i = 0 ; i < point_dim ; ++i){
-		std::cout << h_dims[i] << " ";
-	}
-	std::cout << std::endl;
-	*/
-
-	//i want a prefix sum of what dimensions are used.
-	int size_of_out_blelloch = sizeof(unsigned int)*(point_dim+1);
-
-
-	unsigned int* d_out_blelloch;
-	checkCudaErrors(cudaMalloc(&d_out_blelloch, size_of_out_blelloch));
-	/*
-	//we try to not that array
-	notBoolArray(dimBlock,stream,dims,point_dim);
-	*/
-	sum_scan_blelloch(stream, d_out_blelloch,dims,point_dim+1, true);
-
-	unsigned int* h_out_blelloch;
-	cudaMallocHost(&h_out_blelloch,sizeof(unsigned int));
-	cudaMemcpy(h_out_blelloch, d_out_blelloch+point_dim, sizeof(unsigned int), cudaMemcpyDeviceToHost);
-	/*
-	//this was to test that it worked
-	unsigned int* h_out_blelloch_all;
-	cudaMallocHost(&h_out_blelloch_all,sizeof(unsigned int)*(point_dim+1));
-	cudaMemcpy(h_out_blelloch_all, d_out_blelloch, sizeof(unsigned int)*(point_dim+1), cudaMemcpyDeviceToHost);
-
-	std::cout << "out_blelloch" << std::endl;
-	for(int i = 0 ; i < point_dim+1 ; ++i){
-		std::cout << h_out_blelloch_all[i] << " ";
-	}
-	std::cout << std::endl;
-	*/
-
-	//std::cout << "h_out_blelloch[0] " << h_out_blelloch[0] << std::endl;
-	//std::cout << "point_dim " << point_dim << std::endl;
-
-	const unsigned int dimensionsLeft = point_dim-(h_out_blelloch[0]);
-	/*
-	std::cout << "h_out_blelloch[0] " << h_out_blelloch[0] << std::endl;
-	std::cout << "point_dim " << point_dim << std::endl;
-	std::cout << "dimensionsLeft " << dimensionsLeft << std::endl;
-	std::cout << "m " << m << std::endl;
-	*/
-
-
-	unsigned int* d_out_whereThingsGo;
-	checkCudaErrors(cudaMalloc(&d_out_whereThingsGo, size_of_out_blelloch));
-
-	const unsigned int dimBlockWhereThingsGo = dimBlock;
-	unsigned int dimGridWhereThingsGo = point_dim/dimBlock;
-	if(point_dim%dimBlock != 0){
-		dimGridWhereThingsGo++;
-	}
-
-	gpuWhereThingsGo<<<dimGridWhereThingsGo,dimBlockWhereThingsGo,0,stream>>>(d_out_whereThingsGo,d_out_blelloch,point_dim);
-
-	/*
-	//this is for testing that the output is the right one
-	unsigned int* h_out_whereThingsGo = (unsigned int*)malloc(size_of_out_blelloch);
-	cudaMemcpy(h_out_whereThingsGo, d_out_whereThingsGo, size_of_out_blelloch, cudaMemcpyDeviceToHost);
-	std::cout << "h_out_whereThingsGo" << std::endl;
-	for(int i = 0 ; i < point_dim ; ++i){
-		std::cout << h_out_whereThingsGo[i] << " ";
-	}
-	std::cout << std::endl;
-	*/
-
-	unsigned int size_of_reducedData = sizeof(float)*dimensionsLeft*no_data;
-	//std::cout << "reducedDimension*no_data " << reducedDimension*no_data << std::endl;
-
-	float* d_reducedData;
-	checkCudaErrors(cudaMalloc(&d_reducedData, size_of_reducedData));
-
-	const unsigned int dimBlockgpuDimensionChanger = dimBlock;
-	unsigned int dimGridgpuDimensionChanger = (no_data*point_dim)/dimBlock;
-	if((no_data*point_dim)%dimBlock != 0){
-		dimGridgpuDimensionChanger++;
-	}
-	//std::cout << "point_dim " << point_dim << std::endl;
-	gpuDimensionChanger<<<dimGridgpuDimensionChanger,dimBlockgpuDimensionChanger,0,stream>>>(d_reducedData,d_out_whereThingsGo,data,no_data,point_dim,dimensionsLeft);
-
-
-	/*
-	//this is for testing that the output is the right one
-	float* h_data = (float*)malloc(no_data*point_dim*sizeof(float));
-	cudaMemcpy(h_data, data, no_data*point_dim*sizeof(float), cudaMemcpyDeviceToHost);
-	std::cout << "dimensionsLeft " << dimensionsLeft << std::endl;
-	std::cout << "data" << std::endl;
-	for(int i = 0 ; i < no_data*point_dim ; ++i){
-		std::cout << h_data[i] << " ";
-	}
-	std::cout << std::endl;
-
-	float* h_out_gpuDimensionChanger = (float*)malloc(size_of_reducedData);
-	cudaMemcpy(h_out_gpuDimensionChanger, d_reducedData, size_of_reducedData, cudaMemcpyDeviceToHost);
-	std::cout << "h_out_gpuDimensionChanger" << std::endl;
-	for(int i = 0 ; i < dimensionsLeft*no_data; ++i){
-		std::cout << h_out_gpuDimensionChanger[i] << " ";
-	}
-	std::cout << std::endl;
-	*/
-
-	whatDataIsInCentroidFewPoints(stream,
-								  dimBlockgpuDimensionChanger,
-								  output,
-								  Csum_out,
-								  d_reducedData,
-								  centroids,
-								  width,
-								  dimensionsLeft,
-								  no_data);
-
-	//pointsContainedDeviceNaiveFewPoints<<<dimGrid,dimBlock,0,stream>>>(d_reducedData,centroids,output,Csum_out,width,dimensionsLeft,no_data,m,numberOfCentroids);
-
-
-
-};
-
 
 void notBoolArray(unsigned int dimBlock,
 				  cudaStream_t stream,
@@ -1082,8 +837,12 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 
 
 	// Call kernel
-	pointsContainedDeviceNaive<<<ceil((no_of_dims)/256.0), 256>>>(data_d, centroids_d, dims_d, output_d, output_count_d,
-															 width, point_dim, no_of_points, no_of_dims, m);
+	pointsContainedDeviceNaive<<<ceil((no_of_dims)/256.0), 256>>>(data_d,
+																  centroids_d,
+																  dims_d,
+																  output_d,
+																  output_count_d,
+																  width, point_dim, no_of_points, no_of_dims, m);
 
 
 	// copy from device

@@ -156,6 +156,251 @@ TEST(testHyperCubeGPU, testFindDimmensions2){
 	EXPECT_EQ(res2.second->at(1), 2);
 }
 
+
+
+
+
+TEST(testHyperCubeGPU, testFindDimmensions_findDimmensionsLoadChunks){
+	auto data = new std::vector<std::vector<float>*>;
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+	auto centroids = new std::vector<unsigned int>{0};
+
+	
+	auto x = new std::vector<float>{1,1,1,1};
+	auto x1 = new std::vector<float>{1,2,1000,1};
+	auto x2 = new std::vector<float>{2,1, 1000,2};
+	auto x3 = new std::vector<float>{1,2,1,3};
+	auto x4 = new std::vector<float>{2,10000, 3,4};
+	data->push_back(x);
+	data->push_back(x1);
+	data->push_back(x2);
+	data->push_back(x3);
+	data->push_back(x4);
+	auto sample1 = new std::vector<unsigned int>{1,2};
+	auto sample2 = new std::vector<unsigned int>{3,4};
+	samples->push_back(sample1);
+	samples->push_back(sample2);
+
+
+	auto res2 = findDimmensionsChunk(data, centroids, samples, 2);
+	auto res = res2.first;
+	SUCCEED();
+	EXPECT_EQ(res->size(), 2);
+	EXPECT_EQ(res->at(0)->size(), 4);
+	EXPECT_TRUE(res->at(0)->at(0));
+	EXPECT_TRUE(res->at(0)->at(1));
+	EXPECT_FALSE(res->at(0)->at(2));
+	EXPECT_TRUE(res->at(0)->at(3));
+	
+	EXPECT_EQ(res->at(1)->size(), 4);
+	EXPECT_TRUE(res->at(1)->at(0));
+	EXPECT_FALSE(res->at(1)->at(1));
+	EXPECT_TRUE(res->at(1)->at(2));
+	EXPECT_TRUE(res->at(1)->at(3));
+
+	EXPECT_EQ(res2.second->size(), 2);
+	EXPECT_EQ(res2.second->at(0), 3);
+	EXPECT_EQ(res2.second->at(1), 3);
+}
+
+
+
+TEST(testHyperCubeGPU, testFindDimmensions_findDimmensionsLoadChunks_2){
+	auto data = new std::vector<std::vector<float>*>;
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+	auto centroids = new std::vector<unsigned int>{0};
+
+	
+	auto x = new std::vector<float>{1,1,1,1,1};
+	auto x1 = new std::vector<float>{1,2,1000,1,1000};
+	auto x2 = new std::vector<float>{2,1, 1000,2,3};
+	auto x3 = new std::vector<float>{1,2,1,3,1};
+	auto x4 = new std::vector<float>{2,10000, 3,4,1};
+	data->push_back(x);
+	data->push_back(x1);
+	data->push_back(x2);
+	data->push_back(x3);
+	data->push_back(x4);
+	auto sample1 = new std::vector<unsigned int>{1,2};
+	auto sample2 = new std::vector<unsigned int>{3,4};
+	samples->push_back(sample1);
+	samples->push_back(sample2);
+
+
+	auto res2 = findDimmensionsChunk(data, centroids, samples, 2);
+	auto res = res2.first;
+	SUCCEED();
+	EXPECT_EQ(res->size(), 2);
+	EXPECT_EQ(res->at(0)->size(), 5);
+	EXPECT_TRUE(res->at(0)->at(0));
+	EXPECT_TRUE(res->at(0)->at(1));
+	EXPECT_FALSE(res->at(0)->at(2));
+	EXPECT_TRUE(res->at(0)->at(3));
+	EXPECT_FALSE(res->at(0)->at(4));
+	
+	EXPECT_EQ(res->at(1)->size(), 5);
+	EXPECT_TRUE(res->at(1)->at(0));
+	EXPECT_FALSE(res->at(1)->at(1));
+	EXPECT_TRUE(res->at(1)->at(2));
+	EXPECT_TRUE(res->at(1)->at(3));
+	EXPECT_TRUE(res->at(1)->at(4));
+
+	EXPECT_EQ(res2.second->size(), 2);
+	EXPECT_EQ(res2.second->at(0), 3);
+	EXPECT_EQ(res2.second->at(1), 4);
+}
+
+
+TEST(testHyperCubeGPU, testFindDimmensions_findDimmensionsLoadChunks_3){
+	auto data = new std::vector<std::vector<float>*>;
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+	auto centroids = new std::vector<unsigned int>{0};
+
+	
+	auto x = new std::vector<float>{1,2,3,4,5,6,7,8};
+	auto x1 = new std::vector<float>{1,2,1000,1,1000,2,3,4};
+	auto x2 = new std::vector<float>{2,1, 1000,2,3,4,5,6};
+	auto x3 = new std::vector<float>{1,2,1,3,1,1000,1,2};
+	auto x4 = new std::vector<float>{2,10000, 3,4,1,5,6,9};
+	data->push_back(x);
+	data->push_back(x1);
+	data->push_back(x2);
+	data->push_back(x3);
+	data->push_back(x4);
+	auto sample1 = new std::vector<unsigned int>{1,2};
+	auto sample2 = new std::vector<unsigned int>{3,4};
+	samples->push_back(sample1);
+	samples->push_back(sample2);
+
+
+	auto res2 = findDimmensionsChunk(data, centroids, samples, 2);
+	auto res = res2.first;
+	SUCCEED();
+	EXPECT_EQ(res->size(), 2);
+	EXPECT_EQ(res->at(0)->size(), 8);
+	EXPECT_TRUE(res->at(0)->at(0));
+	EXPECT_TRUE(res->at(0)->at(1));
+	EXPECT_FALSE(res->at(0)->at(2));
+	EXPECT_TRUE(res->at(0)->at(3));
+	EXPECT_FALSE(res->at(0)->at(4));
+	EXPECT_TRUE(res->at(0)->at(5));
+	EXPECT_TRUE(res->at(0)->at(6));
+	EXPECT_TRUE(res->at(0)->at(7));
+	
+	EXPECT_EQ(res->at(1)->size(), 8);
+	EXPECT_TRUE(res->at(1)->at(0));
+	EXPECT_FALSE(res->at(1)->at(1));
+	EXPECT_TRUE(res->at(1)->at(2));
+	EXPECT_TRUE(res->at(1)->at(3));
+	EXPECT_TRUE(res->at(1)->at(4));
+	EXPECT_FALSE(res->at(1)->at(5));
+	EXPECT_TRUE(res->at(1)->at(6));
+	EXPECT_TRUE(res->at(1)->at(7));
+				
+
+	EXPECT_EQ(res2.second->size(), 2);
+	EXPECT_EQ(res2.second->at(0), 6);
+	EXPECT_EQ(res2.second->at(1), 6);
+}
+
+TEST(testHyperCubeGPU, testFindDimmensions_findDimmensionsLoadChunks_4){
+	auto data = new std::vector<std::vector<float>*>;
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+	auto centroids = new std::vector<unsigned int>{0};
+
+	
+	auto x = new std::vector<float>{1,1,1,1,1,1,1,1,9999};
+	auto x1 = new std::vector<float>{1,2,1000,1,1000,2,3,4,1};
+	auto x2 = new std::vector<float>{2,1, 1000,2,3,4,5,6,2};
+	auto x3 = new std::vector<float>{1,2,1,3,1,1000,1,2,3};
+	auto x4 = new std::vector<float>{2,10000, 3,4,1,5,6,9,4};
+	data->push_back(x);
+	data->push_back(x1);
+	data->push_back(x2);
+	data->push_back(x3);
+	data->push_back(x4);
+	auto sample1 = new std::vector<unsigned int>{1,2};
+	auto sample2 = new std::vector<unsigned int>{3,4};
+	samples->push_back(sample1);
+	samples->push_back(sample2);
+
+
+	auto res2 = findDimmensionsChunk(data, centroids, samples, 2);
+	auto res = res2.first;
+	SUCCEED();
+	EXPECT_EQ(res->size(), 2);
+	EXPECT_EQ(res->at(0)->size(), 9);
+	EXPECT_TRUE(res->at(0)->at(0));
+	EXPECT_TRUE(res->at(0)->at(1));
+	EXPECT_FALSE(res->at(0)->at(2));
+	EXPECT_TRUE(res->at(0)->at(3));
+	EXPECT_FALSE(res->at(0)->at(4));
+	EXPECT_TRUE(res->at(0)->at(5));
+	EXPECT_TRUE(res->at(0)->at(6));
+	EXPECT_TRUE(res->at(0)->at(7));
+	EXPECT_FALSE(res->at(0)->at(8));
+	
+	EXPECT_EQ(res->at(1)->size(), 9);
+	EXPECT_TRUE(res->at(1)->at(0));
+	EXPECT_FALSE(res->at(1)->at(1));
+	EXPECT_TRUE(res->at(1)->at(2));
+	EXPECT_TRUE(res->at(1)->at(3));
+	EXPECT_TRUE(res->at(1)->at(4));
+	EXPECT_FALSE(res->at(1)->at(5));
+	EXPECT_TRUE(res->at(1)->at(6));
+	EXPECT_TRUE(res->at(1)->at(7));
+	EXPECT_FALSE(res->at(1)->at(8));
+				
+
+	EXPECT_EQ(res2.second->size(), 2);
+	EXPECT_EQ(res2.second->at(0), 6);
+	EXPECT_EQ(res2.second->at(1), 6);
+}
+
+TEST(testHyperCubeGPU, testFindDimmensions2_findDimmensionsLoadChunks){
+	auto data = new std::vector<std::vector<float>*>;
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+	auto centroids = new std::vector<unsigned int>{0};
+
+	
+	auto x = new std::vector<float>{1,1,1};
+	auto x1 = new std::vector<float>{1,2,1000};
+	auto x2 = new std::vector<float>{2,1, 1000};
+	auto x3 = new std::vector<float>{1,2,1};
+	auto x4 = new std::vector<float>{2,10000, 3};
+	data->push_back(x);
+	data->push_back(x1);
+	data->push_back(x2);
+	data->push_back(x3);
+	data->push_back(x4);
+	auto sample1 = new std::vector<unsigned int>{1,2};
+	auto sample2 = new std::vector<unsigned int>{3,4};
+	samples->push_back(sample1);
+	samples->push_back(sample2);
+
+
+	auto res2 = findDimmensionsChunk(data, centroids, samples, 2);
+	auto res = res2.first;
+	SUCCEED();
+	EXPECT_EQ(res->size(), 2);
+	EXPECT_EQ(res->at(0)->size(), 3);
+	EXPECT_TRUE(res->at(0)->at(0));
+	EXPECT_TRUE(res->at(0)->at(1));
+	EXPECT_FALSE(res->at(0)->at(2));
+	
+	EXPECT_EQ(res->at(1)->size(), 3);
+	EXPECT_TRUE(res->at(1)->at(0));
+	EXPECT_FALSE(res->at(1)->at(1));
+	EXPECT_TRUE(res->at(1)->at(2));
+
+
+	EXPECT_EQ(res2.second->size(), 2);
+	EXPECT_EQ(res2.second->at(0), 2);
+	EXPECT_EQ(res2.second->at(1), 2);
+}
+
+
+//findDimmensionsLoadChunks
 /*
 
 TEST(testFindDimensionsGPU, testFindDimmensions3){
@@ -379,6 +624,100 @@ TEST(testFindDimensionsGPU, _SLOW_testFindDimmensionsRandom){
 	}
 
 	auto res2 = findDimmensions(data, centroids, samples, m);
+	auto resGPU = res2.first;
+	
+	
+	DOC d;
+	int f = 0,t = 0;
+	for(int i = 0; i < number_of_samples; i++){
+		auto centroid = data->at(centroids->at(i/m));
+		auto sample = new std::vector<std::vector<float>*>;
+		for(int j = 0; j < sample_size; j++){
+			sample->push_back(data->at(samples->at(i)->at(j)));
+		}
+		std::vector<bool>* res = d.findDimensions(centroid, sample, 10);
+
+		std::vector<bool>* res2 = resGPU->at(i);
+		EXPECT_EQ(res->size(), res2->size());
+			
+		/*
+		  std::cout << "CPU: ";
+		  for(int k = 0; k < res->size();k++){
+		  std::cout << res->at(k) << ", ";
+		  }
+		  std::cout << std::endl;
+			
+		  std::cout << "GPU: ";
+		  for(int k = 0; k < res->size();k++){
+		  std::cout << res2->at(k) << ", ";
+		  }
+		  std::cout << std::endl;
+		*/
+			
+			
+			for(int k = 0; k < res->size(); k++){
+				ASSERT_EQ(res->at(k), res2->at(k)) << "Not equal at k: " << k << ", and " << i <<"th sample and " << i/m << "th centroid";
+				if(res->at(k)){
+					t++;
+				}else{
+					f++;
+				}
+			}
+			
+		  
+			
+		
+	}
+	//std::cout << "number of false: " << f << " number of true: " << t <<std::endl;
+
+
+	
+}
+
+
+
+TEST(testFindDimensionsGPU, _SLOW_testFindDimmensionsRandom_findDimmensionsLoadChunks){
+
+	int amount_of_ps = 100;
+	int number_of_samples = 2000;
+	int m = number_of_samples/amount_of_ps;
+
+	int sample_size = 200;
+	int data_size = (amount_of_ps+number_of_samples*sample_size)*2;
+	int point_dim = 200;
+	std::default_random_engine generator;
+	generator.seed(100);
+	std::uniform_real_distribution<double> distribution(5.0,20.0);
+	std::uniform_int_distribution<int> distribution_int(0,data_size-1);
+
+
+	auto data = new std::vector<std::vector<float>*>;
+	auto centroids = new std::vector<unsigned int>;
+	auto samples = new std::vector<std::vector<unsigned int>*>;
+
+
+	for(int j = 0; j < data_size; j++){
+		auto p = new std::vector<float>;
+		for(int k = 0; k < point_dim; k++){
+			float d = distribution(generator);
+			p->push_back(d);
+		}
+		data->push_back(p);
+	}
+
+	for(int i = 0; i < amount_of_ps; i++){
+		centroids->push_back(distribution_int(generator));
+	}
+
+	for(int i = 0; i < number_of_samples; i++){
+		auto sample = new std::vector<unsigned int>;
+		for(int j = 0; j < sample_size; j++){
+			sample->push_back(distribution_int(generator));
+		}
+		samples->push_back(sample);
+	}
+
+	auto res2 = findDimmensionsChunk(data, centroids, samples, m);
 	auto resGPU = res2.first;
 	
 	

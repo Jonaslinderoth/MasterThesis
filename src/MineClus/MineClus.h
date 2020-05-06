@@ -4,6 +4,7 @@
 #include "../Clustering.h"
 #include "../dataReader/DataReader.h"
 #include <boost/dynamic_bitset.hpp>
+#include "MuApriori/MuApriori.h"
 
 class MineClus : public Clustering{
  public:
@@ -21,23 +22,29 @@ class MineClus : public Clustering{
 	void setBeta(float value){this->beta = value;};
 	void setWidth(float value){this->width = value;};
 	void setd0(unsigned int value){this->d0 = value;};
+	void setConcurentVersion(bool value){this->concurent = value;};
+	bool isConcurentVersion(){return this->concurent;};
 	unsigned int getd0(){return this->d0;};
 	float getAlpha(){return this->alpha;};
 	float getBeta(){return this->beta;};
 	float getWidth(){return this->width;};
+	std::vector<OutputCandidate*>* findClusterCandidates();
+
+	
 	
 	unsigned int size(){return this->data->size();};
 	std::vector<boost::dynamic_bitset<>>* findDimensions(std::vector<float>* centroid,
 									  std::vector<std::vector<float>* >* points, float width);
 	std::vector<std::vector<float>*>* pickRandom(int n);
 	virtual ~MineClus(){};
- private:
-	
+	bool isDisjoint(OutputCandidate* lhs, OutputCandidate* rhs);
  	float alpha;
 	float beta;
 	float width;
 	unsigned int d0;
+	bool concurent=true;
 	std::vector<std::vector<float>*>* data;
+	std::vector<std::vector<float>*>* medoids;
 	
 };
 

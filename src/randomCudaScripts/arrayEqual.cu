@@ -1,6 +1,7 @@
 #include "src/randomCudaScripts/arrayEqual.h"
 #include "src/DOC_GPU/DOCGPU_Kernels.h"
 #include "src/DOC_GPU/pointsContainedDevice.h"
+#include "src/Fast_DOCGPU/whatDataInCentroid.h"
 
 #include <iostream>
 
@@ -433,19 +434,17 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 												 m,
 												 no_of_centroids);
 	}else if(version == 4){
-		pointsContainedKernelFewPoints(ceil((no_of_dims)/(float)block_size),
-                                       block_size,
-                                       stream,
-                                       data_d,
-                                       centroids_d,
-                                       dims_d,
-                                       output_d,
-                                       output_count_d,
-                                       width,
-                                       point_dim,
-                                       no_of_points,
-                                       m,
-                                       no_of_centroids);
+		whatDataIsInCentroidKernelFewPointsKernel(
+												  ceil((no_of_dims)/(float)block_size),
+												  block_size,
+												  stream,
+												  output_d,
+												  data_d,
+												  centroids_d,
+												  dims_d,
+												  width,
+												  point_dim,
+												  no_of_points);
 	}else if(version == 5){
 		// Call kernel
 		pointsContainedKernelNaiveBreak(ceil((no_of_dims)/(float)block_size),
@@ -462,7 +461,6 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 								   	   no_of_dims,
 								   	   m,
 								   	   breakIntervall);
-
 	}
 
     (cudaStreamDestroy(stream));
