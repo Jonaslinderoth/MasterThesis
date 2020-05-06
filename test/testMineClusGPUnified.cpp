@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 #include "testingTools.h"
 #include <random>
-#include "../src/MineClusGPU/MineClusGPU.h"
+#include "../src/MineClusGPU/MineClusGPUnified.h"
 #include "../src/MineClus/MineClus.h"
 #include <vector>
 
 
 
-TEST(testMineClusGPU, testSetup){
+TEST(testMineClusGPUnified, testSetup){
 	auto data = new std::vector<std::vector<float>*>;
 	auto point1 = new std::vector<float>({1,2});
 	data->push_back(point1);
@@ -23,7 +23,7 @@ TEST(testMineClusGPU, testSetup){
 	}
 
 	
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
 
 	auto res = c.findKClusters(1);
@@ -51,7 +51,7 @@ TEST(testMineClusGPU, testSetup){
 }
 
 
-TEST(testMineClusGPU, testSetup2){
+TEST(testMineClusGPUnified, testSetup2){
 	auto data = new std::vector<std::vector<float>*>;
 	auto point1 = new std::vector<float>({1,2});
 	data->push_back(point1);
@@ -62,7 +62,7 @@ TEST(testMineClusGPU, testSetup2){
 	}
 
 	
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
 
 	auto res = c.findKClusters(1);
@@ -81,7 +81,7 @@ TEST(testMineClusGPU, testSetup2){
 }
 
 
-TEST(testMineClusGPU, testSetup3){
+TEST(testMineClusGPUnified, testSetup3){
 	auto data = new std::vector<std::vector<float>*>;
 	auto point1 = new std::vector<float>({1,2});
 	data->push_back(point1);
@@ -92,7 +92,7 @@ TEST(testMineClusGPU, testSetup3){
 	}
 
 	
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
 
 	auto res = c.findKClusters(1);
@@ -106,7 +106,7 @@ TEST(testMineClusGPU, testSetup3){
 
 
 
-TEST(testMineClusGPU, testNoise){
+TEST(testMineClusGPUnified, testNoise){
 	std::default_random_engine gen;
 	gen.seed(100);
 	std::normal_distribution<double> noise(100.0,200000.0);
@@ -122,7 +122,7 @@ TEST(testMineClusGPU, testNoise){
 	}
 
 
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
 
 	auto res = c.findKClusters(10);
@@ -131,7 +131,7 @@ TEST(testMineClusGPU, testNoise){
 }
 
 
-TEST(testMineClusGPU, test3){
+TEST(testMineClusGPUnified, test3){
 	auto data = new std::vector<std::vector<float>*>;
 	auto point1 = new std::vector<float>({1,2,3});
 	data->push_back(point1);
@@ -142,7 +142,7 @@ TEST(testMineClusGPU, test3){
 	}
 
 	
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
 
 	auto res = c.findKClusters(1);
@@ -154,7 +154,7 @@ TEST(testMineClusGPU, test3){
 	EXPECT_EQ(res.at(0).second->at(2), 1);
 }
 
-TEST(testMineClusGPU, test5){
+TEST(testMineClusGPUnified, test5){
 	auto data = new std::vector<std::vector<float>*>;
 	auto point1 = new std::vector<float>({1,2,3,4,5});
 	data->push_back(point1);
@@ -165,7 +165,7 @@ TEST(testMineClusGPU, test5){
 	}
 
 	
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
 
 	auto res = c.findKClusters(1);
@@ -182,7 +182,7 @@ TEST(testMineClusGPU, test5){
 }
 
 
-TEST(testMineClusGPU, test3dims_1){
+TEST(testMineClusGPUnified, test3dims_1){
 	auto data = new std::vector<std::vector<float>*>;
 	auto point1 = new std::vector<float>({1,2,3});
 	data->push_back(point1);
@@ -193,7 +193,7 @@ TEST(testMineClusGPU, test3dims_1){
 	}
 
 	
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
 
 	auto res = c.findKClusters(1);
@@ -205,7 +205,7 @@ TEST(testMineClusGPU, test3dims_1){
 	EXPECT_EQ(res.at(0).second->at(2), 1);
 }
 
-TEST(testMineClusGPU, test3dims_2){
+TEST(testMineClusGPUnified, test3dims_2){
 	auto data = new std::vector<std::vector<float>*>;
 	auto point1 = new std::vector<float>({1,2,3});
 	data->push_back(point1);
@@ -219,7 +219,7 @@ TEST(testMineClusGPU, test3dims_2){
 		data->push_back(point);
 	}
 	
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
 
 	auto res = c.findKClusters(1);
@@ -259,7 +259,7 @@ TEST(testMineClusGPU, test3dims_2){
 	
 }
 
-TEST(testMineClusGPU, test10Dims){
+TEST(testMineClusGPUnified, test10Dims){
 	auto data = new std::vector<std::vector<float>*>;
 	auto point1 = new std::vector<float>({1,2,3,4,5,6,7,8,9,10});
 	data->push_back(point1);
@@ -274,7 +274,7 @@ TEST(testMineClusGPU, test10Dims){
 		data->push_back(point);
 	}
 	
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
 
 
@@ -326,7 +326,7 @@ TEST(testMineClusGPU, test10Dims){
 }
 
 
-TEST(testMineClusGPU, _SLOW_test66Dims){
+TEST(testMineClusGPUnified, _SLOW_test66Dims){
 	std::default_random_engine gen;
 	gen.seed(10);
 	std::normal_distribution<double> cluster1(100.0,2.0);
@@ -364,7 +364,7 @@ TEST(testMineClusGPU, _SLOW_test66Dims){
 		}
 	}
 
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(2);
 
 
@@ -389,7 +389,7 @@ TEST(testMineClusGPU, _SLOW_test66Dims){
 }
 
 
-TEST(testMineClusGPU, _SLOW_test66Dims_6clusters){
+TEST(testMineClusGPUnified, _SLOW_test66Dims_6clusters){
 	std::default_random_engine gen;
 	gen.seed(100);
 	std::normal_distribution<double> cluster1(100.0,2.0);
@@ -474,7 +474,7 @@ TEST(testMineClusGPU, _SLOW_test66Dims_6clusters){
 			data->push_back(point);
 		}
 	}
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(2);
 
 
@@ -511,7 +511,7 @@ TEST(testMineClusGPU, _SLOW_test66Dims_6clusters){
 
 
 
-TEST(testMineClusGPU, _SLOW_test66Dims_6clusters_NotConcurrent){
+TEST(testMineClusGPUnified, _SLOW_test66Dims_6clusters_NotConcurrent){
 	std::default_random_engine gen;
 	gen.seed(100);
 	std::normal_distribution<double> cluster1(100.0,2.0);
@@ -596,7 +596,7 @@ TEST(testMineClusGPU, _SLOW_test66Dims_6clusters_NotConcurrent){
 			data->push_back(point);
 		}
 	}
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(2);
 
 	c.setConcurentVersion(false);
@@ -620,7 +620,7 @@ TEST(testMineClusGPU, _SLOW_test66Dims_6clusters_NotConcurrent){
 }
 
 
-TEST(testMineClusGPU, _SLOW_test32Dims){
+TEST(testMineClusGPUnified, _SLOW_test32Dims){
 	std::default_random_engine gen;
 	gen.seed(0);
 	std::normal_distribution<float> cluster1(100.0,2.0);
@@ -661,7 +661,7 @@ TEST(testMineClusGPU, _SLOW_test32Dims){
 	EXPECT_EQ(data->size(), 400);
 	EXPECT_EQ(data->at(0)->size(), 32);
 
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(3);
 
 
@@ -697,7 +697,7 @@ TEST(testMineClusGPU, _SLOW_test32Dims){
 }
 
 
-TEST(testMineClusGPU, _SLOW_test100Dims){
+TEST(testMineClusGPUnified, _SLOW_test100Dims){
 	std::default_random_engine gen;
 	gen.seed(0);
 	std::normal_distribution<float> cluster1(100.0,2.0);
@@ -738,7 +738,7 @@ TEST(testMineClusGPU, _SLOW_test100Dims){
 	EXPECT_EQ(data->size(), 400);
 	EXPECT_EQ(data->at(0)->size(), 100);
 
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(2);
 
 
@@ -775,7 +775,7 @@ TEST(testMineClusGPU, _SLOW_test100Dims){
 
 
 
-TEST(testMineClusGPU, _SLOW_test40Dims){
+TEST(testMineClusGPUnified, _SLOW_test40Dims){
 	std::default_random_engine gen;
 	gen.seed(1);
 	unsigned int dim = 40;
@@ -816,7 +816,7 @@ TEST(testMineClusGPU, _SLOW_test40Dims){
 	EXPECT_EQ(data->size(), 400);
 	EXPECT_EQ(data->at(0)->size(), dim);
 
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
 
 
@@ -846,7 +846,7 @@ TEST(testMineClusGPU, _SLOW_test40Dims){
 	}
 }
 
-TEST(testMineClusGPU, _SLOW_test20Dims){
+TEST(testMineClusGPUnified, _SLOW_test20Dims){
 	std::default_random_engine gen;
 	gen.seed(0);
 	unsigned int dim = 20;
@@ -888,7 +888,7 @@ TEST(testMineClusGPU, _SLOW_test20Dims){
 	EXPECT_EQ(data->size(), 400);
 	EXPECT_EQ(data->at(0)->size(), dim);
 
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(2);
 
 
@@ -918,7 +918,7 @@ TEST(testMineClusGPU, _SLOW_test20Dims){
 	}
 }
 
-TEST(testMineClusGPU, _SLOW_test30Dims){
+TEST(testMineClusGPUnified, _SLOW_test30Dims){
 	std::default_random_engine gen;
 	gen.seed(1000);
 	std::normal_distribution<float> cluster1(100.0,2.0);
@@ -956,7 +956,7 @@ TEST(testMineClusGPU, _SLOW_test30Dims){
 		}
 	}
 
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(3000);
 
 
@@ -994,7 +994,7 @@ TEST(testMineClusGPU, _SLOW_test30Dims){
 }
 
 
-TEST(testMineClusGPU, _SUPER_SLOW_test130Dims){
+TEST(testMineClusGPUnified, _SUPER_SLOW_test130Dims){
 	std::default_random_engine gen;
 	gen.seed(1000);
 	std::normal_distribution<float> cluster1(100.0,2.0);
@@ -1032,7 +1032,7 @@ TEST(testMineClusGPU, _SUPER_SLOW_test130Dims){
 		}
 	}
 
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(3000);
 
 
@@ -1072,7 +1072,7 @@ TEST(testMineClusGPU, _SUPER_SLOW_test130Dims){
 
 
 
-TEST(testMineClusGPU, _SUPER_SLOW_test100Dims_5clusters){
+TEST(testMineClusGPUnified, _SUPER_SLOW_test100Dims_5clusters){
 	std::default_random_engine gen;
 	gen.seed(10);
 	std::normal_distribution<double> cluster1(100.0,2.0);
@@ -1157,7 +1157,7 @@ TEST(testMineClusGPU, _SUPER_SLOW_test100Dims_5clusters){
 			data->push_back(point);
 		}
 	}
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(2);
 
 
@@ -1198,7 +1198,7 @@ TEST(testMineClusGPU, _SUPER_SLOW_test100Dims_5clusters){
 
 
 
-TEST(testMineClusCompare, testSetup3_compare){
+TEST(testMineClusUnifiedCompare, testSetup3_compare){
 	auto data = new std::vector<std::vector<float>*>;
 	auto point1 = new std::vector<float>({1,2});
 	data->push_back(point1);
@@ -1209,7 +1209,7 @@ TEST(testMineClusCompare, testSetup3_compare){
 	}
 
 	
-	auto cGPU = MineClusGPU(data);
+	auto cGPU = MineClusGPUnified(data);
 	cGPU.setSeed(1);
 
 	auto resGPU = cGPU.findKClusters(1);
@@ -1233,7 +1233,7 @@ TEST(testMineClusCompare, testSetup3_compare){
 
 
 
-TEST(testMineClusCompare, testNoise){
+TEST(testMineClusUnifiedCompare, testNoise){
 	std::default_random_engine gen;
 	gen.seed(100);
 	std::normal_distribution<double> noise(100.0,200000.0);
@@ -1249,7 +1249,7 @@ TEST(testMineClusCompare, testNoise){
 	}
 
 
-	auto c = MineClusGPU(data);
+	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
 
 	auto res = c.findKClusters(10);

@@ -167,8 +167,4 @@ void MuApriori::findBest(unsigned int numberOfBest){
 		delete result->at(i);
 	}
 	delete result;
-
 };
-
-
-
