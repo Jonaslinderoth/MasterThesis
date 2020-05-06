@@ -31,14 +31,17 @@ std::vector<Candidate*>* MuApriori::createInitialCandidates(){
 	unsigned int i = 0;
 	while(i< result->size()){
 		if(result->at(i)->support < this->minSupp){
+			delete result->at(i);
 			result->erase(result->begin()+i); // todo better delete
 		}else{
 			result->at(i)->score = this->mu(result->at(i)->support, result->at(i)->item.count());
 			if(this->bestCandidate == nullptr || this->bestCandidate->score < result->at(i)->score){
 				auto cand = new OutputCandidate(*(result->at(i)));
+				if(this->bestCandidate != nullptr){
+					delete this->bestCandidate;
+				}
 				this->bestCandidate = cand;
 			}
-
 			
 			i++;
 		}
@@ -75,10 +78,34 @@ std::vector<Candidate*>* MuApriori::createKthCandidates(unsigned int k, std::vec
 	std::sort( result->begin(), result->end(), [](const Candidate*  a, const Candidate* b) -> bool{
 			return (a->item) > (b->item);
 		});
-	result->erase( std::unique( result->begin(), result->end(),[](const Candidate* a, const Candidate* b) -> bool{
-				return (a->item) == (b->item);
-			}), result->end() );
 
+	unsigned int deletedCount = 0;
+	unsigned int head = result->size() < 1 ? 0 : 1;
+	bool deletePrev = false;
+	for(unsigned int i = 1; i < result->size(); i++){
+		if(result->at(i-1)->item == result->at(i)->item){
+			if(deletePrev){
+				deletedCount++;
+				delete result->at(i-1);	
+			}
+			deletePrev = true;
+		}else{
+			result->at(head) = result->at(i);
+			head++;
+			if(deletePrev){
+				deletedCount++;
+				delete result->at(i-1);	
+			}
+			deletePrev = false;
+		}
+	}
+	if(deletePrev){
+		deletedCount++;
+		delete result->at(result->size()-1);	
+	}
+	assert(deletedCount == result->size()-head);
+	result->erase(result->begin()+head, result->end());
+	
 	// Count support
 	for(unsigned int i = 0; i < this->itemSet->size(); i++){
 		for(unsigned int j = 0; j < result->size(); j++){
@@ -98,6 +125,7 @@ std::vector<Candidate*>* MuApriori::createKthCandidates(unsigned int k, std::vec
 	unsigned int i = 0;
 	while(i<result->size()){
 		if(result->at(i)->support < this->minSupp){
+			delete result->at(i);
 			result->erase(result->begin()+i); // todo better delete
 		}else{
 			result->at(i)->score = this->mu(result->at(i)->support, result->at(i)->item.count());
@@ -105,6 +133,9 @@ std::vector<Candidate*>* MuApriori::createKthCandidates(unsigned int k, std::vec
 			if(this->bestCandidate == nullptr || this->bestCandidate->score < result->at(i)->score){
 				auto cand = new OutputCandidate(*(result->at(i)));
 				cand->centroidNr = this->centroidNr;
+				if(this->bestCandidate != nullptr){
+					delete this->bestCandidate;
+				}
 				this->bestCandidate = cand;
 			}
 			i++;
@@ -123,7 +154,7 @@ void MuApriori::findBest(unsigned int numberOfBest){
 	if(result->size() < 1){return;};
 	unsigned int dim = result->at(0)->item.size();
 	unsigned int k = 1;
-	while(result->size() > 0 && k < dim){
+	while(result->size() > 1 && k < dim){
 		k ++;
 		result_tmp = result;
 		result = this->createKthCandidates(k, result_tmp);
@@ -132,6 +163,10 @@ void MuApriori::findBest(unsigned int numberOfBest){
 		}
 		delete result_tmp;
 	}
+	for(int i = 0; i< result->size(); i++){
+		delete result->at(i);
+	}
+	delete result;
 
 };
 

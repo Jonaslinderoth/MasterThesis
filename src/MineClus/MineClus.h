@@ -36,7 +36,9 @@ class MineClus : public Clustering{
 	std::vector<boost::dynamic_bitset<>>* findDimensions(std::vector<float>* centroid,
 									  std::vector<std::vector<float>* >* points, float width);
 	std::vector<std::vector<float>*>* pickRandom(int n);
-	virtual ~MineClus(){};
+	virtual ~MineClus(){
+		delete this->medoids;
+	};
 	bool isDisjoint(OutputCandidate* lhs, OutputCandidate* rhs);
  	float alpha;
 	float beta;
