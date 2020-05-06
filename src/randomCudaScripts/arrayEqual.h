@@ -30,7 +30,8 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 																					   int m,
 																					   float width = 10.0 ,
 																					   unsigned long version = 0,
-																					   unsigned long garbage = 0);
+																					   unsigned long garbage = 0,
+																					   unsigned long breakIntervall = 1);
 
 bool areTheyEqual_h(std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> a_h , std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> b_h , bool print = false);
 

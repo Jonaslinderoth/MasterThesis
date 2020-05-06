@@ -50,6 +50,61 @@ __global__ void pointsContainedDeviceNaive(float* data, unsigned int* centroids,
 	}
 }
 
+
+/*
+ * This fuction returns if the points are in the hypercube made by the centroid by using a subset of the dimensions
+ * It does tries to break early every .
+ */
+__global__ void pointsContainedDeviceNaiveBreak(float* data,
+											    unsigned int* centroids,
+											    bool* dims,
+											    bool* output,
+											    unsigned int* Csum_out,
+											    float width,
+											    unsigned int point_dim,
+											    unsigned int no_data,
+											    unsigned int no_dims,
+											    unsigned int m,
+											    unsigned int breakingIntervall){
+	// one kernel for each hypercube
+	unsigned int entry = blockIdx.x*blockDim.x+threadIdx.x;
+	unsigned int currentCentroid = entry/m;
+	if(entry < no_dims){
+		//assert(currentCentroid < no_of_ps);
+		// for each data point
+		unsigned int Csum = 0;
+		for(unsigned int j = 0; j < no_data; j++){
+			// for all dimmensions in each hypercube / point
+			bool d = true;
+			for(unsigned int i = 0; i < point_dim; i++){
+				//(not (dims[entry*point_dim+i])) ||
+				unsigned int centroid_index = centroids[currentCentroid];
+				//if(!(centroid_index < no_data)){
+				//    printf("num_data: %u, centroid_index: %u, currentCentroid: %u \n", no_data, centroid_index, currentCentroid);
+				//}
+				assert(centroid_index < no_data);
+				assert(entry*point_dim+i < no_dims*point_dim);
+				assert(centroid_index*point_dim+i < no_data*point_dim);
+				assert(j*point_dim+i < no_data*point_dim);
+				const unsigned long entryDims = entry*point_dim+i;
+				const float centro = data[centroid_index*point_dim+i];
+				const float punto = data[j*point_dim+i];
+				const float abss = abs(centro - punto);
+				d &= (not (dims[entryDims])) || (abss < width);
+				if(i%breakingIntervall == 0 and (not d)){
+					break;
+				}
+			}
+			assert(entry < no_dims);
+			assert((size_t)entry*(size_t)no_data+(size_t)j < (size_t)no_dims*(size_t)no_data+(size_t)j);
+			output[(size_t)entry*(size_t)no_data+(size_t)j] = d;
+			Csum += d;
+		}
+		Csum_out[entry] = Csum;
+
+	}
+}
+
 /*
  * This does the same as the naive but it moved the data to shared memory before.
  * making
@@ -625,15 +680,44 @@ void pointsContainedKernelNaive(unsigned int dimGrid,
 							    float width,
 							    unsigned int point_dim,
 							    unsigned int no_data,
-							    unsigned int number_of_samples,
+							    unsigned int no_dims,
 							    unsigned int m){
 
 	pointsContainedDeviceNaive<<<dimGrid, dimBlock, 0, stream>>>(data, centroids, dims,
 												 output, Csum_out,
-												 width, point_dim, no_data, number_of_samples, m);
+												 width, point_dim, no_data, no_dims, m);
 
 
 };
+
+void pointsContainedKernelNaiveBreak(unsigned int dimGrid,
+									 unsigned int dimBlock,
+									 cudaStream_t stream,
+									 float* data,
+									 unsigned int* centroids,
+									 bool* dims,
+									 bool* output,
+									 unsigned int* Csum_out,
+									 float width,
+									 unsigned int point_dim,
+									 unsigned int no_data,
+									 unsigned int no_dims,
+									 unsigned int m,
+									 unsigned int breakingIntervall){
+
+	pointsContainedDeviceNaiveBreak<<<dimGrid, dimBlock, 0, stream>>>(data,
+																	  centroids,
+																	  dims,
+																	  output,
+																	  Csum_out,
+																	  width,
+																	  point_dim,
+																	  no_data,
+																	  no_dims,
+																	  m,
+																	  breakingIntervall);
+}
+
 
 void pointsContainedKernelSharedMemory(unsigned int dimGrid,
 									   unsigned int dimBlock,

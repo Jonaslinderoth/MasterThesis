@@ -280,7 +280,8 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 																					   int m,
 																					   float width,
 																					   unsigned long version,
-																					   unsigned long garbage){
+																					   unsigned long garbage,
+																					   unsigned long breakIntervall){
 
 
     int block_size = 1024;
@@ -372,18 +373,18 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 		// Call kernel
 
 		pointsContainedKernelNaive(ceil((no_of_dims)/(float)block_size),
-		          block_size,
-				  stream,
-				  data_d,
-				  centroids_d,
-				  dims_d,
-				  output_d,
-				  output_count_d,
-				  width,
-				  point_dim,
-				  no_of_points,
-				  no_of_dims,
-				  m);
+								   block_size,
+								   stream,
+								   data_d,
+								   centroids_d,
+								   dims_d,
+								   output_d,
+								   output_count_d,
+								   width,
+								   point_dim,
+								   no_of_points,
+								   no_of_dims,
+								   m);
 
 
 	}else if(version == 1){
@@ -445,6 +446,23 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
                                        no_of_points,
                                        m,
                                        no_of_centroids);
+	}else if(version == 5){
+		// Call kernel
+		pointsContainedKernelNaiveBreak(ceil((no_of_dims)/(float)block_size),
+								   	   block_size,
+								   	   stream,
+								   	   data_d,
+								   	   centroids_d,
+								   	   dims_d,
+								   	   output_d,
+								   	   output_count_d,
+								   	   width,
+								   	   point_dim,
+								   	   no_of_points,
+								   	   no_of_dims,
+								   	   m,
+								   	   breakIntervall);
+
 	}
 
     (cudaStreamDestroy(stream));

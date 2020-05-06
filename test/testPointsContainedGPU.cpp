@@ -649,6 +649,7 @@ TEST_F(testPointsContainedGPU, _SUPER_SLOW_testIfDifferentPointContainedDeviceKe
 				auto c2 = pointsContained(dims, data, centroids,m,10,2);
 				auto c3 = pointsContained(dims, data, centroids,m,10,3);
 				auto c4 = pointsContained(dims, data, centroids,m,10,4);
+				auto c5 = pointsContained(dims, data, centroids,m,10,4);
 
 
 
@@ -656,6 +657,7 @@ TEST_F(testPointsContainedGPU, _SUPER_SLOW_testIfDifferentPointContainedDeviceKe
 				EXPECT_TRUE(areTheyEqual_h(c2,c0)) << "c2 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
 				EXPECT_TRUE(areTheyEqual_h(c3,c0)) << "c3 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
 				EXPECT_TRUE(areTheyEqual_h(c4,c0)) << "c4 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
+				EXPECT_TRUE(areTheyEqual_h(c5,c0)) << "c5 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
 
                 for(int i = 0; i < c1.first->size(); i++){
                     delete c1.first->at(i);
@@ -675,6 +677,10 @@ TEST_F(testPointsContainedGPU, _SUPER_SLOW_testIfDifferentPointContainedDeviceKe
 					delete c4.first->at(i);
 				}
 				delete c4.second;
+				for(int i = 0; i < c5.first->size(); i++){
+					delete c5.first->at(i);
+				}
+				delete c5.second;
 
 				for(int i = 0; i < data->size(); i++){
 				    delete data->at(i);
