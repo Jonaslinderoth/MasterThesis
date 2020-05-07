@@ -112,9 +112,11 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 	// Transfer data the data
 	size_t sizeOfData = size*dim*sizeof(float);
 	float* data_d = this->transformData();
-	//checkCudaErrors(cudaMemcpyAsync(data_d, data_h, sizeOfData, cudaMemcpyHostToDevice, stream1_2));
-	// TODO should probably prefetch here
-	// checkCudaErrors(cudaFreeHost(data_h));
+	// Tells the system that the data is prefered to be stored at the device and is mostly written to, and accessed by the device
+	 // cudaMemAdvise(data_d, numberOfPoints*dim*sizeof(float), cudaMemAdviseSetPreferredLocation, device);
+	 // cudaMemAdvise(data_d, numberOfPoints*dim*sizeof(float), cudaMemAdviseSetAccessedBy, device);
+	 // cudaMemAdvise(data_d, numberOfPoints*dim*sizeof(float), cudaMemAdviseSetReadMostly, device);
+
 	// This loop is running until all clusters are found
 	while(k > result.size()){
 		// std::cout << result.size() << std::endl;
@@ -128,15 +130,13 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 		checkCudaErrors(cudaMallocManaged((void**) &bestCandidate_d,
 										  numberOfCentroids*numberOfBlocksPrPoint*sizeof(unsigned int)));
 
+
 		// If it is the first iteration set the current best score to 0 for all future centroids too
 		//float* bestScore_h;
-		// checkCudaErrors(cudaMallocHost((void**) &bestScore_h, sizeof(float)*numberOfCentroids));
 		for(int j = 0; j < numberOfCentroids; j++){
 			bestScore_d[j] = 0;
 		}
-		// checkCudaErrors(cudaMemcpy(bestScore_d, bestScore_h, sizeof(float)*numberOfCentroids,
-		// 						   cudaMemcpyHostToDevice));				
-		//checkCudaErrors(cudaFreeHost(bestScore_h));
+
 
 		
 		// Create long living variables
@@ -155,18 +155,26 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			size_t sizeOfItemSet = numberOfPoints*numberOfBlocksPrPoint*sizeof(unsigned int);
 			unsigned int* itemSet_d;
 			checkCudaErrors(cudaMallocManaged((void**) &itemSet_d,  sizeOfItemSet));
+			checkCudaErrors(cudaMemPrefetchAsync(itemSet_d, sizeOfItemSet, device, stream1_2));
+			checkCudaErrors(cudaMemPrefetchAsync(data_d, numberOfPoints*dim*sizeof(float), device, stream1_2));
+			// cudaMemAdvise(itemSet_d, sizeOfItemSet, cudaMemAdviseSetPreferredLocation, device);
+			// cudaMemAdvise(itemSet_d, sizeOfItemSet, cudaMemAdviseSetAccessedBy, device);
+			
 			createTransactionsWrapper(ceilf((float)size/dimBlock), dimBlock, smemSize ,stream1_2, data_d, dim,
-								 numberOfPoints, currentCentroidIndex, this->width, itemSet_d); 
+								 numberOfPoints, currentCentroidIndex, this->width, itemSet_d);
+			
+			// cudaMemAdvise(itemSet_d, sizeOfItemSet, cudaMemAdviseSetReadMostly, device);
 
 			// Create the initial candidates
 			size_t sizeOfCandidates = dim*numberOfBlocksPrPoint*sizeof(unsigned int);
 			unsigned int* candidates_d;
 			checkCudaErrors(cudaMallocManaged((void**) &candidates_d,  sizeOfCandidates));
+			checkCudaErrors(cudaMemPrefetchAsync(candidates_d, sizeOfCandidates, device, stream1_1));
 			createInitialCandidatesWrapper(ceilf((float)dim/dimBlock), dimBlock, stream1_1,
 										   dim, candidates_d);
 
 
-	
+  
 			// Allocate the arrays for the support counting, scores,
 			// and the bool arrays of elements to be deleted
 			size_t sizeOfSupport = dim*sizeof(unsigned int);
@@ -186,27 +194,24 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			checkCudaErrors(cudaStreamSynchronize(stream1_2));
 
 			// Count the support
+			checkCudaErrors(cudaMemPrefetchAsync(itemSet_d, sizeOfItemSet, device, stream1_1));
+			checkCudaErrors(cudaMemPrefetchAsync(candidates_d, sizeOfCandidates, device, stream1_1));
 			countSupportWrapper(ceilf((float)dim/dimBlock), dimBlock, stream1_1,
 								candidates_d, itemSet_d, dim, numberOfPoints, dim, minSupp,
 								this->beta, support_d, score_d, toBeDeleted_d);
-
-
 
 			// Create the PrefixSum, and find the number of elements left
 			// The number elements to be deleted is the last value in the prefixSum
 			size_t sizeOfPrefixSum = (dim+1)*sizeof(unsigned int); // +1 because of the prefixSum
 			unsigned int* prefixSum_d;
 			checkCudaErrors(cudaMallocManaged((void**) &prefixSum_d,   sizeOfPrefixSum));
-			sum_scan_blelloch(stream1_1, prefixSum_d,toBeDeleted_d,(dim+1), false);
+
+			
+			sum_scan_blelloch_managed(stream1_1,stream1_1, prefixSum_d,toBeDeleted_d,(dim+1), false);
+
 
 			// Find the number of candidates after deletion of the small candidates
-			// unsigned int* sum_h;
-			// checkCudaErrors(cudaMallocHost((void**) &sum_h, sizeof(unsigned int)));
-			// checkCudaErrors(cudaMemcpyAsync(sum_h, prefixSum_d+dim, sizeof(unsigned int),
-			// 								cudaMemcpyDeviceToHost,stream1_1));
-			// checkCudaErrors(cudaFree(toBeDeleted_d));
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));
-			cudaDeviceSynchronize();
 			unsigned int oldNumberOfCandidates = dim;	
 			unsigned int numberOfCandidates = dim-prefixSum_d[dim];
 			
@@ -216,9 +221,13 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 				// Delete all candidates smaller than minSupp,
 				// the prefix sum is calculated before the "if" to get the number of candidates left
+				checkCudaErrors(cudaMemPrefetchAsync(candidates_d, sizeOfCandidates, device, stream1_1));
 				unsigned int* newCandidates_d;
 				sizeOfCandidates = dim*numberOfBlocksPrPoint*sizeof(unsigned int);
 				checkCudaErrors(cudaMallocManaged((void**) &newCandidates_d,   sizeOfCandidates));
+				checkCudaErrors(cudaMemPrefetchAsync(newCandidates_d, sizeOfCandidates, device, stream1_1));
+				checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d, sizeOfPrefixSum, device, stream1_1));
+				
 				deleteFromArrayTransfomedDataWrapper(ceilf((float)dim/32), dimBlock, stream1_1,
 													 candidates_d, prefixSum_d, oldNumberOfCandidates,
 													 numberOfBlocksPrPoint, newCandidates_d);
@@ -227,6 +236,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 				// Also delete the scores
 				float* newScore_d;
 				sizeOfScore = dim*sizeof(unsigned int);
+				checkCudaErrors(cudaMemPrefetchAsync(score_d, sizeOfScore, device, stream1_1));
 				checkCudaErrors(cudaMallocManaged((void**) &newScore_d,   sizeOfScore));
 				deleteFromArrayTransfomedDataWrapper(ceilf((float)dim/32), dimBlock, stream1_1,
 													 score_d, prefixSum_d,
@@ -235,6 +245,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 				// create indeces for argmax, it is here because it can be done concurently with the above kernel, and the frees below are blocking
 				unsigned int* index_d;
 				checkCudaErrors(cudaMallocManaged((void **) &index_d, numberOfCandidates*sizeof(unsigned int)));
+				checkCudaErrors(cudaMemPrefetchAsync(index_d, numberOfCandidates*sizeof(unsigned int), device, stream1_2));
 				createIndicesKernel(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_2,
 									index_d, numberOfCandidates);
 
@@ -252,6 +263,11 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 							 smemSize ,stream1_1, score_d, index_d, numberOfCandidates);
 
 
+
+				checkCudaErrors(cudaMemPrefetchAsync(candidates_d, sizeOfCandidates, device, stream1_1));
+				checkCudaErrors(cudaMemPrefetchAsync(score_d, sizeof(float), device, stream1_1));
+				checkCudaErrors(cudaMemPrefetchAsync(bestScore_d+i, sizeof(float), device, stream1_1));
+				checkCudaErrors(cudaMemPrefetchAsync(index_d, sizeof(unsigned int), device, stream1_1));
 				// Find the best score, then copy that score and the coresponding candidate and centroid to the result
 				// All centroids best are stored in the same array, one after each other,
 				//   to make it possible to find the disjoint clusters later.
@@ -268,6 +284,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 				// loop until there are no more candidates, or there are no more dimensions. 
 				unsigned int iterationNr = 1;
 				while(numberOfCandidates > 1 && iterationNr <= dim+1){
+
+					
 					iterationNr++;
 
 					// Merge candidates
@@ -283,7 +301,11 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 					checkCudaErrors(cudaMallocManaged((void**) &deletedFromCount_d,   sizeOfToBeDeleted));
 					checkCudaErrors(cudaMallocManaged((void**) &newCandidates_d,   sizeOfCandidates));
-				
+
+					checkCudaErrors(cudaMemPrefetchAsync(candidates_d, oldNumberOfCandidates*numberOfBlocksPrPoint * sizeof(unsigned int), device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(deletedFromCount_d, sizeOfToBeDeleted, device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(newCandidates_d, sizeOfCandidates, device, stream1_1));
+					
 					mergeCandidatesWrapper(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1,
 										   candidates_d, oldNumberOfCandidates, dim, iterationNr,
 										   newCandidates_d, deletedFromCount_d);
@@ -297,32 +319,34 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					// Find all the dublicate candidates
 					// For the find dublicates call the output vector needs to be sat to 0,
 					//    because it only writes the true values
-					checkCudaErrors(cudaMemsetAsync(toBeDeleted_d, 0, sizeOfToBeDeleted, stream1_1));
+					//checkCudaErrors(cudaMemsetAsync(toBeDeleted_d, 0, sizeOfToBeDeleted, stream1_1));
+
+					checkCudaErrors(cudaMemPrefetchAsync(candidates_d, sizeOfCandidates, device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(deletedFromCount_d, sizeOfToBeDeleted, device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(toBeDeleted_d, sizeOfToBeDeleted, device, stream1_1));
 					
 					findDublicatesWrapper(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1,
 										  candidates_d, numberOfCandidates, dim,
 										  deletedFromCount_d, toBeDeleted_d, Hash);
+					
 					orKernelWrapper(ceilf((float)(numberOfCandidates+1)/dimBlock), dimBlock, stream1_1,
 									numberOfCandidates+1, toBeDeleted_d, deletedFromCount_d);
+					
 
 					checkCudaErrors(cudaFree(deletedFromCount_d));
 					// Compute the prefix sum and then find the number of dublicates
 					sizeOfPrefixSum = (numberOfCandidates+1)*sizeof(unsigned int);
-									checkCudaErrors(cudaMallocManaged((void**) &prefixSum_d,   sizeOfPrefixSum));
-					sum_scan_blelloch(stream1_1, prefixSum_d,toBeDeleted_d,(numberOfCandidates+1), false);
-				
+					checkCudaErrors(cudaMallocManaged((void**) &prefixSum_d,   sizeOfPrefixSum));
+					sum_scan_blelloch_managed(stream1_1,stream1_1, prefixSum_d,toBeDeleted_d,(numberOfCandidates+1), false);
+					
+					
 					// checkCudaErrors(cudaMemcpyAsync(sum_h, prefixSum_d+numberOfCandidates,
 					// 								sizeof(unsigned int), cudaMemcpyDeviceToHost,stream1_1));
 					checkCudaErrors(cudaFree(toBeDeleted_d));
 
 					// always sync streams before reading value from host
 					checkCudaErrors(cudaStreamSynchronize(stream1_1));
-					cudaDeviceSynchronize();
 					
-					// for(int i = 0; i < numberOfCandidates; i++){
-					// 	std::cout << prefixSum_d[i] << " ";
-					// }
-					// std::cout << std::endl;
 					assert(numberOfCandidates >= prefixSum_d[numberOfCandidates]); // avoid underflow
 				
 					// Calculate the new number of candidates, based on the amount that should be deleted
@@ -333,10 +357,15 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					}
 										
 					// Delete the dublicate candidates
+					checkCudaErrors(cudaMemPrefetchAsync(candidates_d, sizeOfCandidates, device, stream1_1));
 					sizeOfCandidates = numberOfCandidates*numberOfBlocksPrPoint*sizeof(unsigned int);
 					checkCudaErrors(cudaMallocManaged((void**) &newCandidates_d,   sizeOfCandidates));
 					unsigned int delTrfmDataDimGrid = ceilf(((float)oldNumberOfCandidates*numberOfBlocksPrPoint)
 															/dimBlock);
+					checkCudaErrors(cudaMemPrefetchAsync(newCandidates_d, sizeOfCandidates, device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d, sizeOfPrefixSum, device, stream1_1));
+
+					
 					deleteFromArrayTransfomedDataWrapper(delTrfmDataDimGrid, dimBlock, stream1_1,
 														 candidates_d, prefixSum_d, oldNumberOfCandidates,
 														 numberOfBlocksPrPoint, newCandidates_d);
@@ -357,6 +386,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					checkCudaErrors(cudaMallocManaged((void**) &score_d,   sizeOfScore));
 					checkCudaErrors(cudaMallocManaged((void**) &toBeDeleted_d,   sizeOfToBeDeleted));
 
+					checkCudaErrors(cudaMemPrefetchAsync(itemSet_d, sizeOfItemSet, device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(candidates_d, sizeOfCandidates, device, stream1_1));
+
 					countSupportWrapper(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1,
 										candidates_d, itemSet_d, dim, numberOfPoints, numberOfCandidates, minSupp,
 										this->beta, support_d, score_d, toBeDeleted_d);
@@ -364,12 +396,11 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					// Delete the candidates with support smaller the minSupp.
 					sizeOfPrefixSum = (numberOfCandidates+1)*sizeof(unsigned int);
 					checkCudaErrors(cudaMallocManaged((void**) &prefixSum_d,   sizeOfPrefixSum));
-					sum_scan_blelloch(stream1_1, prefixSum_d, toBeDeleted_d,(numberOfCandidates+1), false);
-					// checkCudaErrors(cudaMemcpyAsync(sum_h, prefixSum_d+numberOfCandidates,
-					// 								sizeof(unsigned int), cudaMemcpyDeviceToHost,stream1_1));
+					sum_scan_blelloch_managed(stream1_1,stream1_1, prefixSum_d, toBeDeleted_d,(numberOfCandidates+1), false);
+
 					checkCudaErrors(cudaFree(toBeDeleted_d));
 					checkCudaErrors(cudaStreamSynchronize(stream1_1));
-					cudaDeviceSynchronize();
+					
 					oldNumberOfCandidates = numberOfCandidates;
  
   					assert(numberOfCandidates >= prefixSum_d[numberOfCandidates]); // avoid underflow
@@ -387,6 +418,11 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					checkCudaErrors(cudaMallocManaged((void**) &newScore_d,   sizeOfScore));
 
 					delTrfmDataDimGrid = ceilf((float)oldNumberOfCandidates*numberOfBlocksPrPoint/dimBlock);
+					checkCudaErrors(cudaMemPrefetchAsync(candidates_d, sizeOfCandidates, device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(score_d, sizeOfScore, device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(newScore_d, sizeOfScore, device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(newCandidates_d, sizeOfCandidates, device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d, sizeOfPrefixSum, device, stream1_1));
 					deleteFromArrayTransfomedDataWrapper(delTrfmDataDimGrid, dimBlock, stream1_1,
 														 candidates_d, prefixSum_d, oldNumberOfCandidates,
 														 numberOfBlocksPrPoint, newCandidates_d);
@@ -410,6 +446,10 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					argMaxKernel(ceilf((float)numberOfCandidates/dimBlock), dimBlock, smemSize ,stream1_1,
 								 score_d, index_d, numberOfCandidates);
 
+					checkCudaErrors(cudaMemPrefetchAsync(candidates_d, sizeOfCandidates, device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(score_d, sizeof(float), device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(bestScore_d+i, sizeof(float), device, stream1_1));
+					checkCudaErrors(cudaMemPrefetchAsync(index_d, sizeof(unsigned int), device, stream1_1));
 					// Store the best in the arrays to look for dublicate arrays. 
 					extractMaxWrapper(ceilf((float)numberOfBlocksPrPoint/dimBlock), dimBlock, stream1_1,
 									  candidates_d, score_d, currentCentroidIndex, numberOfCandidates, index_d,
@@ -475,17 +515,11 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 		unsigned int* prefixSum_d;
 		size_t sizeOfPrefixSum = (numberOfCentroids+1)*sizeof(unsigned int);
 		checkCudaErrors(cudaMallocManaged((void**) &prefixSum_d,   sizeOfPrefixSum));
-		sum_scan_blelloch(stream1_1, prefixSum_d,disjointClustersToBeRemoved_b_d,(numberOfCentroids+1), true);
+		sum_scan_blelloch_managed(stream1_1,stream1_1, prefixSum_d,disjointClustersToBeRemoved_b_d,(numberOfCentroids+1), true);
 
-		checkCudaErrors(cudaFree(disjointClustersToBeRemoved_b_d));
 
-		// unsigned int* newNumberOfCentroids_h;
-		// checkCudaErrors(cudaMallocHost((void**) &newNumberOfCentroids_h, sizeof(unsigned int)));
-		// checkCudaErrors(cudaMemcpyAsync(newNumberOfCentroids_h, prefixSum_d+numberOfCentroids,
-		// 								sizeof(unsigned int), cudaMemcpyDeviceToHost,stream1_1));
-		
+		checkCudaErrors(cudaFree(disjointClustersToBeRemoved_b_d));		
 		checkCudaErrors(cudaStreamSynchronize(stream1_1));
-		cudaDeviceSynchronize();
 		// make sure that there can be no more centroids than there were before
 		
 		assert(numberOfCentroids >= prefixSum_d[numberOfCentroids]);
@@ -509,6 +543,12 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 		checkCudaErrors(cudaMallocManaged((void**) &finalCandidates_d,
 								   finalNumberOfClusters*numberOfBlocksPrPoint*sizeof(unsigned int)));
 
+		checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d, sizeOfPrefixSum, device, stream1_1));
+		checkCudaErrors(cudaMemPrefetchAsync(finalScore_d, finalNumberOfClusters*sizeof(float), device, stream1_1));
+		checkCudaErrors(cudaMemPrefetchAsync(finalCentroids_d, finalNumberOfClusters*sizeof(unsigned int), device, stream1_1));
+		checkCudaErrors(cudaMemPrefetchAsync(finalCandidates_d, finalNumberOfClusters*numberOfBlocksPrPoint*sizeof(unsigned int), device, stream1_1));
+						
+
 		// Delete form the arrays
 		deleteFromArrayWrapper(ceilf((float)(numberOfCentroids)/dimBlock), dimBlock, stream1_1,
 							   bestCentroid_d, prefixSum_d, numberOfCentroids, 1, finalCentroids_d);
@@ -531,10 +571,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 							finalCentroids_d, data_d, dim, finalNumberOfClusters, outputCentroids_d);
 
 		checkCudaErrors(cudaFree(finalCentroids_d));
-		cudaDeviceSynchronize();
 		// For each of the clusters found
 		for(unsigned int i = 0; i < finalNumberOfClusters; i++){
-			checkCudaErrors(cudaPeekAtLastError());
 			// Find the points in the i'th cluster
 			bool* pointsContained_d;
 			checkCudaErrors(cudaMallocManaged((void**) &pointsContained_d,   (numberOfPoints+1)*sizeof(bool)));
@@ -550,7 +588,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			unsigned int* prefixSum_d;
 			size_t sizeOfPrefixSum = (numberOfPoints+1)*sizeof(unsigned int);
 			checkCudaErrors(cudaMallocManaged((void**) &prefixSum_d,   sizeOfPrefixSum));
-			sum_scan_blelloch(stream1_1, prefixSum_d,pointsContained_d,(numberOfPoints+1), true);
+			sum_scan_blelloch_managed(stream1_1,stream1_1, prefixSum_d,pointsContained_d,(numberOfPoints+1), true);
 
 			// Fetch the number of points in the cluster
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));
@@ -562,6 +600,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 	
 			size_t sizeOfOutputCluster = (oldNumberOfPoints - numberOfPoints)*dim*sizeof(unsigned int);
 			checkCudaErrors(cudaMallocManaged((void**) &outputCluster_d,   sizeOfOutputCluster));
+			checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d, sizeOfPrefixSum, device, stream1_1));
+			checkCudaErrors(cudaMemPrefetchAsync(outputCluster_d, sizeOfOutputCluster, device, stream1_1));
 			deleteFromArrayWrapper(ceilf((float)(oldNumberOfPoints*dim)/dimBlock), dimBlock, stream1_1,
 								   data_d, prefixSum_d, oldNumberOfPoints, dim, outputCluster_d);
 		
@@ -570,15 +610,23 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			// Delete the points already in the cluster.
 			float* newData_d;
 			size_t sizeOfNewData = numberOfPoints*dim*sizeof(unsigned int);
-			sum_scan_blelloch(stream1_1, prefixSum_d,pointsContained_d,(oldNumberOfPoints+1), false);
 			if(sizeOfNewData != 0){
 				checkCudaErrors(cudaMallocManaged((void**) &newData_d, sizeOfNewData)); // This can be done at the same time as previous delete
+				// cudaMemAdvise(newData_d, sizeOfNewData, cudaMemAdviseSetPreferredLocation, device);
+				// cudaMemAdvise(newData_d, sizeOfNewData, cudaMemAdviseSetAccessedBy, device);
+				// cudaMemAdvise(newData_d, sizeOfNewData, cudaMemAdviseSetReadMostly, device);
+				checkCudaErrors(cudaMemPrefetchAsync(newData_d, sizeOfNewData, device, stream1_2));
 			}
+			sum_scan_blelloch_managed(stream1_1,stream1_1, prefixSum_d,pointsContained_d,(oldNumberOfPoints+1), false);
 			
-			checkCudaErrors(cudaDeviceSynchronize());	
+			checkCudaErrors(cudaStreamSynchronize(stream1_2));
+			
+			checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d, sizeOfPrefixSum, device, stream1_1));
+			
 			deleteFromArrayWrapper(ceilf((float)oldNumberOfPoints*dim/dimBlock),  dimBlock, stream1_1,
 								   data_d, prefixSum_d, oldNumberOfPoints, dim, newData_d);
-			checkCudaErrors(cudaDeviceSynchronize());
+
+			
 			checkCudaErrors(cudaFree(pointsContained_d));
 			checkCudaErrors(cudaFree(prefixSum_d));
 			
@@ -608,18 +656,16 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					}
 				}
 			}
-			checkCudaErrors(cudaDeviceSynchronize());
+
 			
 			result.push_back(std::make_pair(outputCluster,outputDim));
-			checkCudaErrors(cudaDeviceSynchronize());
 			data_d = newData_d;
-			checkCudaErrors(cudaDeviceSynchronize());
 			// Break if the are no more points.
 			if(numberOfPoints == 0){
 				break;
 			}
 		}
-		checkCudaErrors(cudaDeviceSynchronize());
+
 		checkCudaErrors(cudaFree(finalScore_d));
 		checkCudaErrors(cudaFree(finalCandidates_d));
 		checkCudaErrors(cudaFree(outputCentroids_d));

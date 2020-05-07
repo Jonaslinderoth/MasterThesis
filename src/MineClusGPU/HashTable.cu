@@ -30,7 +30,8 @@ KeyValue* create_hashtable(unsigned int size, cudaStream_t stream)
 {
     // Allocate memory
     KeyValue* hashtable;
-    checkCudaErrors(cudaMalloc((void**) &hashtable, sizeof(KeyValue) * size));
+    checkCudaErrors(cudaMallocManaged((void**) &hashtable, sizeof(KeyValue) * size));
+	checkCudaErrors(cudaMemPrefetchAsync(hashtable, sizeof(KeyValue) * size, 0, stream));
 
     // Initialize hash table to empty
     static_assert(kEmpty == 0xffffffffffffffff, "memset expected kEmpty=0xffffffffffffffff");
