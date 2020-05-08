@@ -1,5 +1,5 @@
 
-#include "src/MineClus/MineClus.h"
+#include "src/MineClusGPU/MineClusGPUnified.h"
 #include <random>
 
 int main(){
@@ -25,7 +25,7 @@ int main(){
 		data->push_back(point);
 	}
 
-	auto c = new MineClus(data);
+	auto c = new MineClusGPUnified(data);
 	c->setSeed(2);
 	c->setConcurentVersion(true);
 	auto res = c->findCluster();

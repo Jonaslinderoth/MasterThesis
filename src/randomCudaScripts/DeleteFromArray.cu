@@ -392,7 +392,7 @@ void sum_scan_blelloch_managed(cudaStream_t stream, cudaStream_t stream_preproce
 	checkCudaErrors(cudaMallocManaged(&d_block_sums, sizeof(unsigned int) * grid_sz));
 	checkCudaErrors(cudaMemPrefetchAsync(d_block_sums, sizeof(unsigned int) * grid_sz,0, stream_preprocess));
 	checkCudaErrors(cudaMemsetAsync(d_block_sums, 0, sizeof(unsigned int) * grid_sz, stream_preprocess));
-	checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
+	//checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
 
 	// Sum scan data allocated to each block
 	//gpu_sum_scan_blelloch<<<grid_sz, block_sz, sizeof(unsigned int) * max_elems_per_block >>>(d_out, d_in, d_block_sums, numElems);
@@ -412,7 +412,7 @@ void sum_scan_blelloch_managed(cudaStream_t stream, cudaStream_t stream_preproce
 		checkCudaErrors(cudaMallocManaged(&d_dummy_blocks_sums, sizeof(unsigned int)));
 		checkCudaErrors(cudaMemPrefetchAsync(d_dummy_blocks_sums, sizeof(unsigned int), 0, stream_preprocess));
 		checkCudaErrors(cudaMemsetAsync(d_dummy_blocks_sums, 0, sizeof(unsigned int), stream_preprocess));
-		checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
+		//checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
 		gpu_prescan<<<1, block_sz, sizeof(unsigned int) * shmem_sz, stream>>>(d_block_sums,
 																			  d_block_sums,
 																			  d_dummy_blocks_sums,
@@ -769,7 +769,7 @@ void sum_scan_blelloch_managed(cudaStream_t stream, cudaStream_t stream_preproce
 	checkCudaErrors(cudaMallocManaged(&d_block_sums, sizeof(unsigned int) * grid_sz));
 	checkCudaErrors(cudaMemPrefetchAsync(d_block_sums, sizeof(unsigned int) * grid_sz, 0, stream_preprocess));
 	checkCudaErrors(cudaMemsetAsync(d_block_sums, 0, sizeof(unsigned int) * grid_sz, stream_preprocess));
-	checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
+	//	checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
 
 	// Sum scan data allocated to each block
 	//gpu_sum_scan_blelloch<<<grid_sz, block_sz, sizeof(unsigned int) * max_elems_per_block >>>(d_out, d_in, d_block_sums, numElems);
@@ -789,7 +789,7 @@ void sum_scan_blelloch_managed(cudaStream_t stream, cudaStream_t stream_preproce
 		checkCudaErrors(cudaMallocManaged(&d_dummy_blocks_sums, sizeof(unsigned int)));
 		checkCudaErrors(cudaMemPrefetchAsync(d_dummy_blocks_sums, sizeof(unsigned int), 0, stream_preprocess));
 		checkCudaErrors(cudaMemsetAsync(d_dummy_blocks_sums, 0, sizeof(unsigned int), stream_preprocess));
-		checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
+		//	checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
 		gpu_prescan<<<1, block_sz, sizeof(unsigned int) * shmem_sz, stream>>>(d_block_sums,
 																	d_block_sums,
 																	d_dummy_blocks_sums,
