@@ -740,6 +740,11 @@ void sum_scan_blelloch_managed(cudaStream_t stream, cudaStream_t stream_preproce
 							   bool inverted)
 {
 	// Zero out d_out
+	// std::cout << " numElems * sizeof(bool): " << numElems * sizeof(bool) << " " <<d_in<< std::endl;
+	// for(int i = 0; i < numElems-5; i++){
+	// 	std::cout << d_in[i] << " " << std::endl;
+	// }
+	// std::cout << std::endl;
 	checkCudaErrors(cudaMemPrefetchAsync(d_in, numElems * sizeof(bool),0, stream_preprocess));
 	checkCudaErrors(cudaMemPrefetchAsync(d_out, numElems * sizeof(unsigned int),0, stream_preprocess));
 	checkCudaErrors(cudaMemsetAsync(d_out, 0, numElems * sizeof(unsigned int), stream_preprocess));
@@ -960,6 +965,34 @@ void deleteFromArray(cudaStream_t stream,
 		cudaEventSynchronize(stop);
 		cudaEventElapsedTime(time, start, stop);
 	}
+
+};
+
+void deleteFromArray_managed(cudaStream_t stream,
+					 float* d_outData,
+					 bool* d_delete_array,
+					 const float* d_data,
+					 const unsigned long numElements,
+					 const unsigned int dimension,
+					 const bool inverted,
+					 float* time){
+	const unsigned int threadsUsed = 1024;
+	// Set up device-side memory for output
+	unsigned int* d_out_blelloch;
+	checkCudaErrors(cudaMallocManaged(&d_out_blelloch, sizeof(unsigned int) * (numElements+1)));
+
+	// std::cout << "(numElements+1): " << (numElements+1) << " "<< d_delete_array << std::endl;
+	sum_scan_blelloch_managed(stream, stream, d_out_blelloch,d_delete_array,(numElements+1), inverted);
+
+	unsigned int blocksToUse = numElements*dimension/threadsUsed;
+	if((numElements*dimension)%threadsUsed!=0){
+		blocksToUse++;
+	}
+
+	gpuDeleteFromArray<<<blocksToUse,threadsUsed,0, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
+
+	checkCudaErrors(cudaFree(d_out_blelloch));
+
 
 };
 

@@ -67,7 +67,14 @@ void deleteFromArray(float* d_outData,
 					 unsigned int dimension = 1,
 					 bool inverted = false,
 					 float* time = nullptr);
-
+void deleteFromArray_managed(cudaStream_t stream,
+					 float* d_outData,
+					 bool* d_delete_array,
+					 const float* d_data,
+					 const unsigned long numElements,
+					 const unsigned int dimension,
+					 const bool inverted = false,
+							 float* time = nullptr);
 
 void deleteFromArrayTrasformedData(cudaStream_t stream,
 					 			   float* d_outData,

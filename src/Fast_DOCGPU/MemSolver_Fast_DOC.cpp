@@ -248,7 +248,6 @@ double MemSolver_Fast_DOC::computeCentroidSizeForAllocation(Memory_sizes allocat
 };
 
 
-
 Array_sizes MemSolver_Fast_DOC::computeArraySizes(double number_of_centroids,
 										 unsigned int number_of_points,
 										 unsigned int m,
