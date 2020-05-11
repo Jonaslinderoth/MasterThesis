@@ -15,7 +15,6 @@
 
 
 Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int number_of_points, unsigned int number_of_centroids_max, unsigned int m, unsigned int sample_size, unsigned k, size_t freeMem){
-	
 	OsiClpSolverInterface solver;
 	rehearse::CelModel model(solver);
 
@@ -36,7 +35,8 @@ Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int num
 	rehearse::CelIntVar size_of_index_max;
 	rehearse::CelIntVar size_of_randomStates_max;
 	rehearse::CelIntVar size_of_bestDims_max;
-
+	rehearse::CelIntVar lower;
+	
 	std::vector<unsigned int> data_points;
 	data_points.push_back(number_of_points);
 	for(int i = 0; i < k; i++){
@@ -51,48 +51,51 @@ Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int num
 	}
 	model.setObjective ( objective );
 	solver.setObjSense(-1.0); // maximize
+	model.addConstraint(lower == 0.000001);
 
-	
 	// Define the constraints
 	for(int i = 0; i < k; i++){
 
 		model.addConstraint( data_points.at(i) * dim * sizeof(float)
-							<= size_of_data_max);
+							 <= size_of_data_max);
 
 		model.addConstraint( number_of_centroids[i] * m * sample_size * sizeof(unsigned int)
-							<= size_of_samples_max);
+							 <= size_of_samples_max);
 
 		model.addConstraint( (number_of_centroids[i]+1) * sizeof(unsigned int)
-							<= size_of_centroids_max); // +1 for ceilf
+							 <= size_of_centroids_max); // +1 for ceilf
 
 		model.addConstraint( number_of_centroids[i] * m * dim * sizeof(bool)
-							<= size_of_findDim_max);
+							 <= size_of_findDim_max);
 
 		model.addConstraint( number_of_centroids[i] * m * dim * sizeof(unsigned int)
-							<= size_of_findDim_count_max);
+							 <= size_of_findDim_count_max);
 		
 		model.addConstraint( (number_of_centroids[i] * m * data_points.at(i)) * sizeof(bool) + sizeof(bool)
-							<= size_of_pointsContained_max);
+							 <= size_of_pointsContained_max);
 
 		model.addConstraint( number_of_centroids[i] * m * sizeof(unsigned int)
-							<= size_of_pointsContained_count_max);
+							 <= size_of_pointsContained_count_max);
 
 		model.addConstraint( number_of_centroids[i] * m * sizeof(float)
-							<= size_of_score_max);
+							 <= size_of_score_max);
 				
 		model.addConstraint( number_of_centroids[i] * m * sizeof(unsigned int)
-							<= size_of_index_max);
+							 <= size_of_index_max);
 
 		model.addConstraint( 1024*10 * sizeof(curandState)
-							<= size_of_randomStates_max); // OBS: hardcoded
+							 <= size_of_randomStates_max); // OBS: hardcoded
 
 		model.addConstraint( (number_of_points+1)*sizeof(bool)
-							<= size_of_bestDims_max);
+							 <= size_of_bestDims_max);
 		
 		model.addConstraint( number_of_centroids[i]
-							<= number_of_centroids_max);
+							 <= number_of_centroids_max);
 		
+		model.addConstraint( lower <=  number_of_centroids[i]);
 	}
+
+
 
 	// Constraint that the maximum allocation for each of the arrays are smaller than the total amount of free memory.
 	model.addConstraint(2*size_of_data_max + // times 2 to allow for the return array
@@ -120,7 +123,6 @@ Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int num
 	}
 	// create the output
 	Memory_sizes result;
-
 	result.size_of_data =                  (model.getSolutionValue(size_of_data_max));
 	result.size_of_samples =               (model.getSolutionValue(size_of_samples_max));
 	result.size_of_centroids =             floorf(model.getSolutionValue(size_of_centroids_max));
@@ -132,7 +134,6 @@ Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int num
 	result.size_of_randomStates =          1024*10 * sizeof(curandState);
 	result.size_of_bestDims =              (model.getSolutionValue(size_of_bestDims_max));
 	result.first_number_of_centroids =     (model.getSolutionValue(number_of_centroids[0]));
-	
 	// recompute the maximum value for pointsContained, to avoid rounding errors
 	size_t a = 0;
 	size_t b;
@@ -141,7 +142,6 @@ Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int num
 		if(a < b) a = b;
 	}
 	result.size_of_pointsContained =       a;
-
 	
 	assert(result.size_of_data                  == number_of_points * dim * sizeof(float));
 	assert(result.size_of_samples               >= (size_t)(result.first_number_of_centroids*m)
@@ -157,7 +157,8 @@ Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int num
 
 
 	assert(result.size_of_data == number_of_points*dim*sizeof(float));
-	return result;	
+	return result;
+   
 }
 
 

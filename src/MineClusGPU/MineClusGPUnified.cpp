@@ -358,6 +358,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					if(numberOfCandidates <= 0){
 						break;
 					}
+					//std::cout <<i<< " "<< iterationNr << " numberOfCandidates: " << numberOfCandidates << std::endl;
 										
 					// Delete the dublicate candidates
 					checkCudaErrors(cudaMemPrefetchAsync(candidates_d, sizeOfCandidates, device, stream1_1));

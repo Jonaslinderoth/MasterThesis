@@ -996,6 +996,7 @@ void deleteFromArray_managed(cudaStream_t stream,
 
 };
 
+
 void deleteFromArrayWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
 							float* data, unsigned int* prefixSum, unsigned int numberOfElements,
 							unsigned int dim, float* output){

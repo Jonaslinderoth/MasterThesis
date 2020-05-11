@@ -36,7 +36,7 @@ Memory_sizes MemSolver_Fast_DOC::computeForAllocations(unsigned int dim, unsigne
 	rehearse::CelIntVar size_of_index_max;
 	rehearse::CelIntVar size_of_randomStates_max;
 	rehearse::CelIntVar size_of_bestDims_max;
-
+	rehearse::CelIntVar lower;
 	std::vector<unsigned int> data_points;
 	data_points.push_back(number_of_points);
 	for(int i = 0; i < k; i++){
@@ -51,7 +51,7 @@ Memory_sizes MemSolver_Fast_DOC::computeForAllocations(unsigned int dim, unsigne
 	}
 	model.setObjective ( objective );
 	solver.setObjSense(-1.0); // maximize
-
+	model.addConstraint(lower == 0.000001);
 	
 	// Define the constraints
 	for(int i = 0; i < k; i++){
@@ -77,6 +77,8 @@ Memory_sizes MemSolver_Fast_DOC::computeForAllocations(unsigned int dim, unsigne
 		
 		model.addConstraint( number_of_centroids[i]
 							<= number_of_centroids_max);
+
+		model.addConstraint( lower <=  number_of_centroids[i]);
 		
 	}
 	
@@ -149,17 +151,17 @@ Memory_sizes MemSolver_Fast_DOC::computeForAllocations(unsigned int dim, unsigne
 		result.size_of_score =                 0;
 	}
 	else{
-		result.size_of_data =                  (model.getSolutionValue(size_of_data_max));
-		result.size_of_samples =               (model.getSolutionValue(size_of_samples_max));
-		result.size_of_centroids =             floorf(model.getSolutionValue(size_of_centroids_max));
-		result.size_of_findDim =               (model.getSolutionValue(size_of_findDim_max));
-		result.size_of_findDim_count =         (model.getSolutionValue(size_of_findDim_count_max));
-		result.size_of_pointsContained =       (model.getSolutionValue(size_of_pointsContained_max));
-		result.size_of_pointsContained_count = (model.getSolutionValue(size_of_pointsContained_count_max));
-		result.size_of_index =                 ceilf(model.getSolutionValue(size_of_index_max));
-		result.size_of_randomStates =          1024*2 * sizeof(curandState);
-		result.size_of_bestDims =              (model.getSolutionValue(size_of_bestDims_max));
-		result.first_number_of_centroids =     (model.getSolutionValue(number_of_centroids[0]));
+		result.size_of_data =                  (size_t)(model.getSolutionValue(size_of_data_max));
+		result.size_of_samples =               (size_t)(model.getSolutionValue(size_of_samples_max));
+		result.size_of_centroids =             (size_t)floorf(model.getSolutionValue(size_of_centroids_max));
+		result.size_of_findDim =               (size_t)(model.getSolutionValue(size_of_findDim_max));
+		result.size_of_findDim_count =         (size_t)(model.getSolutionValue(size_of_findDim_count_max));
+		result.size_of_pointsContained =       (size_t)(model.getSolutionValue(size_of_pointsContained_max));
+		result.size_of_pointsContained_count = (size_t)(model.getSolutionValue(size_of_pointsContained_count_max));
+		result.size_of_index =                 (size_t)ceilf(model.getSolutionValue(size_of_index_max));
+		result.size_of_randomStates =          (size_t)1024*2 * sizeof(curandState);
+		result.size_of_bestDims =              (size_t)(model.getSolutionValue(size_of_bestDims_max));
+		result.first_number_of_centroids =     (size_t)(model.getSolutionValue(number_of_centroids[0]));
 		result.size_of_score =                 0;
 			};
 	

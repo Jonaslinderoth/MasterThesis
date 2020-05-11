@@ -1,5 +1,5 @@
 
-#include "src/MineClusGPU/MineClusGPUnified.h"
+#include "src/Fast_DOCGPU/Fast_DOCGPUnified.h"
 #include <random>
 
 int main(){
@@ -25,9 +25,10 @@ int main(){
 		data->push_back(point);
 	}
 
-	auto c = new MineClusGPUnified(data);
+	auto c = new Fast_DOCGPUnified(data);
 	c->setSeed(2);
-	c->setConcurentVersion(true);
+
+	
 	auto res = c->findCluster();
 	
 

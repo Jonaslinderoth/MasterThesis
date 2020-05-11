@@ -438,6 +438,8 @@ TEST(testFastDOCUnified, testFind2ClusterGPU){
 		
 	EXPECT_EQ(res_gpu.at(1).first->size(), 50);
 	EXPECT_EQ(res_gpu.at(1).second->size(), dim);
+
+	
 }
 
 

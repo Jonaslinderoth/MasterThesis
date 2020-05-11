@@ -5,8 +5,8 @@
  *      Author: mikkel
  */
 
-#ifndef DOCGPU_H_
-#define DOCGPU_H_
+#ifndef DOCGPUNIFIED_H_
+#define DOCGPUNIFIED_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,17 +21,17 @@
 #include <stdint.h>
 
 
-class DOCGPU : public Clustering{
+class DOCGPUnified : public Clustering{
 public:
- DOCGPU() : DOCGPU(new std::vector<std::vector<float>*>){};
- DOCGPU(DataReader* dr) : DOCGPU(initDataReader(dr)){};
- DOCGPU(std::vector<std::vector<float>*>* input) : DOCGPU(input, 0.1, 0.25, 15) {};
- DOCGPU(float alpha, float beta, float width) : DOCGPU(new std::vector<std::vector<float>*>, alpha, beta, width){};
-	DOCGPU(std::vector<std::vector<float>*>* input, float alpha, float beta, float width);
+ DOCGPUnified() : DOCGPUnified(new std::vector<std::vector<float>*>){};
+ DOCGPUnified(DataReader* dr) : DOCGPUnified(initDataReader(dr)){};
+ DOCGPUnified(std::vector<std::vector<float>*>* input) : DOCGPUnified(input, 0.1, 0.25, 15) {};
+ DOCGPUnified(float alpha, float beta, float width) : DOCGPUnified(new std::vector<std::vector<float>*>, alpha, beta, width){};
+	DOCGPUnified(std::vector<std::vector<float>*>* input, float alpha, float beta, float width);
 	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster();
 	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> findKClusters(int k);
 
-	virtual ~DOCGPU();
+	virtual ~DOCGPUnified();
 	void setAlpha(float value){this->alpha = value;};
 	void setBeta(float value){this->beta = value;};
 	void setWidth(float value){this->width = value;};
@@ -57,4 +57,4 @@ public:
 	
 };
 
-#endif /* DOCGPU_H_ */
+#endif /* DOCGPUnified_H_ */

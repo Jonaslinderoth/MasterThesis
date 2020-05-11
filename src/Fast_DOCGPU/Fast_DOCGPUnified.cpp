@@ -150,6 +150,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 	// if the CPU random generator is seeded then the GPU is also
 	assert(numberOfRandomStates*sizeof(curandState) == sizes.size_of_randomStates);
   	int randomSeed = this->randInt(0,100000, 1).at(0);
+	checkCudaErrors(cudaMemPrefetchAsync(randomStates_d, sizes.size_of_randomStates, device, stream1));
 	generateRandomStatesArray(stream1, randomStates_d,numberOfRandomStates,false, randomSeed);
 
 	
@@ -167,10 +168,11 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 	unsigned int* findDim_count_d;
 	checkCudaErrors(cudaMallocManaged((void **) &findDim_d, sizes.size_of_findDim));
 	checkCudaErrors(cudaMallocManaged((void **) &findDim_count_d, sizes.size_of_findDim_count));
-
+	// std::cout << "findDim_count_d: " << findDim_count_d << " to " << findDim_count_d+(sizes.size_of_findDim_count/4) << std::endl;
 	// allocating memory for pointsContained
 	bool* pointsContained_d;
 	checkCudaErrors(cudaMallocManaged((void **) &pointsContained_d, sizes.size_of_pointsContained));
+	// std::cout << "pointsContained_d: " << pointsContained_d << " to " << pointsContained_d+(sizes.size_of_pointsContained/sizeof(bool)) << std::endl;
 	// std::cout << "sizes.size_of_pointsContained: " << sizes.size_of_pointsContained << std::endl;
 
 
@@ -230,13 +232,15 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 
 
 			// generate random indices for samples
-			checkCudaErrors(cudaMemPrefetchAsync(samples_d, arr_sizes.number_of_samples*sizeof(unsigned int), device, stream1));
+			checkCudaErrors(cudaMemPrefetchAsync(samples_d, arr_sizes.number_of_values_in_samples*sizeof(unsigned int), device, stream1));
 			checkCudaErrors(cudaMemPrefetchAsync(randomStates_d, sizes.size_of_randomStates, device, stream1));
 			generateRandomIntArrayDevice(stream1, samples_d, randomStates_d , numberOfRandomStates,
 										 arr_sizes.number_of_values_in_samples, number_of_points-1, 0);
 
 			// only regenerate when new centroids are needed
 			if(j == 0 || j%((unsigned int)ceilf(1/number_of_centroids_sample))==0){
+				checkCudaErrors(cudaMemPrefetchAsync(centroids_d, arr_sizes.number_of_centroids*sizeof(unsigned int), device, stream1));
+				// std::cout << "centroids_d: " << centroids_d << " to " << centroids_d+19<< std::endl;
 				generateRandomIntArrayDevice(stream1, centroids_d, randomStates_d , numberOfRandomStates,
 											 arr_sizes.number_of_centroids, number_of_points-1 , 0);
 			}
@@ -277,6 +281,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 			// unsigned int* best_score_h = (unsigned int*) malloc(sizeof(unsigned int));
 			// checkCudaErrors(cudaMemcpyAsync(best_score_h, findDim_count_d, sizeof(unsigned int), cudaMemcpyDeviceToHost, stream1));
 			// Synchronize to make sure that the value have arrived to the host side
+			checkCudaErrors(cudaMemPrefetchAsync((findDim_count_d), sizeof(unsigned int), cudaCpuDeviceId, stream1));
 			cudaStreamSynchronize(stream1);
 			if(maxScore < findDim_count_d[0]){ // if the new score is better than the current;
 				maxScore = findDim_count_d[0];
@@ -289,23 +294,33 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 										   pointsContained_d, pointsContained_count_d,
 										   width, dim, number_of_points, 1, 1);
 				*/
-				checkCudaErrors(cudaMemPrefetchAsync(pointsContained_d, sizeof(bool)*number_of_points, device, stream1));
-				checkCudaErrors(cudaMemPrefetchAsync(centroids_d+(((size_t)(index_d[0]/m))), sizeof(unsigned int), device, stream1));
-				checkCudaErrors(cudaMemPrefetchAsync(findDim_d+(index_d[0]*dim), sizeof(bool)*dim, device, stream1));
+
+				checkCudaErrors(cudaMemPrefetchAsync((index_d), sizeof(unsigned int), cudaCpuDeviceId, stream1));
+				cudaStreamSynchronize(stream1);
+				auto tmp = index_d[0];
+				
+				checkCudaErrors(cudaMemPrefetchAsync(centroids_d+(((size_t)(tmp/m))), sizeof(unsigned int), device, stream1));
+				checkCudaErrors(cudaMemPrefetchAsync(findDim_d+(tmp*dim), sizeof(bool)*(dim+1), device, stream1));
+				checkCudaErrors(cudaMemPrefetchAsync(pointsContained_d, sizeof(bool)*(number_of_points+1), device, stream1));			   
 				checkCudaErrors(cudaMemPrefetchAsync(data_d, sizeof(float)*number_of_points*dim, device, stream1));
+				// std::cout << "centroids_d+(((size_t)(index_d[0]/m))): " << centroids_d+(((size_t)(index_d[0]/m))) << std::endl;
+				// std::cout << "findDim_d+(index_d[0]*dim): " << findDim_d+(index_d[0]*dim) << " to " << findDim_d+(index_d[0]*dim)+dim+1 << std::endl;
+				// std::cout << "pointsContained_d: " << pointsContained_d << " to " << pointsContained_d+(number_of_points+1) << std::endl;
+				// std::cout << "data_d: " << data_d << " to " << data_d+(number_of_points*dim) << std::endl;
 				whatDataIsInCentroid(dimGrid,
 									 dimBlock,
 									 stream1,
 									 pointsContained_d,
 									 data_d,
-									 centroids_d+(((size_t)(index_d[0]/m))),
-									 findDim_d+(index_d[0]*dim),
+									 centroids_d+(((size_t)(tmp/m))),
+									 findDim_d+(tmp*dim),
 									 width,
 									 dim,
 									 number_of_points);
 
 				//prefixsum....
-												 
+
+				
 
 				// Allocate space for the size of the cluster
 				checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d, sizeof(unsigned int)*number_of_points, device, stream1));
@@ -346,7 +361,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 					//notDevice(dimGrid, dimBlock, stream1, pointsContained_d, number_of_points);
 					cudaStreamSynchronize(stream1);
 					assert(sizes.size_of_data >= number_of_points*dim*sizeof(float));
-
+					checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d, sizeof(unsigned int)+(number_of_points+1), device, stream1));
 					checkCudaErrors(cudaMemPrefetchAsync(outputCluster_d, sizeof(float)*cluster_size*dim, device, stream1));
 					checkCudaErrors(cudaMemPrefetchAsync(pointsContained_d, sizeof(bool)*(number_of_points+1), device, stream1));
 					
@@ -354,10 +369,12 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 										   stream1, data_d, prefixSum_d, 
 										   number_of_points, dim, outputCluster_d);
 
+					//checkCudaErrors(cudaMemPrefetchAsync((index_d), sizeof(unsigned int), cudaCpuDeviceId, stream1));
+
 					cudaStreamSynchronize(stream1);
-					checkCudaErrors(cudaMemPrefetchAsync(findDim_d+(index_d[0]*dim), sizeof(unsigned int)*dim, cudaCpuDeviceId, stream1));
+					checkCudaErrors(cudaMemPrefetchAsync(findDim_d+(tmp*dim), sizeof(unsigned int)*dim, cudaCpuDeviceId, stream2));
 					
-					bool* output_dims_h = findDim_d+(index_d[0]*dim);
+					bool* output_dims_h = findDim_d+(tmp*dim);
 					// checkCudaErrors(cudaMallocManagedHost((void**) &output_dims_h, dim*sizeof(bool)));
 					// checkCudaErrors(cudaMemcpyAsync(output_dims_h, findDim_d+(best_index_h[0]*dim),
 					// 								dim, cudaMemcpyDeviceToHost, stream1));
