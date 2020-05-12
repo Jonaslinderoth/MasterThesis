@@ -327,7 +327,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					checkCudaErrors(cudaMemPrefetchAsync(deletedFromCount_d, sizeOfToBeDeleted, device, stream1_1));
 					checkCudaErrors(cudaMemPrefetchAsync(toBeDeleted_d, sizeOfToBeDeleted, device, stream1_1));
 					
-					findDublicatesWrapper(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1,
+					findDublicatesWrapper_mananged(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1,
 										  candidates_d, numberOfCandidates, dim,
 										  deletedFromCount_d, toBeDeleted_d, Hash);
 					

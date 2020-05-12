@@ -21,6 +21,18 @@ void findDublicatesWrapper(unsigned int dimGrid,
 						   dublicatesType version = dublicatesType::Naive
 						   );
 
+
+void findDublicatesWrapper_mananged(unsigned int dimGrid,
+						   unsigned int dimBlock,
+						   cudaStream_t stream,
+						   unsigned int* candidates,
+						   unsigned int numberOfCandidates,
+						   unsigned int dim,
+						   bool* alreadyDeleted,
+						   bool* output,
+						   dublicatesType version
+							   );
+
 // ONLY FOR TESTING
 std::vector<bool> findDublicatesTester(std::vector<std::vector<bool>> candidates, dublicatesType version = dublicatesType::Naive);
 #endif

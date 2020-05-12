@@ -21,7 +21,8 @@ void countSupportWrapper(unsigned int dimGrid,
 						 float beta,
 						 unsigned int* outSupp,
 						 float* outScore,
-						 bool* outToBeDeleted
+						 bool* outToBeDeleted,
+						 countSupportType version = NaiveCount
 						 );
 
 

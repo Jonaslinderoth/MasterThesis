@@ -30,6 +30,21 @@ KeyValue* create_hashtable(unsigned int size, cudaStream_t stream)
 {
     // Allocate memory
     KeyValue* hashtable;
+    checkCudaErrors(cudaMalloc((void**) &hashtable, sizeof(KeyValue) * size));
+
+    // Initialize hash table to empty
+    static_assert(kEmpty == 0xffffffffffffffff, "memset expected kEmpty=0xffffffffffffffff");
+    checkCudaErrors(cudaMemsetAsync(hashtable, 0xff, sizeof(KeyValue) * size, stream));
+
+    return hashtable;
+}
+
+
+// Create a hash table. For linear probing, this is just an array of KeyValues
+KeyValue* create_hashtable_mananged(unsigned int size, cudaStream_t stream) 
+{
+    // Allocate memory
+    KeyValue* hashtable;
     checkCudaErrors(cudaMallocManaged((void**) &hashtable, sizeof(KeyValue) * size));
 	checkCudaErrors(cudaMemPrefetchAsync(hashtable, sizeof(KeyValue) * size, 0, stream));
 
@@ -39,7 +54,6 @@ KeyValue* create_hashtable(unsigned int size, cudaStream_t stream)
 
     return hashtable;
 }
-
 
 KeyValue* create_hashtable(unsigned int size) 
 {
@@ -152,6 +166,22 @@ void findDublicatesHashTableWrapper(unsigned int dimGrid, unsigned int dimBlock,
 	//std::cout << "sizeOfHashTable " << sizeOfHashTable << " what it sould be: " << ceilf(log2(numberOfCandidates)) << " number of candidates: " << numberOfCandidates << std::endl;
 	assert(sizeOfHashTable > numberOfCandidates);
 	auto hashTable = create_hashtable(sizeOfHashTable, stream);
+	insertHashTable<<<dimGrid, dimBlock, 0, stream>>>(hashTable, candidates, sizeOfHashTable, numberOfCandidates, dim, alreadyDeleted_d, output_d);
+	//lookupHashTable<<<dimGrid, dimBlock, 0, stream>>>(hashTable, candidates, sizeOfHashTable, numberOfCandidates, dim, output_d);
+	checkCudaErrors(cudaFree(hashTable));
+}
+
+
+
+
+void findDublicatesHashTableWrapper_mananged(unsigned int dimGrid, unsigned int dimBlock,cudaStream_t stream,
+								   unsigned int* candidates, unsigned int numberOfCandidates,
+								   unsigned int dim, bool* alreadyDeleted_d, bool* output_d){
+	assert(dimGrid>=1);
+	unsigned int sizeOfHashTable = max((unsigned int)pow(2,ceilf(log2(numberOfCandidates))), 4096 /*2^10*/);
+	//std::cout << "sizeOfHashTable " << sizeOfHashTable << " what it sould be: " << ceilf(log2(numberOfCandidates)) << " number of candidates: " << numberOfCandidates << std::endl;
+	assert(sizeOfHashTable > numberOfCandidates);
+	auto hashTable = create_hashtable_mananged(sizeOfHashTable, stream);
 	insertHashTable<<<dimGrid, dimBlock, 0, stream>>>(hashTable, candidates, sizeOfHashTable, numberOfCandidates, dim, alreadyDeleted_d, output_d);
 	//lookupHashTable<<<dimGrid, dimBlock, 0, stream>>>(hashTable, candidates, sizeOfHashTable, numberOfCandidates, dim, output_d);
 	checkCudaErrors(cudaFree(hashTable));

@@ -279,6 +279,7 @@ __global__ void countSupportSharedMemory(unsigned int* candidates, unsigned int*
 	}
 }
 
+
 /**
    Thin wrapper for CountSupport kernel
 */
@@ -294,18 +295,40 @@ void countSupportWrapper(unsigned int dimGrid,
 						 float beta,
 						 unsigned int* outSupp,
 						 float* outScore,
-						 bool* outToBeDeleted
+						 bool* outToBeDeleted,
+						 countSupportType version
 						 ){
-	countSupport<<<dimGrid, dimBlock, 0, stream>>>(candidates,
-												   itemSet,
-												   dim,
-												   numberOfItems,
-												   numberOfCandidates,
-												   minSupp,
-												   beta,
-												   outSupp,
-												   outScore,
-												   outToBeDeleted);
+	if(version == NaiveCount){
+		countSupport<<<dimGrid, dimBlock, 0, stream>>>(candidates,
+													   itemSet,
+													   dim,
+													   numberOfItems,
+													   numberOfCandidates,
+													   minSupp,
+													   beta,
+													   outSupp,
+													   outScore,
+													   outToBeDeleted);
+	}else if(version == SmemCount){
+		dimGrid = ceilf((float)numberOfCandidates/(32));
+		unsigned int smemSize = ceilf((float)dim/32) > 6 ? 6 : ceilf((float)dim/32);
+		smemSize = smemSize*sizeof(unsigned int)*32*62;
+		smemSize = smemSize < dimBlock*sizeof(unsigned int) ? dimBlock*sizeof(unsigned int) : smemSize;
+		//std::cout << "smsm: " << smemSize << " dimGrid "<< dimGrid << " dim: " << dim << std::endl;
+		
+		
+		countSupportSharedMemory<<<dimGrid, dimBlock,smemSize,stream>>>(candidates,
+																		itemSet,
+																		dim,
+																		numberOfItems,
+																		numberOfCandidates,
+																		minSupp,
+																		beta,
+																		outSupp,
+																		outScore,
+																		outToBeDeleted);
+		
+	}
 };
 
 

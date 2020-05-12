@@ -85,6 +85,28 @@ void findDublicatesWrapper(unsigned int dimGrid,
 	}
 };
 
+
+void findDublicatesWrapper_mananged(unsigned int dimGrid,
+						   unsigned int dimBlock,
+						   cudaStream_t stream,
+						   unsigned int* candidates,
+						   unsigned int numberOfCandidates,
+						   unsigned int dim,
+						   bool* alreadyDeleted,
+						   bool* output,
+						   dublicatesType version
+						   ){
+	if(version == Naive){
+		findDublicatesNaive<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, alreadyDeleted, output);			
+	}else if(version == Breaking){
+		findDublicatesBreaking<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, alreadyDeleted, output);			
+	}else if(version == MoreBreaking){
+		findDublicatesMoreBreaking<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, alreadyDeleted, output);			
+	}else if(version == Hash){
+		findDublicatesHashTableWrapper_mananged(dimGrid, dimBlock, stream, candidates, numberOfCandidates, dim, alreadyDeleted, output);		 
+	}
+};
+
 /**
    ONLY FOR TESTING
 */
