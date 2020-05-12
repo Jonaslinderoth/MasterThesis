@@ -128,7 +128,7 @@ Memory_sizes MemSolver_Fast_DOCUnified::computeForAllocations(unsigned int dim, 
 
 		if(solver.isProvenPrimalInfeasible()){
 			freeMem *= 1.5;
-			std::cout << "increasing memory to " << freeMem << std::endl;
+			//std::cout << "increasing memory to " << freeMem << std::endl;
 			continue;
 				}else{
 			optimal=true;
