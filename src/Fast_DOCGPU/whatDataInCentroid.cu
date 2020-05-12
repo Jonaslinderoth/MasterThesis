@@ -344,6 +344,111 @@ void whatDataIsInCentroidKernelFewPointsKernel(
 
 
 
+__global__ void whatDataIsInCentroidLessReading(bool* output,
+												float* data,
+												bool* dimensions,
+												const unsigned int* centroid,
+												const unsigned int no_data_p,
+												const unsigned int point_dim,
+												const float width){
+	unsigned int indexData_p = threadIdx.x + blockIdx.x*blockDim.x;
+	if(indexData_p < no_data_p){
+		const size_t indexDataNoDim_f = indexData_p*point_dim;
+		const size_t centroid_f = centroid[0]*point_dim;
+		bool d = true;
+		for(unsigned int indexDim = 0 ; indexDim < point_dim ; indexDim++){
+			const size_t indexData_f = indexDataNoDim_f + indexDim;
+			const bool dim = dimensions[indexDim];
+			if(dim){
+				const float dat = data[indexData_f];
+				const float cen = data[centroid_f+indexDim];
+				//printf("%u : c: %f p: %f \n", indexData_p, cen, dat);
+				d &= (abs(cen - dat) < width);
+			}
+		}
+		output[indexData_p] = d;
+	}
+}
+
+
+
+__global__ void whatDataIsInCentroidLessReadingAndBreaking(bool* output,
+												float* data,
+												bool* dimensions,
+												const unsigned int* centroid,
+												const unsigned int no_data_p,
+												const unsigned int point_dim,
+												const float width){
+	unsigned int indexData_p = threadIdx.x + blockIdx.x*blockDim.x;
+	if(indexData_p < no_data_p){
+		const size_t indexDataNoDim_f = indexData_p*point_dim;
+		const size_t centroid_f = centroid[0]*point_dim;
+		bool d = true;
+		for(unsigned int indexDim = 0 ; indexDim < point_dim ; indexDim++){
+			const size_t indexData_f = indexDataNoDim_f + indexDim;
+			const bool dim = dimensions[indexDim];
+			if(dim){
+				const float dat = data[indexData_f];
+				const float cen = data[centroid_f+indexDim];
+				//printf("%u : c: %f p: %f \n", indexData_p, cen, dat);
+				d &= (abs(cen - dat) < width);
+				if(!d){
+					break;
+				}
+			}
+		}
+		output[indexData_p] = d;
+	}
+}
+
+bool whatDataIsInCentroidLessReadingWrapper(size_t dimGrid,
+						  size_t dimBlock,
+						  cudaStream_t stream,
+						  bool* output,
+						  float* data,
+						  unsigned int* centroids,
+						  bool* dimensions,
+						  const float width,
+						  const unsigned int point_dim,
+						  const unsigned int no_data_p){
+
+
+
+	whatDataIsInCentroidLessReading<<<dimGrid,dimBlock,dimBlock*sizeof(unsigned int),stream>>>(output,
+																					data,
+																					dimensions,
+																					centroids,
+																					no_data_p,
+																					point_dim,
+																					width);
+	return true;
+}
+
+bool whatDataIsInCentroidLessReadingAndBreakingWrapper(size_t dimGrid,
+						  size_t dimBlock,
+						  cudaStream_t stream,
+						  bool* output,
+						  float* data,
+						  unsigned int* centroids,
+						  bool* dimensions,
+						  const float width,
+						  const unsigned int point_dim,
+						  const unsigned int no_data_p){
+
+
+
+	whatDataIsInCentroidLessReadingAndBreaking<<<dimGrid,dimBlock,dimBlock*sizeof(unsigned int),stream>>>(output,
+																					data,
+																					dimensions,
+																					centroids,
+																					no_data_p,
+																					point_dim,
+																					width);
+	return true;
+}
+
+
+ 
 
 std::vector<bool>* whatDataIsInCentroidTester(std::vector<bool>* dims,
 											  std::vector<std::vector<float>*>* data,
@@ -431,6 +536,12 @@ std::vector<bool>* whatDataIsInCentroidTester(std::vector<bool>* dims,
 												  );
 	cudaStreamSynchronize(stream);
 		cudaStreamDestroy(stream);
+	}else if(type == LessReadingContained){
+		whatDataIsInCentroidLessReading<<<ceilf((float)no_of_points/1024), 1024>>>(output_d, data_d, dims_d, centroids_d,
+																			  no_of_points, point_dim, width);
+	}else if(type == LessReadingBreakContained){
+		whatDataIsInCentroidLessReadingAndBreaking<<<ceilf((float)no_of_points/1024), 1024>>>(output_d, data_d, dims_d, centroids_d,
+																			  no_of_points, point_dim, width);		
 	}
 
 

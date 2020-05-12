@@ -9,7 +9,7 @@
 #define WHATDATAINCENTROID_H_
 #include <vector>
 
-enum containedType {NaiveContained, ChunksContained, FewDimsContained};
+enum containedType {NaiveContained, ChunksContained, FewDimsContained, LessReadingContained, LessReadingBreakContained};
 
 bool whatDataIsInCentroid(size_t dimGrid,
 						  size_t dimBlock,
@@ -45,7 +45,28 @@ bool whatDataIsInCentroidChunks(size_t dimGrid,
 								const unsigned int no_data_p);
 
 
+bool whatDataIsInCentroidLessReadingWrapper(size_t dimGrid,
+											size_t dimBlock,
+											cudaStream_t stream,
+											bool* output,
+											float* data,
+											unsigned int* centroids,
+											bool* dimensions,
+											const float width,
+											const unsigned int point_dim,
+											const unsigned int no_data_p);
 
+bool whatDataIsInCentroidLessReadingAndBreakingWrapper(size_t dimGrid,
+													   size_t dimBlock,
+													   cudaStream_t stream,
+													   bool* output,
+													   float* data,
+													   unsigned int* centroids,
+													   bool* dimensions,
+													   const float width,
+													   const unsigned int point_dim,
+													   const unsigned int no_data_p);
+	
 
 void whatDataIsInCentroidKernelFewPointsKernel(
 											   unsigned int dimGrid,
