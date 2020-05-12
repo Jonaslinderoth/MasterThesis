@@ -355,30 +355,98 @@ void sum_scan_blelloch(cudaStream_t stream,
 	checkCudaErrors(cudaFree(d_block_sums));
 }
 
+
+
+
+void sum_scan_blelloch_managed(cudaStream_t stream, cudaStream_t stream_preprocess, 
+					   unsigned int* const d_out,
+					   const unsigned int* d_in,
+					   const size_t numElems)
+{
+	// Zero out d_out
+	checkCudaErrors(cudaMemPrefetchAsync(d_in, numElems * sizeof(unsigned int),0, stream_preprocess));
+	checkCudaErrors(cudaMemPrefetchAsync(d_out, numElems * sizeof(unsigned int),0, stream_preprocess));
+	checkCudaErrors(cudaMemsetAsync(d_out, 0, numElems * sizeof(unsigned int), stream_preprocess));
+
+	// Set up number of threads and blocks
+
+	unsigned int block_sz = MAX_BLOCK_SZ / 2;
+	unsigned int max_elems_per_block = 2 * block_sz; // due to binary tree nature of algorithm
+
+	// If input size is not power of two, the remainder will still need a whole block
+	// Thus, number of blocks must be the ceiling of input size / max elems that a block can handle
+	//unsigned int grid_sz = (unsigned int) std::ceil((double) numElems / (double) max_elems_per_block);
+	// UPDATE: Instead of using ceiling and risking miscalculation due to precision, just automatically
+	//  add 1 to the grid size when the input size cannot be divided cleanly by the block's capacity
+	unsigned int grid_sz = numElems / max_elems_per_block;
+	// Take advantage of the fact that integer division drops the decimals
+	if (numElems % max_elems_per_block != 0)
+		grid_sz += 1;
+
+	// Conflict free padding requires that shared memory be more than 2 * block_sz
+	unsigned int shmem_sz = max_elems_per_block + ((max_elems_per_block - 1) >> LOG_NUM_BANKS);
+
+	// Allocate memory for array of total sums produced by each block
+	// Array length must be the same as number of blocks
+	unsigned int* d_block_sums;
+	checkCudaErrors(cudaMallocManaged(&d_block_sums, sizeof(unsigned int) * grid_sz));
+	checkCudaErrors(cudaMemPrefetchAsync(d_block_sums, sizeof(unsigned int) * grid_sz,0, stream_preprocess));
+	checkCudaErrors(cudaMemsetAsync(d_block_sums, 0, sizeof(unsigned int) * grid_sz, stream_preprocess));
+	//checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
+
+	// Sum scan data allocated to each block
+	//gpu_sum_scan_blelloch<<<grid_sz, block_sz, sizeof(unsigned int) * max_elems_per_block >>>(d_out, d_in, d_block_sums, numElems);
+	gpu_prescan<<<grid_sz, block_sz, sizeof(unsigned int) * shmem_sz, stream>>>(d_out,
+																				d_in,
+																				d_block_sums,
+																				numElems,
+																				shmem_sz,
+																				max_elems_per_block);
+
+	// Sum scan total sums produced by each block
+	// Use basic implementation if number of total sums is <= 2 * block_sz
+	//  (This requires only one block to do the scan)
+	if (grid_sz <= max_elems_per_block)
+	{
+		unsigned int* d_dummy_blocks_sums;
+		checkCudaErrors(cudaMallocManaged(&d_dummy_blocks_sums, sizeof(unsigned int)));
+		checkCudaErrors(cudaMemPrefetchAsync(d_dummy_blocks_sums, sizeof(unsigned int), 0, stream_preprocess));
+		checkCudaErrors(cudaMemsetAsync(d_dummy_blocks_sums, 0, sizeof(unsigned int), stream_preprocess));
+		//checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
+		gpu_prescan<<<1, block_sz, sizeof(unsigned int) * shmem_sz, stream>>>(d_block_sums,
+																			  d_block_sums,
+																			  d_dummy_blocks_sums,
+																			  grid_sz,
+																			  shmem_sz,
+																			  max_elems_per_block);
+		checkCudaErrors(cudaFree(d_dummy_blocks_sums));
+	}
+	// Else, recurse on this same function as you'll need the full-blown scan
+	//  for the block sums
+	else
+	{
+		unsigned int* d_in_block_sums;
+		checkCudaErrors(cudaMallocManaged(&d_in_block_sums, sizeof(unsigned int) * grid_sz));
+		checkCudaErrors(cudaMemPrefetchAsync(d_in_block_sums, sizeof(unsigned int) * grid_sz, 0, stream_preprocess));
+		checkCudaErrors(cudaMemcpyAsync(d_in_block_sums, d_block_sums, sizeof(unsigned int) * grid_sz, cudaMemcpyDeviceToDevice, stream));
+		sum_scan_blelloch_managed(stream, stream_preprocess, d_block_sums, d_in_block_sums, grid_sz);
+		checkCudaErrors(cudaFree(d_in_block_sums));
+	}
+
+	// Add each block's total sum to its scan output
+	// in order to get the final, global scanned array
+	gpu_add_block_sums<<<grid_sz, block_sz, 0, stream>>>(d_out, d_out, d_block_sums, numElems);
+
+	checkCudaErrors(cudaFree(d_block_sums));
+}
+
+
+
+
+
+
 //this is mikkel and jonas work.
 
-/*__global__ void gpuDeleteFromArray(float* d_outData,
-								   const unsigned int* d_delete_array,
-								   const float* d_data,
-								   const size_t numElements,
-								   const unsigned int dimensions){
-	unsigned int i = blockIdx.x*blockDim.x+threadIdx.x;
-
-	if(i < numElements){
-		unsigned int offset = d_delete_array[i];
-		unsigned int nextPrefix = d_delete_array[i+1];
-		if(offset == nextPrefix){
-			offset = i-offset;
-			unsigned int offsetWithDim = offset*dimensions;
-			unsigned int iWithDim = i*dimensions;
-			for(int dimIndex = 0 ; dimIndex < dimensions ; ++dimIndex){
-				d_outData[offsetWithDim+dimIndex] = d_data[iWithDim+dimIndex];
-				printf("%u ", iWithDim+dimIndex);
-			}
-		}
-
-	}
-	}*/
 
 
 __global__ void gpuDeleteFromArrayOld(float* d_outData,
@@ -662,6 +730,101 @@ void sum_scan_blelloch(cudaStream_t stream,
 	checkCudaErrors(cudaFree(d_block_sums));
 }
 
+
+
+
+void sum_scan_blelloch_managed(cudaStream_t stream, cudaStream_t stream_preprocess, 
+							   unsigned int* const d_out,
+							   bool* d_in,
+							   const size_t numElems,
+							   bool inverted)
+{
+	// Zero out d_out
+	// std::cout << " numElems * sizeof(bool): " << numElems * sizeof(bool) << " " <<d_in<< std::endl;
+	// for(int i = 0; i < numElems-5; i++){
+	// 	std::cout << d_in[i] << " " << std::endl;
+	// }
+	// std::cout << std::endl;
+	checkCudaErrors(cudaMemPrefetchAsync(d_in, numElems * sizeof(bool),0, stream_preprocess));
+	checkCudaErrors(cudaMemPrefetchAsync(d_out, numElems * sizeof(unsigned int),0, stream_preprocess));
+	checkCudaErrors(cudaMemsetAsync(d_out, 0, numElems * sizeof(unsigned int), stream_preprocess));
+
+	// Set up number of threads and blocks
+
+	unsigned int block_sz = MAX_BLOCK_SZ / 2;
+	unsigned int max_elems_per_block = 2 * block_sz; // due to binary tree nature of algorithm
+
+
+	// If input size is not power of two, the remainder will still need a whole block
+	// Thus, number of blocks must be the ceiling of input size / max elems that a block can handle
+	//unsigned int grid_sz = (unsigned int) std::ceil((double) numElems / (double) max_elems_per_block);
+	// UPDATE: Instead of using ceiling and risking miscalculation due to precision, just automatically
+	//  add 1 to the grid size when the input size cannot be divided cleanly by the block's capacity
+	unsigned int grid_sz = numElems / max_elems_per_block;
+	// Take advantage of the fact that integer division drops the decimals
+	if (numElems % max_elems_per_block != 0)
+		grid_sz += 1;
+
+	// Conflict free padding requires that shared memory be more than 2 * block_sz
+	unsigned int shmem_sz = max_elems_per_block + ((max_elems_per_block - 1) >> LOG_NUM_BANKS);
+
+	// Allocate memory for array of total sums produced by each block
+	// Array length must be the same as number of blocks
+	unsigned int* d_block_sums;
+	checkCudaErrors(cudaMallocManaged(&d_block_sums, sizeof(unsigned int) * grid_sz));
+	checkCudaErrors(cudaMemPrefetchAsync(d_block_sums, sizeof(unsigned int) * grid_sz, 0, stream_preprocess));
+	checkCudaErrors(cudaMemsetAsync(d_block_sums, 0, sizeof(unsigned int) * grid_sz, stream_preprocess));
+	//	checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
+
+	// Sum scan data allocated to each block
+	//gpu_sum_scan_blelloch<<<grid_sz, block_sz, sizeof(unsigned int) * max_elems_per_block >>>(d_out, d_in, d_block_sums, numElems);
+	gpu_prescan<<<grid_sz, block_sz, sizeof(unsigned int) * shmem_sz, stream>>>(d_out,
+																				d_in,
+																				d_block_sums,
+																				numElems,
+																				shmem_sz,
+																				max_elems_per_block, inverted);
+
+	// Sum scan total sums produced by each block
+	// Use basic implementation if number of total sums is <= 2 * block_sz
+	//  (This requires only one block to do the scan)
+	if (grid_sz <= max_elems_per_block)
+	{
+		unsigned int* d_dummy_blocks_sums;
+		checkCudaErrors(cudaMallocManaged(&d_dummy_blocks_sums, sizeof(unsigned int)));
+		checkCudaErrors(cudaMemPrefetchAsync(d_dummy_blocks_sums, sizeof(unsigned int), 0, stream_preprocess));
+		checkCudaErrors(cudaMemsetAsync(d_dummy_blocks_sums, 0, sizeof(unsigned int), stream_preprocess));
+		//	checkCudaErrors(cudaStreamSynchronize(stream_preprocess)); 
+		gpu_prescan<<<1, block_sz, sizeof(unsigned int) * shmem_sz, stream>>>(d_block_sums,
+																	d_block_sums,
+																	d_dummy_blocks_sums,
+																	grid_sz,
+																	shmem_sz,
+																			  max_elems_per_block);
+		checkCudaErrors(cudaFree(d_dummy_blocks_sums));
+	}
+	// Else, recurse on this same function as you'll need the full-blown scan
+	//  for the block sums
+	else
+	{
+		unsigned int* d_in_block_sums;
+		checkCudaErrors(cudaMallocManaged(&d_in_block_sums, sizeof(unsigned int) * grid_sz));
+		checkCudaErrors(cudaMemPrefetchAsync(d_in_block_sums, sizeof(unsigned int) * grid_sz, 0, stream_preprocess));
+		checkCudaErrors(cudaMemcpyAsync(d_in_block_sums, d_block_sums, sizeof(unsigned int) * grid_sz, cudaMemcpyDeviceToDevice, stream));
+		sum_scan_blelloch_managed(stream, stream_preprocess, d_block_sums, d_in_block_sums, grid_sz);
+		checkCudaErrors(cudaFree(d_in_block_sums));
+	}
+
+	// Add each block's total sum to its scan output
+	// in order to get the final, global scanned array
+	gpu_add_block_sums<<<grid_sz, block_sz, 0, stream>>>(d_out, d_out, d_block_sums, numElems);
+
+	checkCudaErrors(cudaFree(d_block_sums));
+}
+
+
+
+
 void cpu_sum_scan(unsigned int* const h_out,
 	const bool* const h_in,
 	const size_t numElems)
@@ -804,6 +967,35 @@ void deleteFromArray(cudaStream_t stream,
 	}
 
 };
+
+void deleteFromArray_managed(cudaStream_t stream,
+					 float* d_outData,
+					 bool* d_delete_array,
+					 const float* d_data,
+					 const unsigned long numElements,
+					 const unsigned int dimension,
+					 const bool inverted,
+					 float* time){
+	const unsigned int threadsUsed = 1024;
+	// Set up device-side memory for output
+	unsigned int* d_out_blelloch;
+	checkCudaErrors(cudaMallocManaged(&d_out_blelloch, sizeof(unsigned int) * (numElements+1)));
+
+	// std::cout << "(numElements+1): " << (numElements+1) << " "<< d_delete_array << std::endl;
+	sum_scan_blelloch_managed(stream, stream, d_out_blelloch,d_delete_array,(numElements+1), inverted);
+
+	unsigned int blocksToUse = numElements*dimension/threadsUsed;
+	if((numElements*dimension)%threadsUsed!=0){
+		blocksToUse++;
+	}
+
+	gpuDeleteFromArray<<<blocksToUse,threadsUsed,0, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
+
+	checkCudaErrors(cudaFree(d_out_blelloch));
+
+
+};
+
 
 void deleteFromArrayWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream_t stream,
 							float* data, unsigned int* prefixSum, unsigned int numberOfElements,

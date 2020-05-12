@@ -51,7 +51,9 @@ class MuApriori{
 	OutputCandidate* getBest(){
 		return bestCandidate;
 	};
-	
+	~MuApriori(){
+		delete this->itemSet;
+	};
  private:
 	float beta;
 	std::vector<boost::dynamic_bitset<>>* itemSet;
@@ -64,7 +66,6 @@ class MuApriori{
 		};		
 	};
 
-	
 	OutputCandidate* bestCandidate = nullptr;
 
 

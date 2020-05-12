@@ -26,6 +26,14 @@
 
 void sum_scan_blelloch(cudaStream_t stream, unsigned int* const d_out,const unsigned int* const d_in,const size_t numElems);
 void sum_scan_blelloch(cudaStream_t stream, unsigned int* const d_out, bool* d_in,const size_t numElems, bool inverted = false);
+void sum_scan_blelloch_managed(cudaStream_t stream, cudaStream_t stream_preprocess, unsigned int* const d_out,
+							   const unsigned int* d_in,
+							   const size_t numElems);
+void sum_scan_blelloch_managed(cudaStream_t stream, cudaStream_t stream_preprocess, unsigned int* const d_out,
+							   bool* d_in,
+							   const size_t numElems,
+							   bool inverted);
+
 
 void cpu_sum_scan(unsigned int* const h_out, const bool* const h_in, const size_t numElems);
 void cpu_sum_scan(unsigned int* const h_out, const unsigned int* const h_in,const size_t numElems);
@@ -59,7 +67,14 @@ void deleteFromArray(float* d_outData,
 					 unsigned int dimension = 1,
 					 bool inverted = false,
 					 float* time = nullptr);
-
+void deleteFromArray_managed(cudaStream_t stream,
+					 float* d_outData,
+					 bool* d_delete_array,
+					 const float* d_data,
+					 const unsigned long numElements,
+					 const unsigned int dimension,
+					 const bool inverted = false,
+							 float* time = nullptr);
 
 void deleteFromArrayTrasformedData(cudaStream_t stream,
 					 			   float* d_outData,

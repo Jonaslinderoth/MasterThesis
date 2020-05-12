@@ -26,12 +26,13 @@ class DOC : public Clustering{
 	float mu(int a, int b){
 		return a*pow(((float) 1/this->beta),b);
 	};
-
+	void setNumberOfSamples(unsigned int m){this->m = m;};
 	void setAlpha(float value){this->alpha = value;};
 	void setBeta(float value){this->beta = value;};
 	void setWidth(float value){this->width = value;};
 	virtual ~DOC(){};
 private:
+	unsigned int m = 0;
 	float alpha;
 	float beta;
 	float width;

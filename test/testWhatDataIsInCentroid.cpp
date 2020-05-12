@@ -296,10 +296,155 @@ TEST(testWhatDataIsInCentroid, testRandom2000points100dims){
 	auto resNaive = whatDataIsInCentroidTester(dims, data,0, 10);
 	auto resChunk = whatDataIsInCentroidTester(dims, data,0, 10,ChunksContained);
 	auto resFew = whatDataIsInCentroidTester(dims, data,0, 10,FewDimsContained);
+	auto resLess = whatDataIsInCentroidTester(dims, data,0, 10,LessReadingContained);
+	auto resBreak = whatDataIsInCentroidTester(dims, data,0, 10,LessReadingBreakContained);
 	EXPECT_EQ(resNaive->size(), resChunk->size());
 	EXPECT_EQ(resNaive->size(), resFew->size());
+	EXPECT_EQ(resNaive->size(), resLess->size());
+	EXPECT_EQ(resNaive->size(), resBreak->size());
 	for(unsigned int i = 0; i < resNaive->size(); i++){
 		EXPECT_EQ(resNaive->at(i), resChunk->at(i));
 		EXPECT_EQ(resNaive->at(i), resFew->at(i));
+		EXPECT_EQ(resNaive->at(i), resLess->at(i));
+		EXPECT_EQ(resNaive->at(i), resBreak->at(i));
 	}
+}
+
+TEST(testWhatDataIsInCentroid, testRandom2000points100dimsNaive){
+	unsigned int numPoint = 20000;
+	unsigned int dim = 1000;
+	std::default_random_engine generator;
+	generator.seed(1010);
+	std::uniform_real_distribution<float> distribution(-25.0,25.0);
+
+
+	
+	std::vector<bool>* dims = new std::vector<bool>;
+	for(unsigned int i = 0; i < dim; i++){
+		dims->push_back(distribution(generator) < -24);
+	}
+	
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	for(unsigned int i = 0; i < numPoint; i++){
+		auto point = new std::vector<float>;
+		for(unsigned int j = 0; j < dim; j++){
+			point->push_back(distribution(generator));
+		}
+		data->push_back(point);
+	}
+
+
+	auto resNaive = whatDataIsInCentroidTester(dims, data,0, 10);
+}
+
+TEST(testWhatDataIsInCentroid, testRandom2000points100dimsChunk){
+	unsigned int numPoint = 20000;
+	unsigned int dim = 1000;
+	std::default_random_engine generator;
+	generator.seed(1010);
+	std::uniform_real_distribution<float> distribution(-25.0,25.0);
+
+
+	
+	std::vector<bool>* dims = new std::vector<bool>;
+	for(unsigned int i = 0; i < dim; i++){
+		dims->push_back(distribution(generator) < -24);
+	}
+	
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	for(unsigned int i = 0; i < numPoint; i++){
+		auto point = new std::vector<float>;
+		for(unsigned int j = 0; j < dim; j++){
+			point->push_back(distribution(generator));
+		}
+		data->push_back(point);
+	}
+
+
+	auto resChunk = whatDataIsInCentroidTester(dims, data,0, 10,ChunksContained);
+}
+
+TEST(testWhatDataIsInCentroid, testRandom2000points100dimsFew){
+	unsigned int numPoint = 20000;
+	unsigned int dim = 1000;
+	std::default_random_engine generator;
+	generator.seed(1010);
+	std::uniform_real_distribution<float> distribution(-25.0,25.0);
+
+
+	
+	std::vector<bool>* dims = new std::vector<bool>;
+	for(unsigned int i = 0; i < dim; i++){
+		dims->push_back(distribution(generator) < -24);
+	}
+	
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	for(unsigned int i = 0; i < numPoint; i++){
+		auto point = new std::vector<float>;
+		for(unsigned int j = 0; j < dim; j++){
+			point->push_back(distribution(generator));
+		}
+		data->push_back(point);
+	}
+
+
+
+	auto resFew = whatDataIsInCentroidTester(dims, data,0, 10,FewDimsContained);
+}
+
+
+TEST(testWhatDataIsInCentroid, testRandom2000points100dimsLessReading){
+	unsigned int numPoint = 20000;
+	unsigned int dim = 1000;
+	std::default_random_engine generator;
+	generator.seed(1010);
+	std::uniform_real_distribution<float> distribution(-25.0,25.0);
+
+
+	
+	std::vector<bool>* dims = new std::vector<bool>;
+	for(unsigned int i = 0; i < dim; i++){
+		dims->push_back(distribution(generator) < -24);
+	}
+	
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	for(unsigned int i = 0; i < numPoint; i++){
+		auto point = new std::vector<float>;
+		for(unsigned int j = 0; j < dim; j++){
+			point->push_back(distribution(generator));
+		}
+		data->push_back(point);
+	}
+
+
+
+	auto resLess = whatDataIsInCentroidTester(dims, data,0, 10,LessReadingContained);
+}
+
+TEST(testWhatDataIsInCentroid, testRandom2000points100dimsLessReadingAndBreaking){
+	unsigned int numPoint = 20000;
+	unsigned int dim = 1000;
+	std::default_random_engine generator;
+	generator.seed(1010);
+	std::uniform_real_distribution<float> distribution(-25.0,25.0);
+
+
+	
+	std::vector<bool>* dims = new std::vector<bool>;
+	for(unsigned int i = 0; i < dim; i++){
+		dims->push_back(distribution(generator) < -24);
+	}
+	
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>;
+	for(unsigned int i = 0; i < numPoint; i++){
+		auto point = new std::vector<float>;
+		for(unsigned int j = 0; j < dim; j++){
+			point->push_back(distribution(generator));
+		}
+		data->push_back(point);
+	}
+
+
+
+	auto resBreak = whatDataIsInCentroidTester(dims, data,0, 10,LessReadingBreakContained);
 }

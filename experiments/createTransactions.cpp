@@ -1,6 +1,7 @@
 #include "createTransactions.h"
 #include <random>
-#include "../src/MineClus/MineClusKernels.h"
+#include "../src/MineClusGPU/MineClusKernels.h"
+#include "../src/MineClusGPU/CreateTransactions.h"
 #include "../src/randomCudaScripts/Utils.h"
 void CreateTransactionsExperiments::start(){
 	std::random_device rd;

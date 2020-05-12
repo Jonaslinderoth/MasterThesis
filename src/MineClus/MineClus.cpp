@@ -55,6 +55,10 @@ std::vector<OutputCandidate*>* MineClus::findClusterCandidates(){
 std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> MineClus::findCluster(){
 
 	auto clusterCandidates = this->findClusterCandidates();
+	if(clusterCandidates->size() < 1){
+		auto tmp = std::make_pair(new std::vector<std::vector<float>*>, new std::vector<bool>);
+		return tmp;
+	}
 	OutputCandidate* best = nullptr;
 	for(unsigned int i = 0; i <clusterCandidates->size(); i++){
 		if(clusterCandidates->at(i) != nullptr && (best == nullptr || best->score < clusterCandidates->at(i)->score)){
@@ -76,6 +80,11 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> MineClus::findC
 			resC->push_back(point);
 		}
 	}
+
+	for(unsigned int i = 0; i < clusterCandidates->size(); i++){
+		delete clusterCandidates->at(i);
+	}
+	delete clusterCandidates;
 	auto result = std::make_pair(resC, subspace);
 	return result;
 
@@ -88,8 +97,6 @@ bool MineClus::isDisjoint(OutputCandidate* lhs, OutputCandidate* rhs){
 	auto dim = this->data->at(0)->size();
 	for(unsigned int i = 0; i < dim; i++){
 		if(intersection[i] && abs(this->medoids->at(lhs->centroidNr)->at(i) -this->medoids->at(rhs->centroidNr)->at(i)) >= 2*this->width){
-			// std::cout << "intersection " << intersection[i] << std::endl;
-			// std::cout << "abs value " << abs(this->medoids->at(lhs->centroidNr)->at(i) -this->medoids->at(rhs->centroidNr)->at(i)) << std::endl;
 			return true;
 		};
 	}
@@ -103,6 +110,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 	while(res.size() < k){
 		if(this->data->size() <= 0) {break;}
 		auto clusterCandidates = this->findClusterCandidates();
+		if(clusterCandidates->size() < 1){
+			break;
+		}
 		std::vector<OutputCandidate*>* clusters = new std::vector<OutputCandidate*>();
 		if (this->concurent == true){
 			std::sort(clusterCandidates->begin(), clusterCandidates->end(),
@@ -112,7 +122,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					  });
 			for(unsigned int k = 0; k < clusterCandidates->size();){
 				bool stillDisjoint = true;
-				// std::cout << "Finding disjoint" << std::endl;
 				for(unsigned int j = 0; j < k; j++){
 					stillDisjoint &= this->isDisjoint(clusterCandidates->at(k), clusterCandidates->at(j));
 					if(stillDisjoint == false){						

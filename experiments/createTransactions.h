@@ -1,5 +1,5 @@
-#ifndef CREATETRANSACTIONS_H
-#define CREATETRANSACTIONS_H
+#ifndef CREATETRANSACTIONS2_H
+#define CREATETRANSACTIONS2_H
 #include "Experiment.h"
 class CreateTransactionsExperiments: public Experiment{
  public:

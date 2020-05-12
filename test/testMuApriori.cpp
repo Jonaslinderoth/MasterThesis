@@ -523,6 +523,7 @@ TEST(testMuApriori, _SLOWtestFindBest20Clusters){
 	EXPECT_NE(b, nullptr);
 	
 
+	
 	EXPECT_EQ(b->item.count(), 4);
 	// EXPECT_EQ(b->at(1)->item.count(), 4);
 	// EXPECT_EQ(b->at(2)->item.count(), 4);
@@ -556,9 +557,71 @@ TEST(testMuApriori, _SLOWtestFindBest20Clusters){
 	// EXPECT_EQ(b->at(7)->score, a.mu(4000,4));
 	// EXPECT_EQ(b->at(8)->score, a.mu(4000,4));
 	// EXPECT_EQ(b->at(9)->score, a.mu(4000,4));
+
 }
 
 
+TEST(testMuApriori, _SLOWtestFindBest80Clusters_smaller){
+	std::vector<boost::dynamic_bitset<>>* itemSet = new std::vector<boost::dynamic_bitset<>>;
+
+	for(int i = 0; i < 10; i++){ // number of points
+		for(int j = 0; j < 20; j+=2){ // number of clusters
+			boost::dynamic_bitset<> point = boost::dynamic_bitset<>();
+			unsigned int count = 0;
+			for(int k = 0; k< 20; k++){ // number of dimensions
+				if(j <= k && count<10){
+					count++;
+					point.push_back(1);
+				}else{
+					point.push_back(0);					
+				}
+			}
+			itemSet->push_back(point);
+		}
+	}
+
+	auto a = MuApriori(itemSet, 0.1*itemSet->size());
+	EXPECT_EQ(a.getBeta(), 0.25);
+	a.findBest(20);
+	auto b = a.getBest();
+	EXPECT_NE(b, nullptr);
+	
+
+	EXPECT_EQ(b->item.count(), 10);
+	// EXPECT_EQ(b->at(1)->item.count(), 4);
+	// EXPECT_EQ(b->at(2)->item.count(), 4);
+	// EXPECT_EQ(b->at(3)->item.count(), 4);
+	// EXPECT_EQ(b->at(4)->item.count(), 4);
+	// EXPECT_EQ(b->at(5)->item.count(), 4);
+	// EXPECT_EQ(b->at(6)->item.count(), 4);
+	// EXPECT_EQ(b->at(7)->item.count(), 4);
+	// EXPECT_EQ(b->at(8)->item.count(), 4);
+	// EXPECT_EQ(b->at(9)->item.count(), 4);
+
+	EXPECT_EQ(b->support, 10);
+	// EXPECT_EQ(b->at(1)->support, 4000);	
+	// EXPECT_EQ(b->at(2)->support, 4000);
+	// EXPECT_EQ(b->at(3)->support, 4000);
+	// EXPECT_EQ(b->at(4)->support, 4000);
+	// EXPECT_EQ(b->at(5)->support, 4000);
+	// EXPECT_EQ(b->at(6)->support, 4000);
+	// EXPECT_EQ(b->at(7)->support, 4000);
+	// EXPECT_EQ(b->at(8)->support, 4000);
+	// EXPECT_EQ(b->at(9)->support, 4000);
+
+	
+	EXPECT_EQ(b->score, a.mu(10,10));
+	// EXPECT_EQ(b->at(1)->score, a.mu(4000,4));	
+	// EXPECT_EQ(b->at(2)->score, a.mu(4000,4));
+	// EXPECT_EQ(b->at(3)->score, a.mu(4000,4));	
+	// EXPECT_EQ(b->at(4)->score, a.mu(4000,4));	
+	// EXPECT_EQ(b->at(5)->score, a.mu(4000,4));
+	// EXPECT_EQ(b->at(6)->score, a.mu(4000,4));	
+	// EXPECT_EQ(b->at(7)->score, a.mu(4000,4));
+	// EXPECT_EQ(b->at(8)->score, a.mu(4000,4));
+	// EXPECT_EQ(b->at(9)->score, a.mu(4000,4));
+
+}
 
 
 TEST(testMuApriori, _SUPER_SLOW_testFindBest20ClustersRandom){

@@ -31,6 +31,15 @@ TEST(testMineClus, testFindClusterSimple1){
 	EXPECT_EQ(res.second->size(), 2);
 	EXPECT_TRUE(res.second->at(0));
 	EXPECT_TRUE(res.second->at(1));
+
+	for(unsigned int i = 0; i < data->size(); i++){
+		delete data->at(i);
+	}
+	delete data;
+
+	delete res.first;
+	delete res.second;
+	delete c;
 }
 
 
