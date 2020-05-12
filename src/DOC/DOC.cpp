@@ -35,6 +35,11 @@ std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> DOC::findCluste
 	float d = this->data->at(0)->size();
 	float r = log2(2*d)/log2(1/(2*this->beta));
 	float m = pow((2/this->alpha),r) * log(4);
+	if(this->m != 0){
+		if(m > this->m){
+			m = this->m;
+		}
+	}
 
 	auto resD = new std::vector<bool>;
 	std::vector<std::vector<float>*>* resC = new std::vector<std::vector<float>*>;

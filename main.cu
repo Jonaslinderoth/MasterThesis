@@ -1,5 +1,6 @@
 
 #include "src/Fast_DOCGPU/Fast_DOCGPUnified.h"
+#include "src/DOC_GPU/DOCGPUnified.h"
 #include <random>
 
 int main(){
@@ -25,19 +26,24 @@ int main(){
 		data->push_back(point);
 	}
 
-	auto c = new Fast_DOCGPUnified(data);
+	auto c = new DOCGPUnified(data);
 	c->setSeed(2);
+	c->setNumberOfSamples(1024);
 
 	
-	auto res = c->findCluster();
+	auto res = c->findKClusters(1);
+	if(res.at(0).first->size() != numPoints){
+		std::cout << "size of cluster is wrong " << res.at(0).first->size() << std::endl;
+	}
 	
+   
 
 	for(unsigned int i = 0; i < data->size(); i++){
 		delete data->at(i);
 	}
 	delete data;
-	res.first->clear();
-	delete res.first;
-	delete res.second;
+	res.at(0).first->clear();
+	delete res.at(0).first;
+	delete res.at(0).second;
 	delete c;
 }

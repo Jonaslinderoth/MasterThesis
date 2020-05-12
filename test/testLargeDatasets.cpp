@@ -35,7 +35,7 @@ public:
 			Cluster small2;
 			small2.setAmmount(100000);
 			for(unsigned int j = 0; j < 1000; j++){
-				if(j%110 == 0){
+				if(j%120 == 0){
 					small2.addDimension(normalDistribution, {-10000,10000}, {50,2});						
 				}else{
 					small2.addDimension(uniformDistribution, {-10000,10000});						
@@ -65,7 +65,7 @@ public:
 			Cluster small2;
 			small2.setAmmount(200000);
 			for(unsigned int j = 0; j < 1000; j++){
-				if(j%110 == 0){
+				if(j%120 == 0){
 					small2.addDimension(normalDistribution, {-10000,10000}, {50,2});						
 				}else{
 					small2.addDimension(uniformDistribution, {-10000,10000});						
@@ -99,7 +99,7 @@ public:
 				Cluster small;
 				small.setAmmount(800000);
 				for(unsigned int j = 0; j < 1000; j++){
-					if(j%110 == 0){
+					if(j%120 == 0){
 						small.addDimension(normalDistribution, {-10000,10000}, {50,2});						
 					}else{
 						small.addDimension(uniformDistribution, {-10000,10000});						
@@ -111,7 +111,7 @@ public:
 				Cluster small2;
 				small2.setAmmount(400000);
 				for(unsigned int j = 0; j < 1000; j++){
-					if(j%120 == 0){
+					if(j%130 == 0){
 						small2.addDimension(normalDistribution, {-10000,10000}, {50,2});						
 					}else{
 						small2.addDimension(uniformDistribution, {-10000,10000});						
@@ -142,9 +142,7 @@ public:
 };
 
 TEST_F(testLargeDatasets, _SUPER_SLOW_testDOC2GB){
-	std::cout << "hello " << std::endl;
 	DataReader* dr = new DataReader("test/testData/test2GB");
-	std::cout << "hello " << std::endl;
 	DOCGPUnified* d = new DOCGPUnified(dr);
 	d->setNumberOfSamples(1024); // upperbound to 1024
 	auto res = d->findKClusters(2);
@@ -152,8 +150,18 @@ TEST_F(testLargeDatasets, _SUPER_SLOW_testDOC2GB){
 	EXPECT_EQ(res.at(0).first->size(), 400000);
 	EXPECT_EQ(res.at(1).first->size(), 100000);
 
-	EXPECT_EQ(res.at(0).second->size(), 10);
-	EXPECT_EQ(res.at(1).second->size(), 9);	
+	EXPECT_EQ(res.at(0).second->size(), 1000);
+	unsigned int c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(0).second->at(i);
+	}
+	EXPECT_EQ(c, 10);
+	EXPECT_EQ(res.at(1).second->size(), 1000);
+	c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(1).second->at(i);
+	}
+	EXPECT_EQ(c, 9);
 	delete d;
 }
 
@@ -175,7 +183,7 @@ TEST_F(testLargeDatasets, _SUPER_SLOW_testFastDOC2GB){
 	EXPECT_EQ(res.at(1).second->size(), 1000);
 	c = 0; 
 	for(unsigned int i = 0; i < 1000; i++){
-		c += res.at(0).second->at(i);
+		c += res.at(1).second->at(i);
 	}
 	EXPECT_EQ(c, 9);
 	delete d;
@@ -199,7 +207,7 @@ TEST_F(testLargeDatasets, _SUPER_SLOW_testMineClus2GB){
 	EXPECT_EQ(res.at(1).second->size(), 1000);
 	c = 0; 
 	for(unsigned int i = 0; i < 1000; i++){
-		c += res.at(0).second->at(i);
+		c += res.at(1).second->at(i);
 	}
 	EXPECT_EQ(c, 9);
 	delete d;
@@ -241,8 +249,18 @@ TEST_F(testLargeDatasets, _SUPER_SLOW_testFastDOC4GB){
 	EXPECT_EQ(res.at(0).first->size(), 800000);
 	EXPECT_EQ(res.at(1).first->size(), 200000);
 
-	EXPECT_EQ(res.at(0).second->size(), 10);
-	EXPECT_EQ(res.at(1).second->size(), 9);
+	EXPECT_EQ(res.at(0).second->size(), 1000);
+	unsigned int c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(0).second->at(i);
+	}
+	EXPECT_EQ(c, 10);
+	EXPECT_EQ(res.at(1).second->size(), 1000);
+	c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(1).second->at(i);
+	}
+	EXPECT_EQ(c, 9);
 	delete d;
 }
 
@@ -255,8 +273,18 @@ TEST_F(testLargeDatasets, _SUPER_SLOW_testMineClus4GB){
 	EXPECT_EQ(res.at(0).first->size(), 800000);
 	EXPECT_EQ(res.at(1).first->size(), 200000);
 
-	EXPECT_EQ(res.at(0).second->size(), 10);
-	EXPECT_EQ(res.at(1).second->size(), 9);
+	EXPECT_EQ(res.at(0).second->size(), 1000);
+	unsigned int c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(0).second->at(i);
+	}
+	EXPECT_EQ(c, 10);
+	EXPECT_EQ(res.at(1).second->size(), 1000);
+	c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(1).second->at(i);
+	}
+	EXPECT_EQ(c, 9);
 	delete d;
 }
 
@@ -274,9 +302,24 @@ TEST_F(testLargeDatasets, _SUPER_SLOW_testDOC8GB){
 	EXPECT_EQ(res.at(1).first->size(), 800000);
 	EXPECT_EQ(res.at(2).first->size(), 400000);
 
-	EXPECT_EQ(res.at(0).second->size(), 10);
-	EXPECT_EQ(res.at(1).second->size(), 9);
-	EXPECT_EQ(res.at(2).second->size(), 8);	
+	EXPECT_EQ(res.at(0).second->size(), 1000);
+	unsigned int c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(0).second->at(i);
+	}
+	EXPECT_EQ(c, 10);
+	EXPECT_EQ(res.at(1).second->size(), 1000);
+	c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(1).second->at(i);
+	}
+	EXPECT_EQ(c, 9);
+	EXPECT_EQ(res.at(2).second->size(), 1000);
+	c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(2).second->at(i);
+	}
+	EXPECT_EQ(c, 8);
 	delete d;
 }
 
@@ -290,9 +333,24 @@ TEST_F(testLargeDatasets, _SUPER_SLOW_testFastDOC8GB){
 	EXPECT_EQ(res.at(1).first->size(), 800000);
 	EXPECT_EQ(res.at(2).first->size(), 400000);
 
-	EXPECT_EQ(res.at(0).second->size(), 10);
-	EXPECT_EQ(res.at(1).second->size(), 9);
-	EXPECT_EQ(res.at(2).second->size(), 8);	
+	EXPECT_EQ(res.at(0).second->size(), 1000);
+	unsigned int c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(0).second->at(i);
+	}
+	EXPECT_EQ(c, 10);
+	EXPECT_EQ(res.at(1).second->size(), 1000);
+	c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(1).second->at(i);
+	}
+	EXPECT_EQ(c, 9);
+	EXPECT_EQ(res.at(2).second->size(), 1000);
+	c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(2).second->at(i);
+	}
+	EXPECT_EQ(c, 8);
 	delete d;
 }
 
@@ -306,8 +364,23 @@ TEST_F(testLargeDatasets, _SUPER_SLOW_testMineClus8GB){
 	EXPECT_EQ(res.at(1).first->size(), 800000);
 	EXPECT_EQ(res.at(2).first->size(), 400000);
 
-	EXPECT_EQ(res.at(0).second->size(), 10);
-	EXPECT_EQ(res.at(1).second->size(), 9);
-	EXPECT_EQ(res.at(2).second->size(), 8);	
+	EXPECT_EQ(res.at(0).second->size(), 1000);
+	unsigned int c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(0).second->at(i);
+	}
+	EXPECT_EQ(c, 10);
+	EXPECT_EQ(res.at(1).second->size(), 1000);
+	c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(1).second->at(i);
+	}
+	EXPECT_EQ(c, 9);
+	EXPECT_EQ(res.at(2).second->size(), 1000);
+	c = 0; 
+	for(unsigned int i = 0; i < 1000; i++){
+		c += res.at(2).second->at(i);
+	}
+	EXPECT_EQ(c, 8);
 	delete d;
 }

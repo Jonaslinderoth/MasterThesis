@@ -174,11 +174,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	generateRandomStatesArray(stream1, randomStates_d,numberOfRandomStates,false, randomSeed);
 
 	// allocate space for the Data, transfer it and release it from Host
-	// float* data_d;
-	// checkCudaErrors(cudaMallocManaged((void **) &data_d, sizes.size_of_data));
-	// checkCudaErrors(cudaMemcpyAsync(data_d, data_d, sizes.size_of_data, cudaMemcpyHostToDevice, stream2));
-	// cudaStreamSynchronize(stream2);
-
 	float* outputCluster_d;
 	checkCudaErrors(cudaMallocManaged((void **) &outputCluster_d, sizes.size_of_data));
 
@@ -186,8 +181,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	dataPointers_d[0] = data_d;
 	dataPointers_d[1] = outputCluster_d;
 	
-
-
 	// allocating memory for findDim
 	bool* findDim_d;
 	unsigned int* findDim_count_d;
@@ -238,7 +231,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 					number_of_centroids_sample = floorf(number_of_centroids_max);
 				}
 			}
-			 std::cout << j << " centroid_size: " << number_of_centroids_sample << std::endl;
 			centroids_used += number_of_centroids_sample;
 
 			assert(sizes.size_of_data >= number_of_points*dim*sizeof(float));
@@ -278,8 +270,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 			findDimmensionsKernel(dimGrid, dimBlock, stream1, samples_d, centroids_d, data_d,  findDim_d,
 								  findDim_count_d, dim, arr_sizes.number_of_samples, sample_size, arr_sizes.number_of_centroids,
 								  m, width, number_of_points);
-			std::cout << " dims found" << std::endl;
-
 
 			checkCudaErrors(cudaMemPrefetchAsync(data_d, number_of_points*dim*sizeof(float), device, stream2));
 			checkCudaErrors(cudaMemPrefetchAsync(centroids_d, arr_sizes.number_of_centroids*sizeof(unsigned int), device, stream2));
@@ -287,8 +277,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 			checkCudaErrors(cudaMemPrefetchAsync(pointsContained_d, arr_sizes.number_of_samples*number_of_points*sizeof(bool), device, stream2));
 			checkCudaErrors(cudaMemPrefetchAsync(pointsContained_count_d, arr_sizes.number_of_samples*sizeof(unsigned int), device, stream2));
 			cudaStreamSynchronize(stream2);
+
 			// Find points contained
-			std::cout << "calling points contained" << std::endl;
 			pointsContainedKernelNaive(dimGrid, dimBlock, stream1, data_d, centroids_d, findDim_d,
 								  pointsContained_d, pointsContained_count_d,
 								  width, dim, number_of_points, arr_sizes.number_of_samples, m);
@@ -316,13 +306,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 			argMaxKernel(dimGrid, dimBlock, sharedMemSize, stream1, score_d, index_d, arr_sizes.number_of_samples);
 
 			// Output Points in that cluster, along with the dimensions and centroid
-			// unsigned int* best_index_h = (unsigned int*) malloc(sizeof(unsigned int));
-			// checkCudaErrors(cudaMemcpyAsync(best_index_h, index_d, sizeof(unsigned int), cudaMemcpyDeviceToHost, stream1));
-
-
-			// Output Points in that cluster, along with the dimensions and centroid
-			// float* best_score_h = (float*) malloc(sizeof(float));
-			// checkCudaErrors(cudaMemcpyAsync(best_score_h, score_d, sizeof(float), cudaMemcpyDeviceToHost, stream1));
 			checkCudaErrors(cudaMemPrefetchAsync((score_d), sizeof(float), cudaCpuDeviceId, stream1));
 			cudaStreamSynchronize(stream1);
 			float bestScore = score_d[0];
@@ -330,9 +313,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 				maxScore = bestScore;
 
 				// Allocate space for the size of the cluster
-				// unsigned int* cluster_size_h = (unsigned int*) malloc(sizeof(unsigned int));
-				// checkCudaErrors(cudaMemcpyAsync(cluster_size_h, pointsContained_count_d+(best_index_h[0]),
-				// 								sizeof(unsigned int), cudaMemcpyDeviceToHost, stream1));
 				checkCudaErrors(cudaMemPrefetchAsync((index_d), sizeof(unsigned int), cudaCpuDeviceId, stream1));
 				cudaStreamSynchronize(stream1);
 				unsigned int bestIndex = index_d[0];
@@ -352,12 +332,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 					// cluster is too small, return empty clusters, and try again....
 					// this might cause it to loop for the rest of the iterations and do nothing, maybe break here?
 				}else{
-					//float* cluster_d;
-					//checkCudaErrors(cudaMallocManaged((void **) &cluster_d, size_of_cluster));
 					checkCudaErrors(cudaMemcpyAsync(bestDims_d, pointsContained_d+(bestIndex*number_of_points),
 													number_of_points, cudaMemcpyDeviceToDevice, stream1));
-					//std::cout << "copied to be deleted" << std::endl;
-
 
 					// create output cluster
 					checkCudaErrors(cudaMemPrefetchAsync(pointsContained_d+(bestIndex*number_of_points), sizeof(bool)*(number_of_points+1), device, stream1));			   
@@ -368,17 +344,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 					deleteFromArray_managed(stream1, outputCluster_d, pointsContained_d+(bestIndex*number_of_points),
 									data_d, number_of_points, dim);
 					
-					// copy the cluster to Host
-					// float* cluster_h;
-					// checkCudaErrors(cudaMallocManagedHost((void**) &cluster_h, size_of_cluster));
-					// checkCudaErrors(cudaMemcpyAsync(cluster_h, outputCluster_d, size_of_cluster, cudaMemcpyDeviceToHost, stream1));
-
-					// copy the used dimmensions to host.
-					// bool* output_dims_h;
-					// checkCudaErrors(cudaMallocManagedHost((void**) &output_dims_h, dim*sizeof(bool)));
-					// checkCudaErrors(cudaMemcpyAsync(output_dims_h, findDim_d+(best_index_d[0]*dim),
-					// 								dim, cudaMemcpyDeviceToHost, stream1));
-
 					// syncronise before deleting
 					checkCudaErrors(cudaMemPrefetchAsync(outputCluster_d, sizeof(unsigned int)*(dim*clusterSize), cudaCpuDeviceId, stream1));
 					checkCudaErrors(cudaMemPrefetchAsync(findDim_d+(bestIndex*dim), sizeof(unsigned int)*dim, cudaCpuDeviceId, stream2));
@@ -400,18 +365,12 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 						dims->push_back(output_dims_h[a]);
 					}
 
-					// deleting the variables used for cluster
-					// checkCudaErrors(cudaFreeHost(cluster_h));
-					// checkCudaErrors(cudaFreeHost(output_dims_h));
-					//checkCudaErrors(cudaFree(cluster_d));
 				}
 				// build result & and delete old
 				delete res.first;
 				delete res.second;
 				res = std::make_pair(cluster, dims);
 				// clean up
-				// free(best_index_h);
-				// free(cluster_size_h);
 			}
 			j++;
 
