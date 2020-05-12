@@ -1,4 +1,3 @@
-
 #include "src/Fast_DOCGPU/Fast_DOCGPUnified.h"
 #include "src/DOC_GPU/DOCGPUnified.h"
 #include <random>

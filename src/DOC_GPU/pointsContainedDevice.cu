@@ -213,6 +213,120 @@ __global__ void pointsContainedDeviceSharedMemory(float* data,
 
 }
 
+
+
+/*
+ * This does the same as the naive but it moved the data to shared memory before.
+ * this contained early breaking
+ *
+ */
+__global__ void pointsContainedDeviceSharedMemoryBreak(float* data,
+													   unsigned int* centroids,
+													   bool* dims,
+													   bool* output,
+													   unsigned int* Csum_out,
+													   float width,
+													   const unsigned int point_dim,
+													   const unsigned int no_data_p,
+													   const unsigned int no_dims,
+													   const unsigned int ammountOfSamplesThatUseSameCentroid,
+													   const unsigned int numberOfCentroids,
+													   const unsigned int centroidSharedMemorySize_f,
+													   const unsigned int dataSharedMemorySize_f,
+													   const unsigned int blocksWithSameCentroid,
+													   const unsigned int breakingIntervall){
+	extern __shared__ float sharedMemory[];
+
+	//shared memory spit
+	float* centroidSharedMemory = sharedMemory;
+	float* dataSharedMemory = (float*)&sharedMemory[centroidSharedMemorySize_f];
+
+
+	//we have that every blocksWithSameCentroid the centroid chances to the next one.
+	const unsigned int indexOfCentroidToCentroids = blockIdx.x/blocksWithSameCentroid;
+	const unsigned int indexOfCentroidInDataNoDims_f = centroids[indexOfCentroidToCentroids]*point_dim;
+	//we want to move the centroid to shared memory.
+	// if(threadIdx.x < point_dim){  // OBS... This kernel will not work for dims higher than the block size
+	// 	const long offsetByDimension_f = threadIdx.x;
+	// 	const unsigned long indexOfCentroidInData_f = indexOfCentroidInDataNoDims_f + offsetByDimension_f;
+	// 	const float partOfACentroid_f = data[indexOfCentroidInData_f];
+	// 	centroidSharedMemory[offsetByDimension_f] = partOfACentroid_f;
+	// }
+
+	for(unsigned int i = 0; i < ceilf((float)point_dim/blockDim.x); i++){
+		const unsigned int j = i*blockDim.x+threadIdx.x;
+		if(j < point_dim){
+			centroidSharedMemory[j] = data[indexOfCentroidInDataNoDims_f+j];
+		}
+	}
+
+	// it is okay to not have
+
+
+	const unsigned long howLongOnM_p = ( blockIdx.x % blocksWithSameCentroid ) * blockDim.x + threadIdx.x;
+	const unsigned long whatM = blockIdx.x / blocksWithSameCentroid;
+	const unsigned long offEntry_p = howLongOnM_p + whatM * ammountOfSamplesThatUseSameCentroid;
+	unsigned int Csum = 0;
+	//_f stand for float , and _p stand for point.
+
+	//now we need to "work" on the data
+	// times the threads will need to copy data from global to shared memory.
+	const unsigned long no_data_f = no_data_p*point_dim;
+	const unsigned long dataSharedMemorySize_p = dataSharedMemorySize_f/point_dim;
+
+
+	for(unsigned long i_p = 0 ; i_p < no_data_p ; i_p += dataSharedMemorySize_p){
+		//copy the data from global to shared memory
+		for(unsigned long indexCopy_f = 0 ; indexCopy_f < dataSharedMemorySize_f ; indexCopy_f+=blockDim.x){
+			const unsigned long indexInSharedMemory_f = indexCopy_f + threadIdx.x;
+			const unsigned long indexInData_f = i_p*point_dim + indexCopy_f +threadIdx.x;
+			if(indexInData_f < no_data_f and indexInSharedMemory_f < dataSharedMemorySize_f ){
+				dataSharedMemory[indexInSharedMemory_f] = data[indexInData_f];
+			}
+		}
+		__syncthreads();
+
+		const unsigned long ammountOfPointsLeft = no_data_p-i_p;
+		for(unsigned long indexDataSM_p = 0 ; indexDataSM_p < dataSharedMemorySize_p ; indexDataSM_p++){
+			const unsigned long indexDimsNoDimension_f = offEntry_p * point_dim;
+			const unsigned long indexPointDataSM_p = indexDataSM_p;
+			const unsigned long indexOutput_p = offEntry_p * no_data_p + i_p + indexDataSM_p;
+
+
+			if( howLongOnM_p < ammountOfSamplesThatUseSameCentroid and indexDataSM_p < ammountOfPointsLeft and offEntry_p < no_dims)
+			{
+
+				bool d = true;
+
+				for(unsigned long dimensionIndex_f = 0 ; dimensionIndex_f < point_dim ; dimensionIndex_f++){
+
+					const unsigned long indexDataSM_f = indexPointDataSM_p*point_dim + dimensionIndex_f;
+					const unsigned long indexDims_f = indexDimsNoDimension_f + dimensionIndex_f;
+					const bool dim = dims[indexDims_f];
+					const float cen = centroidSharedMemory[dimensionIndex_f];
+					const float dat = dataSharedMemory[indexDataSM_f];
+					d &= (not (dim)) || (abs(cen - dat) < width);
+					if(dimensionIndex_f % breakingIntervall == 0 and (not d)){
+						break;
+					}
+
+				}
+				output[indexOutput_p] = d;
+				Csum += d;
+			}
+
+		}
+		__syncthreads();
+
+	}
+
+	if(offEntry_p < no_dims and howLongOnM_p < ammountOfSamplesThatUseSameCentroid){
+		Csum_out[offEntry_p] = Csum;
+
+	}
+
+}
+
 __global__ void pointsContainedDeviceSharedMemoryFewBank(float* __restrict__ data,
 		unsigned int* __restrict__ centroids,
 		bool* __restrict__ dims,
@@ -643,7 +757,6 @@ void pointsContainedKernelSharedMemory(unsigned int dimGrid,
 
 	unsigned long sharedMemorySize_f = dataSharedMemorySize_f+centroidSharedMemorySize_f;
 
-
 	pointsContainedDeviceSharedMemory<<<dimGridv2, dimBlock, sharedMemorySize_f*sizeof(float), stream>>>(data,
 																								 centroids,
 																								 dims,
@@ -660,6 +773,58 @@ void pointsContainedKernelSharedMemory(unsigned int dimGrid,
 																								 blocksWithSameCentroid);
 
 };
+
+
+void pointsContainedKernelSharedMemoryBreak(unsigned int dimGrid,
+									   	    unsigned int dimBlock,
+									   	    cudaStream_t stream,
+									   	    float* data,
+									   	    unsigned int* centroids,
+									   	    bool* dims,
+									   	    bool* output,
+									   	    unsigned int* Csum_out,
+									   	    float width,
+									   	    unsigned int point_dim,
+									   	    unsigned int no_data,
+									   	    unsigned int number_of_samples,
+									   	    unsigned int m,
+									   	    unsigned int numberOfCentroids,
+									   	    unsigned int breakingIntervall){
+
+	unsigned long maxSharedmemory = 48000; //48kb can probably go up to more but...
+	//we block takes care of only on centroid. a centroid is made of point_dim floats
+	unsigned long centroidSharedMemorySize_f = point_dim;
+	//how many blocks needed to cover m.
+	unsigned long blocksWithSameCentroid = ceil((float)m/dimBlock);
+	//we need blocksWithSameCentroid per centroid to cover all the sampels
+	unsigned long dimGridv2 = blocksWithSameCentroid*numberOfCentroids;
+
+	//need to know how much shared memory we are going to use.
+	unsigned long dataSharedMemorySize_f = maxSharedmemory/sizeof(float)-centroidSharedMemorySize_f;
+	dataSharedMemorySize_f = (dataSharedMemorySize_f/point_dim);
+	dataSharedMemorySize_f = dataSharedMemorySize_f*point_dim;
+
+	unsigned long sharedMemorySize_f = dataSharedMemorySize_f+centroidSharedMemorySize_f;
+
+
+	pointsContainedDeviceSharedMemoryBreak<<<dimGridv2, dimBlock, sharedMemorySize_f*sizeof(float), stream>>>(data,
+																								              centroids,
+																								              dims,
+																								              output,
+																								              Csum_out,
+																								              width,
+																								              point_dim,
+																								              no_data,
+																								              number_of_samples,
+																								              m,
+																								              numberOfCentroids,
+																								              centroidSharedMemorySize_f,
+																								              dataSharedMemorySize_f,
+																								              blocksWithSameCentroid,
+																								              breakingIntervall);
+
+};
+
 /*
  * dimBlock needs to be multiple of 32.
  * dimBlock needs to be >= then point_dim

@@ -461,7 +461,25 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 								   	   no_of_dims,
 								   	   m,
 								   	   breakIntervall);
+	}else if(version == 6){
+		// Call kernel
+		pointsContainedKernelSharedMemoryBreak(ceil((no_of_dims)/(float)block_size),
+				                        	   block_size,
+				                        	   stream,
+				                        	   data_d,
+				                        	   centroids_d,
+				                        	   dims_d,
+				                        	   output_d,
+				                        	   output_count_d,
+				                        	   width,
+				                        	   point_dim,
+				                        	   no_of_points,
+				                        	   no_of_dims,
+				                        	   m,
+				                        	   no_of_centroids,
+				                        	   breakIntervall);
 	}
+
 
     (cudaStreamDestroy(stream));
 
