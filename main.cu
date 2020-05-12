@@ -82,6 +82,8 @@ int main ()
 				auto c3 = pointsContained(dims, data, centroids,m,10,3);
 				//auto c4 = pointsContained(dims, data, centroids,m,10,4);
 				auto c5 = pointsContained(dims, data, centroids,m,10,5,2);
+				auto c6 = pointsContained(dims, data, centroids,m,10,6,2);
+
 
 				std::cout << "done with gpu" << std::endl;
 				if(not areTheyEqual_h(c1,c0)){
@@ -100,6 +102,9 @@ int main ()
 				*/
 				if(not areTheyEqual_h(c5,c0)){
 					std::cout << "error c5" << std::endl;
+				}
+				if(not areTheyEqual_h(c6,c0)){
+					std::cout << "error c6" << std::endl;
 				}
 				/*
 				EXPECT_TRUE(areTheyEqual_h(c1,c0)) << "c1 point_dim: " << point_dim << " no_dims " << no_dims << " no_data " << no_data << std::endl;
@@ -133,6 +138,10 @@ int main ()
 					delete c5.first->at(i);
 				}
 				delete c5.second;
+				for(int i = 0; i < c6.first->size(); i++){
+					delete c6.first->at(i);
+				}
+				delete c6.second;
 
 				for(int i = 0; i < data->size(); i++){
 				    delete data->at(i);
