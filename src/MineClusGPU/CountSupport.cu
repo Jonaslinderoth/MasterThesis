@@ -21,6 +21,7 @@ __global__ void countSupport(unsigned int* candidates, unsigned int* itemSet,
 	unsigned int numberOfBlocksPrItem = ceilf((float)dim/32);
 	
 	if(candidate < numberOfCandidates){
+
 		unsigned int count = 0;
 		for(unsigned int i = 0; i < numberOfItems; i++){
 			bool isSubset = true;
@@ -35,9 +36,11 @@ __global__ void countSupport(unsigned int* candidates, unsigned int* itemSet,
 		unsigned int subSpaceCount = 0;
 		for(unsigned int j = 0; j < numberOfBlocksPrItem; j++){
 			unsigned int candidateBlock = candidates[j*numberOfCandidates + candidate];
+			// if(threadIdx.x == 0 && blockIdx.x == 0) printf("Naive thread %u loads from %u value %u\n",threadIdx.x,j*numberOfCandidates + candidate,candidateBlock);
 			subSpaceCount += __popc(candidateBlock);
 		}
-		outScore[candidate] = count*pow(((float) 1/beta),subSpaceCount) ; // calculate score and store
+		// if(threadIdx.x == 0 && blockIdx.x == 0)printf("naive subspace count %u \n", subSpaceCount);
+		outScore[candidate] = logf(count)+logf((float) 1/beta)*subSpaceCount; // calculate score and store
 		//printf("candidate %u, have score %f \n", candidate, outScore[candidate]);
 		outToBeDeleted[candidate] = count < minSupp;
 	}
@@ -84,9 +87,10 @@ __global__ void countSupportSharedMemory(unsigned int* candidates, unsigned int*
 	while(transactionsProcessed < numberOfTransactions){
 		isSubset_r[0] = 0xffffffff;
 		isSubset_r[1] = 0xffffffff;
-
+		// if(threadIdx.x == 0 && blockIdx.x == 0) printf("start iteration\n");
 		// compute the number of transactions each chunk is responsible for
 		if(transactionsProcessed+62*32 < numberOfTransactions){
+			// if(threadIdx.x == 0 && blockIdx.x == 0) printf("got here3\n");
 			currentTransactionChunkSize = 62;
 			transactionsProcessed += currentTransactionChunkSize*(threadIdx.x/32);
 			restTransactionChunk = currentTransactionChunkSize*32 - currentTransactionChunkSize*(threadIdx.x/32);
@@ -95,46 +99,42 @@ __global__ void countSupportSharedMemory(unsigned int* candidates, unsigned int*
 			currentTransactionChunkSize = diff/32;
 			if(diff%32 > threadIdx.x/32){
 				currentTransactionChunkSize++;
+				// if(threadIdx.x == 0 && blockIdx.x == 0) printf("got here1\n");
 				transactionsProcessed += currentTransactionChunkSize*(threadIdx.x/32);
 				restTransactionChunk = diff - currentTransactionChunkSize*(threadIdx.x/32);
 			}else{
+				// if(threadIdx.x == 0 && blockIdx.x == 0) printf("got here2\n");
 				transactionsProcessed += (diff%32) + currentTransactionChunkSize*(threadIdx.x/32);
 				restTransactionChunk = diff - ((diff%32) + currentTransactionChunkSize*(threadIdx.x/32));
 			}
 		}
 
-		// if(threadIdx.x < 320 && (currentTransactionChunkSize == 22 ) ) printf("currentTransactionChunkSize %u threadId %u \n", currentTransactionChunkSize, threadIdx.x); 
 		
 		dimsProcessed = 0;
-		subspaceCount = 0;
+		if(dim > 6*32 || firstIter) subspaceCount = 0;
 		unsigned int dimChunks = (unsigned int)ceilf((float)dim/32);
 		while(dimsProcessed < dimChunks){
 			if(dimsProcessed+6 < dimChunks){
 				currentDimChunkSize = 6;
-				//dimsProcessed += currentDimChunkSize;
 			}else{
 				currentDimChunkSize = dimChunks - dimsProcessed;
-				//dimsProcessed += currentDimChunkSize;
 			}
-			//if(blockIdx.x == 0) printf("tid %u transactionsProcessed < numberOfTransactions %u < %u | %u | %u\n", threadIdx.x, transactionsProcessed , numberOfTransactions, currentTransactionChunkSize, dimsProcessed);
+			// if(threadIdx.x == 0 && blockIdx.x == 0) printf("chunk size %u transactionsProcessed %u restTransactionChunk %u\n",currentDimChunkSize,transactionsProcessed,restTransactionChunk);
 
 			// Load candidate into registers			
 			if(dim > 6*32 || firstIter){ // To avoid reloading the transactions if they do not change
 				unsigned int id = threadIdx.x%32 + blockIdx.x*32; /*the index of the candidate*/
 				if(id < numberOfCandidates){
 					for(unsigned int i = 0; i < currentDimChunkSize; i++){ // loads a candidate into registers
-						// if(threadIdx.x == 0 && id == 4800) printf("i %u id %u loading from %u value %u\n",i, id, id + (i+dimsProcessed)*numberOfCandidates, candidates[id + (i+dimsProcessed)*numberOfCandidates]);
 						candidates_chunk[i] = candidates[id + (i+dimsProcessed)*numberOfCandidates];
-
-						// if(threadIdx.x == 0 && blockIdx.x == 0) printf("tid %u value %u i %u global index %u \n",threadIdx.x, candidates_chunk[i], i, id + (i+dimsProcessed)*numberOfCandidates);
-
 						
 						subspaceCount += __popc(candidates_chunk[i]); // done in all warps, but only used in last warp, only one extra instruction, and one register read.
-						//if(threadIdx.x == 0) printf("thread %u subspace count %u \n", threadIdx.x, subspaceCount);
-						//if(threadIdx.x == 0 || threadIdx.x == 1 || threadIdx.x == 2 || threadIdx.x == 3 ) printf("thread %u loads %u into registers\n",threadIdx.x ,candidates_chunk[i]);
+						// if(threadIdx.x == 0 && blockIdx.x == 0) printf("thread %u loads from %u value %u subspaceCount %u\n",threadIdx.x,id + (i+dimsProcessed)*numberOfCandidates,candidates_chunk[i],subspaceCount);
+						
 					}				
 				}
 			}
+			// if(threadIdx.x == 0 && blockIdx.x == 0) printf("SMEM thread %u subspaceCount %u\n",threadIdx.x,subspaceCount);
 			firstIter = false;
 
 			__syncthreads();
@@ -144,33 +144,19 @@ __global__ void countSupportSharedMemory(unsigned int* candidates, unsigned int*
 			for(unsigned int i = 0; i < ceilf((float)currentTransactionChunkSize/32); i++){
 				unsigned int currentWarpPos = threadIdx.x%32;
 				unsigned int id = (currentWarpPos + i*32)*32 +(threadIdx.x/32); 
-				for(unsigned int j = 0; j < currentDimChunkSize; j++){		   
+				for(unsigned int j = 0; j < currentDimChunkSize; j++){
 					if(transactionsProcessed+currentWarpPos+i*32 < transactionsProcessed+currentTransactionChunkSize){
+						// if(blockIdx.x == 0) printf("Thread %u reads from %u numberOfTransactions %u j %u transactionsProcessed %u i %u restTransactionChunk %u currentTransactionChunkSize %u\n", threadIdx.x,
+												   // transactionsProcessed+currentWarpPos+i*32 + (dimsProcessed+j)*numberOfTransactions,
+												   // numberOfTransactions, j, transactionsProcessed, i, restTransactionChunk,
+												   // currentTransactionChunkSize);
 						
-						transactions_s[id+ j*currentTransactionChunkSize*32] = transactions[transactionsProcessed+currentWarpPos+i*32 + j*numberOfTransactions];
-						//if(id+ j*currentTransactionChunkSize*32 == 1120) printf("writing %u to 1120 \n", transactions[transactionsProcessed+currentWarpPos+i*32 + j*numberOfTransactions]);
-						// if(threadIdx.x < 64 && blockIdx.x == 1) printf("tid %u global addres %u shared address %u, value %u\n",
-						// 											   threadIdx.x,
-						// 											   transactionsProcessed+currentWarpPos+i*32 + j*numberOfTransactions,
-						// 											   id+ j*currentTransactionChunkSize*32,						// 											   transactions_s[id+ j*currentTransactionChunkSize*32]);
-
+						transactions_s[id+ j*currentTransactionChunkSize*32] = transactions[transactionsProcessed+currentWarpPos+i*32 + (dimsProcessed+j)*numberOfTransactions];
 					}
 				}
 			}
 
-				
-			
-			// for(unsigned int i = 0; i < ceilf((float)nPoints*32*chunkSize/blockDim.x); i++){
-			// 	unsigned int j = i*blockDim.x+threadIdx.x; // the if if it were a normal for loop
-			// 	unsigned int transactionNumber = (j % (nPoints*32)) +  currentChunk*nPoints*32;
-			// 	unsigned int currentDim = (j / (nPoints*32)) + currentDimChunk*chunkSize;
-			// 	unsigned int id = currentDim*numberOfTransactions + transactionNumber;
-			// 	if((id < numberOfTransactions*ceilf((float)dim/32))  && (j < nPoints*chunkSize*32)){
-			// 		transactions_s[j] = transactions[id];
-			// 		printf("%u thread: %u, transaction %u value %u id %u transaction number %u, currentDim %u\n",
-			// 			   i, threadIdx.x, j, transactions_s[j], id, transactionNumber, currentDim);
-			// 	}
-			// }
+
 
 			__syncthreads();
 			// Compute the count
@@ -180,18 +166,7 @@ __global__ void countSupportSharedMemory(unsigned int* candidates, unsigned int*
 				bool isSubset = true;
 				for(unsigned int j = 0; j < currentDimChunkSize; j++){
 					unsigned int transactionIndex = i*32+currentBank + j*32*currentTransactionChunkSize;
-					//if(threadIdx.x == 0 && blockIdx.x == 1) printf("smemUtilised %u\n",smemUtilised);
-							// 				if(i == 0 && threadIdx.x == 0 && blockIdx.x == 150 && transactionsProcessed == 0)
-							// printf("threadId %u candidate id %u value %u; transaction id %u value %u isSubset %u | trans %u dims %u \n",
-							// 	   threadIdx.x,
-							// 	   j,
-							// 	   candidates_chunk[j],
-							// 	   transactionIndex,
-							// 	   transactions_s[transactionIndex],
-							// 	   isSubset,
-							// 	   currentTransactionChunkSize,
-							// 	   currentDimChunkSize
-							// 	   ); 
+
 						isSubset = isSubset && countSupportBlock(transactions_s, candidates_chunk, transactionIndex ,j);
 					
 					
@@ -209,38 +184,15 @@ __global__ void countSupportSharedMemory(unsigned int* candidates, unsigned int*
 				}
 
 			}			
-		
-			
-			// unsigned int temp = 0;
-			// for(unsigned int j = 0; j < nPoints; j++){
-			// 	bool isSubset = true;
-			// 	for(unsigned int i = 0; i < chunkSize; i++){
-			// 		unsigned int currentBank = threadIdx.x/32;
-			// 		unsigned int transactionIndex = 32*j + currentBank + nPoints*i;
-			// 		if(transactionIndex < numberOfTransactions*ceilf((float)dim/32)){
-			// 			isSubset = isSubset && countSupportBlock(transactions_s, candidates_chunk, transactionIndex ,i);
 
-			// 		}
-			// 	}
-			// 	if(isSubset){
-			// 		temp = writeBit(temp, j%32);
-			// 	}
-			// 	if(j != 0 && j%32 == 0 || j == ceilf((float)nPoints/32)-1){
-			// 		isSubset_r[j/32] &= temp;
-			// 		temp = 0;
-			// 	}
-			// }
 			dimsProcessed += currentDimChunkSize;
 		}
 		if(currentTransactionChunkSize > 0){
-			// if((threadIdx.x == 0 || threadIdx.x == 0) && blockIdx.x == 0) printf("Counting chunk 1 chunkSize %u count %u\n", currentTransactionChunkSize,  __popc(isSubset_r[0]));
 			supportCount += __popc(isSubset_r[0]);
 		}
 		if(currentTransactionChunkSize > 32){
-			// if((threadIdx.x == 0 || threadIdx.x == 0) && blockIdx.x == 0) printf("Counting chunk 2 chunkSize %u count %u\n", currentTransactionChunkSize,  __popc(isSubset_r[1]));
 			supportCount += __popc(isSubset_r[1]);	
 		}
-		//if(threadIdx.x%32 == 0 && blockIdx.x == 0) printf("thredid %u support %u b %u\n", threadIdx.x, supportCount, b); 
 		transactionsProcessed += restTransactionChunk;
 	}
 	__syncthreads();
@@ -273,7 +225,9 @@ __global__ void countSupportSharedMemory(unsigned int* candidates, unsigned int*
 		if(i < numberOfCandidates){
 			// if(i == 0) printf("thid: %u i %u value %u result %u subspace %u\n",threadIdx.x,i, transactions_s[threadIdx.x],  transactions_s[threadIdx.x] < minSupp, subspaceCount);
 			outSupp[i] = transactions_s[threadIdx.x];
-			outScore[i] = transactions_s[threadIdx.x]*pow(((float) 1/beta),subspaceCount) ; // calculate score and store
+			// if(threadIdx.x == 0 && blockIdx.x == 0)printf("Smem subspace count %u support %u\n", subspaceCount,transactions_s[threadIdx.x]);
+			outScore[i] = logf(transactions_s[threadIdx.x])+logf((float) 1/beta)*subspaceCount; // calculate score and store
+			// printf("i %u \n",i);
 			outToBeDeleted[i] = transactions_s[threadIdx.x] < minSupp;	
 		}
 	}
@@ -394,6 +348,7 @@ std::tuple<
 		}
 		candidates_h[i+blockNr*numberOfCandidates] = block;
 	}
+	
 
 	// fill itemSet
 	for(unsigned int i = 0; i < numberOfItems; i++){

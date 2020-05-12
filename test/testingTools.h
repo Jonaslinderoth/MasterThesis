@@ -6,7 +6,7 @@ inline bool readBit(unsigned int value, unsigned int index){
 }
 
 inline double mu(unsigned int subSpaceSize, unsigned int support, float beta){
-	return support*pow(((double) 1/beta),subSpaceSize);
+	return log(support)+log((double) 1/beta)*subSpaceSize;
 }
 
 

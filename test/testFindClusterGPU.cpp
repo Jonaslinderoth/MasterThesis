@@ -488,7 +488,7 @@ TEST(testFindClusterGPU, testScore){
 	dim_sizes[0] = 1;
 	
 	scoreHost(cluster_sizes, dim_sizes, output, len, 0.1, 0.25, 10);
-	EXPECT_EQ(output[0], 4);
+	EXPECT_FLOAT_EQ(output[0], log(4));
 }
 
 
@@ -503,8 +503,8 @@ TEST(testFindClusterGPU, testScore2){
 	dim_sizes[1] = 1;
 	
 	scoreHost(cluster_sizes, dim_sizes, output, len,0.1, 0.25,10);
-	EXPECT_EQ(output[0], 4);
-	EXPECT_EQ(output[1], 4);
+	EXPECT_FLOAT_EQ(output[0], log(4));
+	EXPECT_FLOAT_EQ(output[1], log(4));
 }
 
 
@@ -535,7 +535,7 @@ TEST(testFindClusterGPU, testScore3){
 			if(b < alpha*points){
  				EXPECT_EQ(0, output[i*n+j]);
 			}else{
-				EXPECT_FLOAT_EQ(a*pow(((float) 1/beta),b),output[i*n+j]);				
+				EXPECT_FLOAT_EQ(log(a)+log((float) 1/beta)*b,output[i*n+j]);				
 			}
 
 		}
@@ -552,7 +552,7 @@ TEST(testFindClusterGPU, testScore3){
 			if(b < alpha*points){
 				EXPECT_EQ(0, output[i*n+j]);
 			}else{
-				EXPECT_FLOAT_EQ(a*pow(((float) 1/beta),b),output[i*n+j]);				
+				EXPECT_FLOAT_EQ(log(a)+log((float) 1/beta)*b,output[i*n+j]);				
 			}
 		}
 	}

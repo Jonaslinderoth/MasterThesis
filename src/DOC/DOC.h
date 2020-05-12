@@ -24,7 +24,7 @@ class DOC : public Clustering{
 	std::vector<bool>* findDimensions(std::vector<float>* centroid, std::vector<std::vector<float>*>* points, float width);
 
 	float mu(int a, int b){
-		return a*pow(((float) 1/this->beta),b);
+		return log(a)+log((float) 1/this->beta)*b;
 	};
 	void setNumberOfSamples(unsigned int m){this->m = m;};
 	void setAlpha(float value){this->alpha = value;};

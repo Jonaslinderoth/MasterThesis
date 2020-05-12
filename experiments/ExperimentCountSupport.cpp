@@ -7,8 +7,8 @@
 
 void ExperimentCountSupport::start(){
 	unsigned int c = 0;
-	unsigned int numberOfCandidates = 10000;
-	unsigned int numberOfPoints =     10000;
+	unsigned int numberOfCandidates = 30000;
+	unsigned int numberOfPoints =     30000;
 	unsigned int dim =                10000;
 
 	// count tests
@@ -21,8 +21,7 @@ void ExperimentCountSupport::start(){
 	}
 
 	std::mt19937 rng(std::random_device{}());
-	rng.seed(0);
-
+	rng.seed(0);;
 	Experiment::addTests(c);
 	Experiment::start();
 
@@ -32,8 +31,8 @@ void ExperimentCountSupport::start(){
 		for(unsigned int j = 1; j < numberOfPoints; j *= 2){
 			for(unsigned int k = 32; k < dim; k*= 2){
 				// Calculate sizes
-				size_t sizeOfTransactions = i*(k/32)*sizeof(unsigned int);
-				size_t sizeOfCandidates = j*(k/32)*sizeof(unsigned int);
+				size_t sizeOfTransactions = j*(k/32)*sizeof(unsigned int);
+				size_t sizeOfCandidates = i*(k/32)*sizeof(unsigned int);
 				size_t sizeOfScore = i*sizeof(float);
 				size_t sizeOfCounts = i*sizeof(unsigned int);
 				size_t sizeOfToBeDeleted = i*sizeof(bool);
@@ -63,15 +62,14 @@ void ExperimentCountSupport::start(){
 						unsigned int block = 0;
 						for(unsigned int blockIndex = 0; blockIndex < 32; blockIndex++){
 							// jj is to make an offset
-							bool value = (jj + kk*32+blockIndex)%10 == 0;
+							bool value = (((jj + kk*32+blockIndex)%10) == 0);
 							if(value){
-								block |= (1 << blockIndex);	
+								block |= (1 << blockIndex);
 							}
 						}
 						transactions[jj+ kk*j] = block;
 					}
 				}
-
 				// Generate candidates
 				for(unsigned int ii = 0; ii < i; ii++){
 					for(unsigned int kk = 0; kk < k/32; kk++){
@@ -80,16 +78,18 @@ void ExperimentCountSupport::start(){
 							// jj is to make an offset
 							bool value = (kk*32+blockIndex) == ii;
 							if(value){
-								block |= (1 << blockIndex);	
+								block |= (1 << blockIndex);
 							}
-							if((kk*32+blockIndex) > ii){
-								block |= ((std::uniform_int_distribution<int>{}(rng)) & 1);	
+							if((kk*32+blockIndex) > k){
+								auto tmp = ((std::uniform_int_distribution<int>{}(rng)) & 1);
+								block |= (tmp << blockIndex);
 							}
 						}
-						candidates[ii+ kk*j] = block;
+						//if(block != 0) Experiment::repportError(std::to_string(block), this->getName());
+						candidates[ii+ kk*i] = block;
 					}				
 				}
-				
+
 				cudaStream_t stream;
 				checkCudaErrors(cudaStreamCreate(&stream));
 				cudaEvent_t start_e, stop_e;
@@ -115,10 +115,10 @@ void ExperimentCountSupport::start(){
 										stream,
 										candidates,
 										transactions,
-										k,
-										j,
-										i,
-										i*0.1,
+										k, // dim
+										j, // number of point
+										i, // number of candidates
+										1,
 										0.25,
 										counts,
 										score,
@@ -151,7 +151,7 @@ void ExperimentCountSupport::start(){
 										k,
 										j,
 										i,
-										i*0.1,
+										1,
 										0.25,
 										counts_2,
 										score_2,
@@ -177,16 +177,18 @@ void ExperimentCountSupport::start(){
 				bool passed = true;
 				for(unsigned int s = 0; s < i; s++){
 					if(counts[s] != counts_2[s]){
-						Experiment::repportError("Counts do not match " + std::to_string(counts[s]) +" != " + std::to_string(counts_2[s]) , this->getName());
+						Experiment::repportError("Counts do not match " + std::to_string(counts[s]) +" != " + std::to_string(counts_2[s]) + " i: " +std::to_string(i)+ " j: "+ std::to_string(j)+ " k: "+ std::to_string(k), this->getName());
 						passed = false;
 					}
 					if(score[s] != score_2[s]){
-						//Experiment::repportError("Scores do not match " + std::to_string(score[s]) +" != " + std::to_string(score_2[s]) , this->getName());
+						Experiment::repportError("Scores do not match " + std::to_string(score[s]) +" != " + std::to_string(score_2[s]) + " i: "+ std::to_string(i)+ " j: "+ std::to_string(j)+ " k: "+ std::to_string(k) + ", s: " +std::to_string(s), this->getName());
+						// std::cout << "Scores do not match " + std::to_string(score[s]) +" != " + std::to_string(score_2[s]) + " i: "+ std::to_string(i)+ " j: "+ std::to_string(j)+ " k: "+ std::to_string(k) + ", s: " +std::to_string(s) << std::endl;
 						passed = false;
 					}
 					if(toBeDeleted[s] != toBeDeleted_2[s]){
-						Experiment::repportError("toBeDeleted do not match " + std::to_string(toBeDeleted[s]) +" != " + std::to_string(toBeDeleted_2[s]) , this->getName());
+						Experiment::repportError("toBeDeleted do not match " + std::to_string(toBeDeleted[s]) +" != " + std::to_string(toBeDeleted_2[s]) + " i: "+ std::to_string(i)+ " j: " +std::to_string(j)+ " k: " +std::to_string(k), this->getName());
 						passed = false;
+						
 					}
 				}
 				

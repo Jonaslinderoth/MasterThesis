@@ -170,7 +170,8 @@ __global__ void findDimmensionsLoadChunks(unsigned int* Xs_d, unsigned int* ps_d
 __global__ void score(unsigned int* Cluster_size, unsigned int* Dim_count, float* score_output, unsigned int len, float alpha, float beta, unsigned int num_points){
 	int entry = blockIdx.x*blockDim.x+threadIdx.x;
 	if(entry < len){
-		score_output[entry] = ((Cluster_size[entry])* powf(1.0/beta, (Dim_count[entry])))*(Cluster_size[entry] >= (alpha*num_points));	
+		// score_output[entry] = ((Cluster_size[entry])* powf(1.0/beta, (Dim_count[entry])))*(Cluster_size[entry] >= (alpha*num_points));
+		score_output[entry] = (logf(Cluster_size[entry])+ logf(1.0/beta)*((Dim_count[entry])))*(Cluster_size[entry] >= (alpha*num_points));
 	}
 
 }
