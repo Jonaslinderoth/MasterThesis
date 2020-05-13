@@ -331,6 +331,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 										  candidates_d, numberOfCandidates, dim,
 										  deletedFromCount_d, toBeDeleted_d, Hash);
 					
+					
+					
 					orKernelWrapper(ceilf((float)(numberOfCandidates+1)/dimBlock), dimBlock, stream1_1,
 									numberOfCandidates+1, toBeDeleted_d, deletedFromCount_d);
 					
@@ -351,6 +353,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 					checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d+numberOfCandidates, sizeof(unsigned int), cudaCpuDeviceId, stream1_1));			
 					assert(numberOfCandidates >= prefixSum_d[numberOfCandidates]); // avoid underflow
+					std::cout << "number of points: " << numberOfCandidates << " deleting: " << (prefixSum_d[numberOfCandidates]) << std::endl;
 				
 					// Calculate the new number of candidates, based on the amount that should be deleted
 					oldNumberOfCandidates = numberOfCandidates;

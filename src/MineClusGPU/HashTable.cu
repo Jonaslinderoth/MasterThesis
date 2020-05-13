@@ -86,6 +86,7 @@ __global__ void insertHashTable(KeyValue* hashTable, unsigned int* candidates, u
 		for(unsigned int i = 0; i < numberOfBlocks; i++){
 			block = candidates[candidate+numberOfCandidates*i];
 			multiplier = hashFun(i+1);
+			if(multiplier == 0) printf("multiplier %u \n", multiplier);
 			key += (unsigned long long int)((unsigned long long int)block*multiplier); // i should really be a prime
 			hash ^= hashFun(block);
 		}
