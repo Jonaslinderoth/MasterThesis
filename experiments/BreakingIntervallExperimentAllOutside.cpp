@@ -37,7 +37,7 @@ void BreakingIntervallExperimentAllOutside::start(){
 		// Calculaating sizes
 		std::size_t point_dim = 200;
 		std::size_t no_of_points = 10000;
-		std::size_t no_of_dims = 50; //idk
+		std::size_t no_of_dims = 1024; //idk
 		std::size_t no_of_centroids = 20;
 		unsigned int m = ceilf((float)no_of_dims/(float)no_of_centroids);
 

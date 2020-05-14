@@ -6,8 +6,8 @@ CXX = g++
 CXXFLAGS=-I. -nocudalib -O2 #-g -G  
 else
 CXX = nvcc
-CXXFLAGS=-I/usr/local/include/coin -I. -arch=sm_37  -DNDEBUG -O2 #-g -G #-DNDEBUG -O3 #-g -G # -DNDEBUG -g -G
-#-lineinfo 
+CXXFLAGS=-I/usr/local/include/coin -I. -arch=sm_37 -maxrregcount 64 -DNDEBUG -O2 #-g -G #-DNDEBUG -O3 #-g -G # -DNDEBUG -g -G
+#-lineinfo -maxrregcount 64 -lineinfo
 endif
 #-maxrregcount 64 is needed for compiling the new merge support in debug mode, since there is not enough registers if some values are not optimised away
 

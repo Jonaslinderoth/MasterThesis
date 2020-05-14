@@ -16,7 +16,7 @@ class MineClus : public Clustering{
 
 	
 	float mu(int a, int b){
-		return a*pow(((float) 1/this->beta),b);
+		return log(a)*log((float) 1/this->beta)*b;
 	};
 	void setAlpha(float value){this->alpha = value;};
 	void setBeta(float value){this->beta = value;};

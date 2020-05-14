@@ -220,11 +220,18 @@ TEST_F(testDOC, testFindCluster2){
 
 TEST_F(testDOC, testMu){
 	auto d = DOC();
-	EXPECT_EQ(d.mu(1,1), 4);
-	EXPECT_EQ(d.mu(2,2), 32);
-	EXPECT_EQ(d.mu(3,2), 48);
-	EXPECT_EQ(d.mu(3,3), 192);
-	EXPECT_EQ(d.mu(3,4), 768);
+	EXPECT_FLOAT_EQ(d.mu(1,1), log(4));
+	EXPECT_FLOAT_EQ(d.mu(2,2), log(32));
+	EXPECT_FLOAT_EQ(d.mu(3,2), log(48));
+	EXPECT_FLOAT_EQ(d.mu(3,3), log(192));
+	EXPECT_FLOAT_EQ(d.mu(3,4), log(768));
+	for(unsigned int i = 1; i < 100; i++){
+		for(unsigned int j = 1; j < 100; j++){
+			EXPECT_LT(d.mu(i-1,j), d.mu(i,j));
+			EXPECT_LT(d.mu(i,j-1), d.mu(i,j));
+			EXPECT_LT(d.mu(i-1,j-1), d.mu(i,j));		
+		}		
+	}
 }
 
 
