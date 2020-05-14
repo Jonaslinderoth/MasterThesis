@@ -205,7 +205,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			checkCudaErrors(cudaFree(toBeDeleted_d));
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));
 			unsigned int oldNumberOfCandidates = dim;	
-			unsigned int numberOfCandidates = dim-sum_h[0];
+			size_t numberOfCandidates = dim-sum_h[0];
 
 			// if there are any candidates left
 			if(numberOfCandidates > 0){
@@ -270,7 +270,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					// The number of candidates after a merge can be seen as
 					//   an upper triangular matrix without the diagonal
 					oldNumberOfCandidates = numberOfCandidates;
-					numberOfCandidates = (numberOfCandidates*(numberOfCandidates+1))/2-numberOfCandidates;
+					numberOfCandidates = ((size_t)numberOfCandidates*(numberOfCandidates+1))/2-numberOfCandidates;
 					sizeOfCandidates = (numberOfCandidates)*numberOfBlocksPrPoint * sizeof(unsigned int);
 					sizeOfToBeDeleted = (numberOfCandidates+1)*sizeof(bool);
 					
@@ -297,7 +297,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					
 					findDublicatesWrapper(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1,
 										  candidates_d, numberOfCandidates, dim,
-										  deletedFromCount_d, toBeDeleted_d, Hash);
+										  deletedFromCount_d, toBeDeleted_d, this->duplicateKernelVerison);
 					orKernelWrapper(ceilf((float)(numberOfCandidates+1)/dimBlock), dimBlock, stream1_1,
 									numberOfCandidates+1, toBeDeleted_d, deletedFromCount_d);
 

@@ -9,12 +9,12 @@ void ExperimentCountSupport::start(){
 	unsigned int c = 0;
 	unsigned int numberOfCandidates = 30000;
 	unsigned int numberOfPoints =     30000;
-	unsigned int dim =                10000;
+	unsigned int dim =                1024;
 
 	// count tests
-	for(unsigned int i = 1; i < numberOfCandidates; i *= 2){
-		for(unsigned int j = 1; j < numberOfPoints; j *= 2){
-			for(unsigned int k = 32; k < dim; k*= 2){
+	for(unsigned int i = 1024; i < numberOfCandidates; i += 1024*2){
+		for(unsigned int j = 1024; j < numberOfPoints; j += 1024*2){
+			for(unsigned int k = 32; k < dim; k+= 32){
 				c++;
 			}	
 		}		
@@ -27,9 +27,9 @@ void ExperimentCountSupport::start(){
 
 	
 	// Do experiments
-	for(unsigned int i = 1; i < numberOfCandidates; i *= 2){
-		for(unsigned int j = 1; j < numberOfPoints; j *= 2){
-			for(unsigned int k = 32; k < dim; k*= 2){
+	for(unsigned int i = 1024; i < numberOfCandidates; i += 1024*2){
+		for(unsigned int j = 1024; j < numberOfPoints; j += 1024*2){
+			for(unsigned int k = 32; k < dim; k+= 32){
 				// Calculate sizes
 				size_t sizeOfTransactions = j*(k/32)*sizeof(unsigned int);
 				size_t sizeOfCandidates = i*(k/32)*sizeof(unsigned int);

@@ -381,15 +381,21 @@ return true;
 }
 
 bool DataGeneratorBuilder::buildUClusters(std::string fileName_,
-		unsigned int ammountOfPoint,
-		unsigned int ammountOfClusters,
-		unsigned int with,
-		unsigned int dimensions,
-		unsigned dimensionUsed,
-		float outLiersPersentage) {
+										  unsigned int ammountOfPoint,
+										  unsigned int ammountOfClusters,
+										  unsigned int with,
+										  unsigned int dimensions,
+										  unsigned dimensionUsed,
+										  float outLiersPersentage,
+										  bool overWrite) {
+	if(!overWrite and existsFile(fileName_+".dat")){
+		return true;
+	}
+		
 	if(ammountOfClusters == 0){
 		return false;
 	}
+	
 
 	//need to calculate the points in each cluster , and because of integer division i need to take care of the rest.
 	std::vector<unsigned int> ammountOfPointPerCluster;

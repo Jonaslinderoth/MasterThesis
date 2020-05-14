@@ -8,7 +8,7 @@
 
 void ExperimentRemoveDuplicates::start(){
 	unsigned int c = 0;
-	unsigned int numberOfCandidates = 10000000;
+	unsigned int numberOfCandidates = 1000000;
 	unsigned int dim =                1000;
 
 	// count tests

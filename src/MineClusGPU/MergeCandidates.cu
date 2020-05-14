@@ -211,7 +211,8 @@ void mergeCandidatesWrapper(unsigned int dimGrid,
 							unsigned int itrNr,
 							unsigned int* output,
 							bool* toBeDeleted,
-							mergeCandidatesType version
+							mergeCandidatesType version,
+							unsigned int chunkSize
 							){
 	
 	if(version == NaiveMerge){
@@ -220,9 +221,10 @@ void mergeCandidatesWrapper(unsigned int dimGrid,
 		mergeCandidatesEarlyStopping<<<dimGrid, dimBlock, 0, stream>>>(candidates, numberOfCandidates, dim, itrNr, output, toBeDeleted);
 	}else if(version == SharedMemoryMerge){
 		unsigned int numberOfBlocks = ceilf((float)dim/32);
-		unsigned int chunkSize = ((48000/4)/2/numberOfBlocks);
-		chunkSize = log2(chunkSize);
-		chunkSize = pow(2, chunkSize);
+		unsigned int largestChunkSize = ((48000/4)/2/numberOfBlocks);
+		largestChunkSize = log2(largestChunkSize);
+		largestChunkSize = pow(2, largestChunkSize);
+		chunkSize = min(largestChunkSize, chunkSize);
 		unsigned int smemSize = chunkSize*2*sizeof(unsigned int)*numberOfBlocks;
 		unsigned int gridDimmension = ceilf(((float)numberOfCandidates/chunkSize));
 		gridDimmension = ceilf((float)(gridDimmension*(gridDimmension+1)/2) -gridDimmension);

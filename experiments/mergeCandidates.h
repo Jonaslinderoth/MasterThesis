@@ -4,7 +4,7 @@
 #include "Experiment.h"
 class MergeCandidatesExperiment: public Experiment{
  public:
- MergeCandidatesExperiment(std::string name, std::string dir, unsigned int memLimit): Experiment(0,name, dir, "number of points, dim, version, passedTest, time"){
+ MergeCandidatesExperiment(std::string name, std::string dir, unsigned int memLimit): Experiment(0,name, dir, "number of points, dim, version, passedTest, time, trues"){
 		this->memLimit = memLimit;
 	}
 	void start() override;

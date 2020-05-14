@@ -6,6 +6,7 @@
 #include <curand.h>
 #include "../dataReader/DataReader.h"
 #include "../Clustering.h"
+#include "FindDublicates.h"
 
 class MineClusGPU : public Clustering{
  public:
@@ -29,6 +30,9 @@ class MineClusGPU : public Clustering{
 	float getWidth(){return this->width;};
 	bool isConcurentVersion(){return this->concurentVersion;};
 	void setConcurentVersion(bool value){this->concurentVersion = value;};
+	void setDuplicatesVersion(dublicatesType a){
+		this->duplicateKernelVerison = a; 
+	}
 	
  private:
 	float alpha;
@@ -40,6 +44,7 @@ class MineClusGPU : public Clustering{
 	std::vector<std::vector<float>*>* data;
 	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 	float* transformData();
+	dublicatesType duplicateKernelVerison = Hash;
 };
 
 #endif

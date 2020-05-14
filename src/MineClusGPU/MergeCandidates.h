@@ -16,7 +16,8 @@ void mergeCandidatesWrapper(unsigned int dimGrid,
 							unsigned int itrNr,
 							unsigned int* output,
 							bool* toBeDeleted,
-							mergeCandidatesType version = NaiveMerge
+							mergeCandidatesType version = NaiveMerge,
+							unsigned int chunkSize = 1024
 							);
 
 

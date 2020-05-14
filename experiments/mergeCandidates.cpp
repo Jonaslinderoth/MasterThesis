@@ -159,7 +159,7 @@ void MergeCandidatesExperiment::start(){
 			
 				cudaMemcpy(candidates_d, candidates_h, sizeOfCandidates, cudaMemcpyHostToDevice);
 				checkCudaErrors(cudaEventRecord(start_e, stream));
-				mergeCandidatesWrapper(dimGrid, dimBlock, stream, candidates_d, numberOfCandidates, dim, k, output_d, toBeDeleted_d, SharedMemoryMerge);
+				mergeCandidatesWrapper(dimGrid, dimBlock, stream, candidates_d, numberOfCandidates, dim, k, output_d, toBeDeleted_d, SharedMemoryMerge, 99999999999);
 				checkCudaErrors(cudaEventRecord(stop_e, stream));
 
 				cudaMemcpy(output_smem_h, output_d, sizeOfOutput, cudaMemcpyDeviceToHost);

@@ -207,7 +207,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d+dim, sizeof(unsigned int), cudaCpuDeviceId, stream1_1));			
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));
 			unsigned int oldNumberOfCandidates = dim;	
-			unsigned int numberOfCandidates = dim-prefixSum_d[dim];
+			size_t numberOfCandidates = dim-prefixSum_d[dim];
 			
 
 			// if there are any candidates left
@@ -294,7 +294,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					// The number of candidates after a merge can be seen as
 					//   an upper triangular matrix without the diagonal
 					oldNumberOfCandidates = numberOfCandidates;
-					numberOfCandidates = (numberOfCandidates*(numberOfCandidates+1))/2-numberOfCandidates;
+					numberOfCandidates = ((size_t)numberOfCandidates*(numberOfCandidates+1))/2-numberOfCandidates;
 					sizeOfCandidates = (numberOfCandidates)*numberOfBlocksPrPoint * sizeof(unsigned int);
 					sizeOfToBeDeleted = (numberOfCandidates+1)*sizeof(bool);
 					
@@ -329,7 +329,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					
 					findDublicatesWrapper_mananged(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1,
 										  candidates_d, numberOfCandidates, dim,
-										  deletedFromCount_d, toBeDeleted_d, Hash);
+										  deletedFromCount_d, toBeDeleted_d, this->duplicateKernelVerison);
 					
 					
 					
@@ -353,7 +353,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 					checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d+numberOfCandidates, sizeof(unsigned int), cudaCpuDeviceId, stream1_1));			
 					assert(numberOfCandidates >= prefixSum_d[numberOfCandidates]); // avoid underflow
-					std::cout << "number of points: " << numberOfCandidates << " deleting: " << (prefixSum_d[numberOfCandidates]) << std::endl;
+					
 				
 					// Calculate the new number of candidates, based on the amount that should be deleted
 					oldNumberOfCandidates = numberOfCandidates;

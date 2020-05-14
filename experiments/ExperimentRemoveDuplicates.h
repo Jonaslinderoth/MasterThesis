@@ -4,7 +4,7 @@
 #include "Experiment.h"
 class ExperimentRemoveDuplicates: public Experiment{
  public:
- ExperimentRemoveDuplicates(std::string name, std::string dir): Experiment(0,name, dir, "number Of Candidates, number of points, dim, version, passedTest, time"){
+ ExperimentRemoveDuplicates(std::string name, std::string dir): Experiment(0,name, dir, "number Of Candidates, dim, version, passedTest, time"){
 	}
 	void start() override;
 };
