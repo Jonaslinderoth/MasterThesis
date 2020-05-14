@@ -1,5 +1,4 @@
-
-#include "breakingIntervallExperiment.h"
+#include "BreakingIntervallExperimentAllOutside.h"
 #include <random>
 #include <string>
 #include <iostream>
@@ -8,7 +7,9 @@
 #include "../src/DOC_GPU/pointsContainedDevice.h"
 #include "../src/Fast_DOCGPU/whatDataInCentroid.h"
 
-void breakingIntervallExperiment::start(){
+void BreakingIntervallExperimentAllOutside::start(){
+	//by having with 5 and all the numbers being at least 10 from each other, the there are no point in with 5 from a medoid exept it self.
+
 	unsigned int repetitions = 10;
 
 	std::random_device rd;
@@ -32,11 +33,11 @@ void breakingIntervallExperiment::start(){
 	for(unsigned int rep = 0 ; rep < repetitions ; ++rep){
 		int block_size = 1024;
 		unsigned long garbage = 0;
-		unsigned long width = 15;
+		unsigned long width = 5;
 		// Calculaating sizes
 		std::size_t point_dim = 200;
 		std::size_t no_of_points = 10000;
-		std::size_t no_of_dims = 50; //idk
+		std::size_t no_of_dims = 1024; //idk
 		std::size_t no_of_centroids = 20;
 		unsigned int m = ceilf((float)no_of_dims/(float)no_of_centroids);
 
@@ -59,10 +60,10 @@ void breakingIntervallExperiment::start(){
 		unsigned int* output_count_h = (unsigned int*) malloc(size_of_output_count);
 
 
-		// filling data array with only 50
+		// filling data array with 0 , 10 , 20 , 30 , 40 , 50 , 60 ecc.
 		for(int i= 0; i < no_of_points; i++){
 			for(int j = 0; j < point_dim; j++){
-				data_h[i*point_dim+j] = 50;
+				data_h[i*point_dim+j] = no_of_points*point_dim*10;
 			}
 		}
 

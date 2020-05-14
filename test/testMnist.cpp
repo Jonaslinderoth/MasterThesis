@@ -4,7 +4,7 @@
 #include "../src/MineClusGPU/MineClusGPUnified.h"
 #include "../experiments/genTestData.cpp"
 
-TEST(testMnist, testGen){
+TEST(testMnist, _SLOW_testGen){
 	auto data = getMnist();
 	EXPECT_EQ(data->size(), 10000);
 	for(int i = 0; i < data->size(); i++){
@@ -13,7 +13,7 @@ TEST(testMnist, testGen){
 }
 
 
-TEST(testMnist, testMineClus){
+TEST(testMnist, _SUPER_SLOW_testMineClus){
 	auto data = getMnist();
 	auto c = MineClusGPUnified(data);
 	c.setSeed(1);
