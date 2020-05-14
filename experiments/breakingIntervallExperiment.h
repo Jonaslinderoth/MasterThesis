@@ -12,7 +12,7 @@
 #include "Experiment.h"
 class breakingIntervallExperiment: public Experiment{
  public:
-	breakingIntervallExperiment(std::string name, std::string dir): Experiment(0,name, dir, "number of points, dim, version, passedTest, time"){
+	breakingIntervallExperiment(std::string name, std::string dir): Experiment(0,name, dir, "number of points, dim,break intervall or naive , time"){
 	}
 	void start() override;
 };

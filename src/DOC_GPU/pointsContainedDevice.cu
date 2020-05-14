@@ -93,6 +93,7 @@ __global__ void pointsContainedDeviceNaiveBreak(float* data,
 				d &= (not (dims[entryDims])) || (abss < width);
 				if(i%breakingIntervall == 0 and (not d)){
 					break;
+
 				}
 			}
 			assert(entry < no_dims);
