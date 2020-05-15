@@ -138,7 +138,7 @@ Memory_sizes MemSolverUnified::computeForAllocations(unsigned int dim, unsigned 
 		result.size_of_score =                 (model.getSolutionValue(size_of_score_max));
 		result.size_of_index =                 (model.getSolutionValue(size_of_index_max));
 		result.size_of_randomStates =          1024*10 * sizeof(curandState);
-		result.size_of_bestDims =              (model.getSolutionValue(size_of_bestDims_max));
+		result.size_of_bestDims =              (model.getSolutionValue(size_of_bestDims_max))+1;
 		result.first_number_of_centroids =     (model.getSolutionValue(number_of_centroids[0]));
 	
 		// recompute the maximum value for pointsContained, to avoid rounding errors

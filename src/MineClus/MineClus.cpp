@@ -27,6 +27,24 @@ MineClus::MineClus(std::vector<std::vector<float>*>* input, float alpha, float b
 }
 
 
+
+/**
+ * Used for loading the data from the data reader into main memory.
+ */
+std::vector<std::vector<float>*>* MineClus::initDataReader(DataReader* dr){
+	auto size = dr->getSize();
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>(0);
+	data->reserve(size);
+	while(dr->isThereANextBlock()){
+		std::vector<std::vector<float>*>* block = dr->next();
+		data->insert(data->end(), block->begin(), block->end());
+		delete block;
+	}
+	return data;
+};
+
+
+
 std::vector<OutputCandidate*>* MineClus::findClusterCandidates(){
 		float d = this->data->at(0)->size();
 	unsigned int min_supp = this->alpha*this->data->size();

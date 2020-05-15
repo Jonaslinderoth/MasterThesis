@@ -103,6 +103,57 @@ TEST_F(dataGenerationTests, testUBuilder){
 }
 
 
+TEST_F(dataGenerationTests, testUBuilder2){
+	DataGeneratorBuilder dgb;
+
+	bool res = dgb.buildUClusters("test222",10,5,15,10,5,0);
+	EXPECT_TRUE(res);
+
+	auto dr = new DataReader("test222");
+	EXPECT_EQ(dr->getSize(), 50);
+	MetaDataFileReader mdfr("test222");
+	EXPECT_EQ(mdfr.getClusters().size(), 5);
+	auto t = mdfr.getClusterLines();
+	EXPECT_EQ(t.size(), 5);
+	
+	
+	
+	SUCCEED();
+
+}
+
+
+TEST_F(dataGenerationTests, testUBuilder3){
+	DataGeneratorBuilder dgb;
+
+	bool res = dgb.buildUClusters("test2222",20,2,15,2,1,0);
+	EXPECT_TRUE(res);
+
+	auto dr = new DataReader("test2222");
+	EXPECT_EQ(dr->getSize(), 40);
+	// while(dr->isThereANextPoint()){
+	// 	auto point = dr->nextPoint();
+	// 	for(unsigned int i = 0; i < point->size(); i++){
+	// 		std::cout << point->at(i) << " ";
+	// 	}
+	// 	std::cout << std::endl;
+	// }
+	
+	std::cout << std::endl;
+	MetaDataFileReader mdfr("test2222");
+	EXPECT_EQ(mdfr.getClusters().size(), 2);
+	auto t = mdfr.getClusterLines();
+	// for(int i = 0; i < t.size(); i++){
+	// 	std::cout << t.at(i) << std::endl;
+	// }
+	EXPECT_EQ(t.size(), 2);
+
+	
+	
+	SUCCEED();
+
+}
+
 TEST_F(dataGenerationTests, _SLOW_testUBuilderVariance){
 	DataGeneratorBuilder dgb;
 	Cluster small;
@@ -174,6 +225,38 @@ TEST_F(dataGenerationTests, testDimensionWithMutipleClusters){
 
 	SUCCEED();
 	EXPECT_TRUE(count == 10);
+}
+
+
+
+TEST_F(dataGenerationTests, testDimensionWithMutipleClusters_small){
+	DataGeneratorBuilder dgb;
+	Cluster small;
+	small.setAmmount(2);
+	small.addDimension(uniformDistribution,{-100,-10},{50,15},21);
+	small.addDimension(normalDistributionSpecial,{-100,-10},{50,15},21);
+	small.setOutLierPercentage(0);
+	dgb.addCluster(small);
+
+
+	Cluster big;
+	big.setAmmount(2);
+	big.addDimension(normalDistributionSpecial,{-100,-10},{50,15},21);
+	big.addDimension(uniformDistribution,{-100,-10},{50,15},21);
+	big.setOutLierPercentage(0);
+	dgb.addCluster(big);
+	dgb.build();
+
+	DataReader* dr = new DataReader();
+	unsigned int count = 0;
+	while(dr->isThereANextPoint()){
+		auto point = dr->nextPoint();
+		count++;
+	}
+
+
+	SUCCEED();
+	EXPECT_TRUE(count == 4);
 }
 
 

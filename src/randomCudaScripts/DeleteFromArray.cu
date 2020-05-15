@@ -507,13 +507,19 @@ __global__ void gpuDeleteFromArray(T* d_outData,
 	if(idx < numElements*dimensions){
 
 
-		const size_t pointIdex = idx/dimensions;
+		const size_t pointIdex = idx/(size_t)dimensions;
 		const size_t dimIndex = idx%dimensions;
-		const size_t offSet = d_delete_array[pointIdex];
-		const size_t nextOffSet = d_delete_array[pointIdex+1];
-		const size_t newIndex = (pointIdex-offSet)*dimensions+dimIndex;
+		const size_t offSet = (size_t)d_delete_array[pointIdex];
+		const size_t nextOffSet = (size_t)d_delete_array[pointIdex+1];
+		const size_t newIndex = (pointIdex-offSet)*(size_t)dimensions+(size_t)dimIndex;
 		const T theData = d_data[idx];
 		if(offSet == nextOffSet){
+			// if(newIndex >= (size_t)(numElements*(size_t)dimensions)){
+			// 	printf("pointIdex %llu dimIndex %llu nextOffSet %llu\n", pointIdex, dimIndex, nextOffSet);
+				
+			// 		//printf("newIndex %llu %llu %u %llu\n",newIndex, numElements,dimensions, (size_t)numElements*(size_t)dimensions);
+			// }
+			assert(newIndex < numElements*dimensions);
 			d_outData[newIndex] = theData;
 		}
 		
@@ -956,7 +962,7 @@ void deleteFromArray(cudaStream_t stream,
 		cudaEventCreate(&stop);
 		cudaEventRecord(start);
 	}
-
+	
 	gpuDeleteFromArray<<<blocksToUse,threadsUsed,0, stream>>>(d_outData,d_out_blelloch,d_data,numElements,dimension);
 
 	checkCudaErrors(cudaFree(d_out_blelloch));

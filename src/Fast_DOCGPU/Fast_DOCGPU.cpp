@@ -280,8 +280,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 										   pointsContained_d, pointsContained_count_d,
 										   width, dim, number_of_points, 1, 1);
 				*/
-				
-				whatDataIsInCentroid(dimGrid,
+				assert(dimGrid*dimBlock >= number_of_centroids);
+				whatDataIsInCentroid(ceilf((float)number_of_points/dimBlock),
 									 dimBlock,
 									 stream1,
 									 pointsContained_d,
@@ -292,6 +292,16 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 									 dim,
 									 number_of_points);
 
+
+				bool* b_h = (bool*) malloc((number_of_points+1)*sizeof(bool));
+				checkCudaErrors(cudaMemcpyAsync(b_h, pointsContained_d,
+												(number_of_points+1)*sizeof(bool), cudaMemcpyDeviceToHost, stream1));
+				// cudaStreamSynchronize(stream1);
+				// for(unsigned int g = 0; g < number_of_points+1; g++){
+				// 	std::cout << b_h[g] << " ";
+				// }
+				// std::cout << std::endl;
+				
 				//prefixsum....
 												 
 
@@ -301,6 +311,18 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 				checkCudaErrors(cudaMemcpyAsync(cluster_size_h, prefixSum_d+number_of_points,
 												sizeof(unsigned int), cudaMemcpyDeviceToHost, stream1));
 
+
+				// cudaStreamSynchronize(stream1);
+				// unsigned int* prefix_h = (unsigned int*) malloc((number_of_points+1)*sizeof(unsigned int));
+				// checkCudaErrors(cudaMemcpyAsync(prefix_h, prefixSum_d,
+				// 								(number_of_points+1)*sizeof(unsigned int), cudaMemcpyDeviceToHost, stream1));
+				// cudaStreamSynchronize(stream1);
+				// for(unsigned int g = 0; g < number_of_points+1; g++){
+				// 	std::cout << prefix_h[g] << " ";
+				// }
+				// std::cout << std::endl;
+
+				
 				// make sure that the size have arrived on the host side
 				cudaStreamSynchronize(stream1);
 				cluster_size_h[0] = number_of_points-cluster_size_h[0];
@@ -336,6 +358,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 					deleteFromArrayWrapper(ceilf((float)(number_of_points*dim)/dimBlock), dimBlock,
 										   stream1, data_d, prefixSum_d, 
 										   number_of_points, dim, outputCluster_d);
+
 					
 					// copy the cluster to Host
 					float* cluster_h;

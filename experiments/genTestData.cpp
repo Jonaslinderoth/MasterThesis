@@ -7,20 +7,29 @@ void inline genTestData(){
 	if(system("mkdir testData  >>/dev/null 2>>/dev/null")){
 		
 	};
-	// 10 clusters of 10000 points in 100 dimesnions 5% outliers ~40 mb
+	// 10 clusters of 10000 points in 100 dimesnions 0% outliers ~40 mb
 	{
 		DataGeneratorBuilder dgb;
-		bool res = dgb.buildUClusters("testData/smallDataSet",10000,10,15,100,10,5, false);
+		dgb.setSeed(2);
+		bool res = dgb.buildUClusters("testData/smallDataSet",1000,10,15,50,10,0, false);
 		if(!res) std::cout << "ERROR" << std::endl;
 	}
 	
-	// 10 clusters of 10000 points in 1000 dimesnions 5% outliers ~400 mb
+	// 10 clusters of 10000 points in 200 dimesnions 0% outliers ~40 mb
 	{
 		DataGeneratorBuilder dgb;
-		bool res = dgb.buildUClusters("testData/mediumDataSet",10000,10,15,1000,10,5, false);
+		dgb.setSeed(1);
+		bool res = dgb.buildUClusters("testData/mediumDataSet",10000,10,15,200,15,0, false);
 		if(!res) std::cout << "ERROR" << std::endl;
 	}
 
+
+
+	// {
+	// 	DataGeneratorBuilder dgb;
+	// 	bool res = dgb.buildUClusters("testData/LargeDataSet",10000,10,15,200,10,5, false);
+	// 	if(!res) std::cout << "ERROR" << std::endl;
+	// }
 	// // 10 clusters of 100000 points in 1000 dimesnions 5% outliers ~4 gb
 	// {
 	// 	DataGeneratorBuilder dgb;
@@ -35,6 +44,7 @@ void inline genTestData(){
 	// 	if(!res) std::cout << "ERROR" << std::endl;
 	//
 };	
+
 
 int inline reverseInt (int i) 
 {

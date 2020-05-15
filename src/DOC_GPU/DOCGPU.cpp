@@ -238,7 +238,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 				}
 			}
 			
-			// std::cout << j << " centroid_size: " << number_of_centroids_sample << std::endl;
+			//std::cout << j << " centroid_size: " << number_of_centroids_sample << std::endl;
 			centroids_used += number_of_centroids_sample;
 
 			assert(sizes.size_of_data >= number_of_points*dim*sizeof(float));

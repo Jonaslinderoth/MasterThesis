@@ -115,10 +115,10 @@ void breakingIntervallExperiment::start(){
 		checkCudaErrors((cudaStreamCreate(&stream)));
 
 		//time taking
-		cudaEvent_t start_naive, stop_naive;
-		checkCudaErrors(cudaEventCreate(&start_naive));
-		checkCudaErrors(cudaEventCreate(&stop_naive));
-		checkCudaErrors(cudaEventRecord(start_naive, stream));
+		cudaEvent_t start, stop;
+		checkCudaErrors(cudaEventCreate(&start));
+		checkCudaErrors(cudaEventCreate(&stop));
+		checkCudaErrors(cudaEventRecord(start, stream));
 
 		pointsContainedKernelNaive(ceil((no_of_dims)/(float)block_size),
 								   block_size,
@@ -134,24 +134,21 @@ void breakingIntervallExperiment::start(){
 								   no_of_dims,
 								   m);
 
-		checkCudaErrors(cudaEventRecord(stop_naive, stream));
+		checkCudaErrors(cudaEventRecord(stop, stream));
 
-		float millisReducedReadsNaive = 0;
-		checkCudaErrors(cudaEventSynchronize(stop_naive));
+		float millisNaive = 0;
+		checkCudaErrors(cudaEventSynchronize(stop));
 
-		checkCudaErrors(cudaEventElapsedTime(&millisReducedReadsNaive, start_naive, stop_naive));
+		checkCudaErrors(cudaEventElapsedTime(&millisNaive, start, stop));
 
-		Experiment::writeLineToFile(std::to_string(no_of_points) + ", " + std::to_string(point_dim) + ", " + "naive, " + std::to_string(millisReducedReadsNaive));
+		Experiment::writeLineToFile(std::to_string(no_of_points) + ", " + std::to_string(point_dim) + ", " + "naive, " + std::to_string(millisNaive));
 		Experiment::testDone("Dim: " + std::to_string(point_dim) + " numPoints: " + std::to_string(no_of_points)+ " naive");
 
 
 
 		for(unsigned long breakIntervall = 1; breakIntervall <= breakIntervallEnd ; breakIntervall+=breakIntervallIncrease){
 			//time taking
-			cudaEvent_t start_breaking, stop_breaking;
-			checkCudaErrors(cudaEventCreate(&start_breaking));
-			checkCudaErrors(cudaEventCreate(&stop_breaking));
-			checkCudaErrors(cudaEventRecord(start_breaking, stream));
+			checkCudaErrors(cudaEventRecord(start, stream));
 
 			pointsContainedKernelNaiveBreak(ceil((no_of_dims)/(float)block_size),
 											   	   block_size,
@@ -168,14 +165,13 @@ void breakingIntervallExperiment::start(){
 											   	   m,
 											   	   breakIntervall);
 
-			checkCudaErrors(cudaEventRecord(stop_breaking, stream));
+			checkCudaErrors(cudaEventRecord(stop, stream));
 
-			float millisReducedReadsBreaking = 0;
-			checkCudaErrors(cudaEventSynchronize(stop_breaking));
+			checkCudaErrors(cudaEventSynchronize(stop));
+			float millisBreaking = 0;
+			checkCudaErrors(cudaEventElapsedTime(&millisBreaking , start, stop));
 
-			checkCudaErrors(cudaEventElapsedTime(&millisReducedReadsBreaking , start_breaking, stop_breaking));
-
-			Experiment::writeLineToFile(std::to_string(no_of_points) + ", " + std::to_string(point_dim) + ", " + std::to_string(breakIntervall) + ", " + std::to_string(millisReducedReadsBreaking));
+			Experiment::writeLineToFile(std::to_string(no_of_points) + ", " + std::to_string(point_dim) + ", " + std::to_string(breakIntervall) + ", " + std::to_string(millisBreaking));
 			Experiment::testDone("Dim: " + std::to_string(point_dim) + " numPoints: " + std::to_string(no_of_points)+ " breaking intervall: " + std::to_string(breakIntervall));
 		}
 

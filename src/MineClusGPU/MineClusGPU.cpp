@@ -54,7 +54,6 @@ float* MineClusGPU::transformData(){
 	
 	for(unsigned int i = 0; i < size; i++){
 		for(unsigned int j = 0; j < dim; j++){
-			
 			data_h[(size_t)i*dim+j] = data->at(i)->at(j);
 		}
 	}
@@ -186,7 +185,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			// Count the support
 			countSupportWrapper(ceilf((float)dim/dimBlock), dimBlock, stream1_1,
 								candidates_d, itemSet_d, dim, numberOfPoints, dim, minSupp,
-								this->beta, support_d, score_d, toBeDeleted_d);
+								this->beta, support_d, score_d, toBeDeleted_d, this->countSupportKernelVersion);
 
 
 
@@ -349,7 +348,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 					countSupportWrapper(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1,
 										candidates_d, itemSet_d, dim, numberOfPoints, numberOfCandidates, minSupp,
-										this->beta, support_d, score_d, toBeDeleted_d);
+										this->beta, support_d, score_d, toBeDeleted_d, this->countSupportKernelVersion);
 
 					// Delete the candidates with support smaller the minSupp.
 					sizeOfPrefixSum = (numberOfCandidates+1)*sizeof(unsigned int);
@@ -407,7 +406,11 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					checkCudaErrors(cudaFree(index_d));
 					checkCudaErrors(cudaFree(score_d));
 				} // Apriori iterations
-			}else{ // Number of candidates > 0 for outer 
+			}else{ // Number of candidates > 0 for outer
+				checkCudaErrors(cudaMemsetAsync(bestScore_d+i, 0, sizeof(float), stream1_1));
+				checkCudaErrors(cudaMemsetAsync(bestCentroid_d+i, 0, sizeof(unsigned int), stream1_1));
+
+				
 				checkCudaErrors(cudaFree(prefixSum_d));
 
 				checkCudaErrors(cudaFree(support_d));
@@ -458,7 +461,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 
 			
-	
 		unsigned int* prefixSum_d;
 		size_t sizeOfPrefixSum = (numberOfCentroids+1)*sizeof(unsigned int);
 		checkCudaErrors(cudaMalloc((void**) &prefixSum_d,   sizeOfPrefixSum));
@@ -506,15 +508,16 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 		checkCudaErrors(cudaFree(bestScore_d));
 		checkCudaErrors(cudaFree(bestCandidate_d));
 		checkCudaErrors(cudaFree(prefixSum_d));
-		
+
 		// Copy the centroids to a new array, because the offsets will be scrambled after the first cluster is deleted.
 		float* outputCentroids_d;
 		checkCudaErrors(cudaMalloc((void**) &outputCentroids_d,   dim*finalNumberOfClusters*sizeof(float)));
-		
 		copyCentroidWrapper(ceilf((float)finalNumberOfClusters*dim/dimBlock),dimBlock ,stream1_1,
 							finalCentroids_d, data_d, dim, finalNumberOfClusters, outputCentroids_d);
 
-		checkCudaErrors(cudaFree(finalCentroids_d));
+		checkCudaErrors(cudaFree(finalCentroids_d));			
+
+
 		// For each of the clusters found
 		for(unsigned int i = 0; i < finalNumberOfClusters; i++){
 			// Find the points in the i'th cluster

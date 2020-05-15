@@ -180,7 +180,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 	unsigned int* index_d;
 	checkCudaErrors(cudaMallocManaged((void **) &index_d, sizes.size_of_index));
 
-
 	// allocate for deletion
 	size_t sizeOfPrefixSum = (number_of_points+1)*sizeof(unsigned int); // +1 because of the prefixSum
 	unsigned int* prefixSum_d;
@@ -307,7 +306,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 				// std::cout << "findDim_d+(index_d[0]*dim): " << findDim_d+(index_d[0]*dim) << " to " << findDim_d+(index_d[0]*dim)+dim+1 << std::endl;
 				// std::cout << "pointsContained_d: " << pointsContained_d << " to " << pointsContained_d+(number_of_points+1) << std::endl;
 				// std::cout << "data_d: " << data_d << " to " << data_d+(number_of_points*dim) << std::endl;
-				whatDataIsInCentroid(dimGrid,
+				whatDataIsInCentroid(ceilf((float)number_of_points/dimBlock),
 									 dimBlock,
 									 stream1,
 									 pointsContained_d,
@@ -321,7 +320,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 				//prefixsum....
 
 				
-
 				// Allocate space for the size of the cluster
 				checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d, sizeof(unsigned int)*number_of_points, device, stream1));
 				// std::cout << "sizeof(bool)*(number_of_points+1): " << sizeof(bool)*(number_of_points+1) << std::endl;
@@ -364,7 +362,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 					checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d, sizeof(unsigned int)+(number_of_points+1), device, stream1));
 					checkCudaErrors(cudaMemPrefetchAsync(outputCluster_d, sizeof(float)*cluster_size*dim, device, stream1));
 					checkCudaErrors(cudaMemPrefetchAsync(pointsContained_d, sizeof(bool)*(number_of_points+1), device, stream1));
-					
+
 					deleteFromArrayWrapper(ceilf((float)(number_of_points*dim)/dimBlock), dimBlock,
 										   stream1, data_d, prefixSum_d, 
 										   number_of_points, dim, outputCluster_d);

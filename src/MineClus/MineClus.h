@@ -10,7 +10,7 @@ class MineClus : public Clustering{
  public:
  MineClus() :MineClus(new std::vector<std::vector<float>*>){};
 	MineClus(std::vector<std::vector<float>*>* input, float alpha = 0.1, float beta = 0.25, float width = 15, unsigned int d0 = 0);
-
+ MineClus(DataReader* dr) : MineClus(initDataReader(dr)){};
 	std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> findCluster() override;
 	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> findKClusters(int k) override;
 
@@ -31,7 +31,6 @@ class MineClus : public Clustering{
 	std::vector<OutputCandidate*>* findClusterCandidates();
 
 	
-	
 	unsigned int size(){return this->data->size();};
 	std::vector<boost::dynamic_bitset<>>* findDimensions(std::vector<float>* centroid,
 									  std::vector<std::vector<float>* >* points, float width);
@@ -45,6 +44,7 @@ class MineClus : public Clustering{
 	float width;
 	unsigned int d0;
 	bool concurent=true;
+	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 	std::vector<std::vector<float>*>* data;
 	std::vector<std::vector<float>*>* medoids;
 	

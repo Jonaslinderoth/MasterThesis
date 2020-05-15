@@ -521,7 +521,6 @@ __global__ void copyCentroid(unsigned int* centroids, float* data, unsigned int 
 		unsigned int dimInCentroid = k%dim;
 		unsigned int centroidIndex = centroids[centroidToUse];
 		centroidsOut[centroidToUse*dim+dimInCentroid] = data[centroidIndex*dim+dimInCentroid];
-		
 	}
 }
 
@@ -535,7 +534,7 @@ void copyCentroidWrapper(unsigned int dimGrid, unsigned int dimBlock, cudaStream
 __global__ void indexToBoolVector(unsigned int* index, unsigned int numberOfElements, bool* output){
 	unsigned int k = blockIdx.x*blockDim.x+threadIdx.x;
 	if(k < numberOfElements){
-		output[k] = index[0] == k;
+		output[k] = (index[0] == k);
 	}
 }
 

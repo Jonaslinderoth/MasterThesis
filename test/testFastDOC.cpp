@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 #include "../src/Fast_DOC/Fast_DOC.h"
 #include "../src/Fast_DOCGPU/Fast_DOCGPU.h"
-
+#include "../src/testingTools/DataGeneratorBuilder.h"
+#include "../src/testingTools/MetaDataFileReader.h"
 
 TEST(testFastDOC, testFindClusterSimple1){
 	auto data = new std::vector<std::vector<float>*>;
@@ -570,3 +571,82 @@ TEST(testFastDOC, testFind2ClusterGPUvsCPU){
 	EXPECT_EQ(res_gpu.at(1).second->size(), res_cpu.at(1).second->size());
 	EXPECT_EQ(res_gpu.at(1).second->size(), dim);
 }
+
+
+TEST(testFastDOC, SLOW_testWithDataReaderUCluster){
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
+	//Fast_DOC GPU Exception caught 16 1024 5: CU
+	bool res2 = dgb.buildUClusters("test/testData/test1234",1024,10,15,16,5,0, true);
+	EXPECT_TRUE(res2);
+	DataReader* dr = new DataReader("test/testData/test1234");
+
+	auto c = Fast_DOCGPU(dr);
+	c.setSeed(1);
+	
+	c.setWidth(15);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = c.findKClusters(10);
+	EXPECT_EQ(res.size(), 10);
+}
+	
+TEST(testFastDOC, SLOW_testWithDataReaderUCluster2){
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
+	//Fast_DOC GPU Exception caught 16 1024 5: CU
+	bool res2 = dgb.buildUClusters("test/testData/test1234",10240,10,15,16,5,0, true);
+	EXPECT_TRUE(res2);
+	DataReader* dr = new DataReader("test/testData/test1234");
+
+	auto c = Fast_DOCGPU(dr);
+	c.setSeed(1);
+	
+	c.setWidth(15);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = c.findKClusters(10);
+	EXPECT_EQ(res.size(), 10);
+}
+	
+TEST(testFastDOC, SLOW_testWithDataReaderUCluster3){
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
+	//Fast_DOC GPU Exception caught 16 1024 5: CU
+	bool res2 = dgb.buildUClusters("test/testData/test1234",10240,10,15,32,5,0, true);
+	EXPECT_TRUE(res2);
+	DataReader* dr = new DataReader("test/testData/test1234");
+
+	auto c = Fast_DOCGPU(dr);
+	c.setSeed(1);
+	
+	c.setWidth(15);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = c.findKClusters(10);
+	EXPECT_EQ(res.size(), 10);
+}
+
+TEST(testFastDOC, SLOW_testWithDataReaderUCluster4){
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
+	//Fast_DOC GPU Exception caught 16 1024 5: CU
+	bool res2 = dgb.buildUClusters("test/testData/test1234",10240,5,15,64,5,0, true);
+	EXPECT_TRUE(res2);
+	DataReader* dr = new DataReader("test/testData/test1234");
+	EXPECT_EQ(dr->getSize(), 10240*5);
+
+	auto c = Fast_DOCGPU(dr);
+	c.setSeed(1);
+	
+	c.setWidth(15);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = c.findKClusters(10);
+	EXPECT_EQ(res.size(), 10);
+}
+	

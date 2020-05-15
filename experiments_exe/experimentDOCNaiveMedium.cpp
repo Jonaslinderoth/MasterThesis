@@ -1,12 +1,12 @@
 #include <iostream>
-#include "../src/MineClusGPU/MineClusGPU.h"
+#include "../src/DOC_GPU/DOCGPU.h"
 #include "../experiments/genTestData.cpp"
 
 int main(){
 	genTestData();
-	DataReader* dr = new DataReader("testData/smallDataSet");
-	auto c = MineClusGPU(dr);
-	c.setDuplicatesVersion(Naive);
+	DataReader* dr = new DataReader("testData/mediumDataSet");
+	auto c = DOCGPU(dr);
+	c.setNumberOfSamples(4096*2);
 	c.setWidth(15);
 	c.setSeed(1);
 	
@@ -16,3 +16,4 @@ int main(){
 	// 	std::cout << res.at(i).first->size() << std::endl;
 	// }
 }
+

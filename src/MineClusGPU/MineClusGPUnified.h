@@ -7,6 +7,7 @@
 #include "../dataReader/DataReader.h"
 #include "../Clustering.h"
 #include "FindDublicates.h"
+#include "CountSupport.h"
 
 class MineClusGPUnified : public Clustering{
  public:
@@ -33,6 +34,9 @@ class MineClusGPUnified : public Clustering{
 	void setDuplicatesVersion(dublicatesType a){
 		this->duplicateKernelVerison = a; 
 	}
+	void setCountSupportVersion(countSupportType a){
+		this->countSupportKernelVersion = a;
+	}
 	
  private:
 	float alpha;
@@ -45,6 +49,7 @@ class MineClusGPUnified : public Clustering{
 	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 	float* transformData();
 	dublicatesType duplicateKernelVerison = Hash;
+	countSupportType countSupportKernelVersion = NaiveCount;
 };
 
 #endif
