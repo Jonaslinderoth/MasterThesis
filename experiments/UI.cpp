@@ -188,49 +188,82 @@ void UI::updateProgressbar(unsigned int barNumber) {
         delete eta_s;
 
     }
-	int mesH = tb_height()-this->progressBar.size()-2;
-	unsigned int messWidth1 = (tb_width()-20)/3;
-	unsigned int l = this->progressBar.size()+2;
-	unsigned int start2 = std::max((int)this->testsDone.size()-mesH,(int)0);
-	unsigned int end2 = this->testsDone.size();
-	for(int k = start2; k < end2; k++){
-		for(int f = 0; f < messWidth1; f++){
-			if(f < this->testsDone.at(k).size()){
-				tb_change_cell(f, l, this->testsDone.at(k).at(f), TB_GREEN, TB_DEFAULT);
-			}else{
-				tb_change_cell(f, l, ' ', TB_WHITE, TB_DEFAULT);
-			}
-		}
-		l++;
-	}
 
-    for(int i = 0; i < tb_width();i++){
-        tb_change_cell(i, this->progressBar.size(), ' ', TB_GREEN, TB_DEFAULT);
-    }
-    for(int i = 0; i < tb_width();i++){
-        tb_change_cell(i, this->progressBar.size()+1, ' ', TB_GREEN, TB_DEFAULT);
-    }
-	l = this->progressBar.size()+2;
-	char mes[] = "Tests ran:";
-	for(int i = 0; i < strlen(mes);i++){
-		tb_change_cell(i, this->progressBar.size()+1, mes[i], TB_GREEN, TB_DEFAULT);
-	}
 
-	char mes2[] = "Errors:";
-	for(int i = 0; i < strlen(mes2);i++){
-		tb_change_cell(i+messWidth1+10, this->progressBar.size()+1, mes2[i], TB_RED, TB_DEFAULT);
-	}
-	start2 = std::max((int)this->errors.size()-mesH,(int)0);
-	end2 = this->errors.size();
-	for(int k = start2; k < end2; k++) {
-		for (int f = 0; f < messWidth1*2; f++) {
-			if (f < this->errors.at(k).size()) {
-				tb_change_cell(f + messWidth1+10, l, this->errors.at(k).at(f), TB_RED, TB_DEFAULT);
-			} else {
-				tb_change_cell(f + messWidth1+10, l, ' ', TB_RED, TB_DEFAULT);
+
+	if(tb_height() < 1000){
+		int mesH = tb_height()-this->progressBar.size()-2;
+		unsigned int l = this->progressBar.size()+2; // l is the current height;
+		unsigned int start = std::max((int)this->testsDone.size()-(mesH/2),(int)0);
+		unsigned int end = this->testsDone.size(); 
+		for(int k = start; k < end; k++){
+			for(int f = 0; f < tb_width(); f++){
+				if(f < this->testsDone.at(k).size()){
+					tb_change_cell(f, l, this->testsDone.at(k).at(f), TB_GREEN, TB_DEFAULT);
+				}else{
+					tb_change_cell(f, l, ' ', TB_WHITE, TB_DEFAULT);
+				}
 			}
+			l++;
 		}
-		l++;
+		unsigned int start2 = std::max((int)this->errors.size()-(mesH/2),(int)0);
+		unsigned int end2 = this->errors.size(); 
+		for(int k = start2; k < end2; k++){
+			for(int f = 0; f < tb_width(); f++){
+				if(f < this->errors.at(k).size()){
+					tb_change_cell(f, l, this->errors.at(k).at(f), TB_RED, TB_DEFAULT);
+				}else{
+					tb_change_cell(f, l, ' ', TB_WHITE, TB_DEFAULT);
+				}
+			}
+			l++;
+		}		
+		
+	}else{
+		int mesH = tb_height()-this->progressBar.size()-2;
+		unsigned int messWidth1 = (tb_width()-20)/3;
+		unsigned int l = this->progressBar.size()+2;
+		unsigned int start2 = std::max((int)this->testsDone.size()-mesH,(int)0);
+		unsigned int end2 = this->testsDone.size(); 
+		for(int k = start2; k < end2; k++){
+			for(int f = 0; f < messWidth1; f++){
+				if(f < this->testsDone.at(k).size()){
+					tb_change_cell(f, l, this->testsDone.at(k).at(f), TB_GREEN, TB_DEFAULT);
+				}else{
+					tb_change_cell(f, l, ' ', TB_WHITE, TB_DEFAULT);
+				}
+			}
+			l++;
+		}
+
+		for(int i = 0; i < tb_width();i++){
+			tb_change_cell(i, this->progressBar.size(), ' ', TB_GREEN, TB_DEFAULT);
+		}
+		for(int i = 0; i < tb_width();i++){
+			tb_change_cell(i, this->progressBar.size()+1, ' ', TB_GREEN, TB_DEFAULT);
+		}
+		l = this->progressBar.size()+2;
+		char mes[] = "Tests ran:";
+		for(int i = 0; i < strlen(mes);i++){
+			tb_change_cell(i, this->progressBar.size()+1, mes[i], TB_GREEN, TB_DEFAULT);
+		}
+
+		char mes2[] = "Errors:";
+		for(int i = 0; i < strlen(mes2);i++){
+			tb_change_cell(i+messWidth1+10, this->progressBar.size()+1, mes2[i], TB_RED, TB_DEFAULT);
+		}
+		start2 = std::max((int)this->errors.size()-mesH,(int)0);
+		end2 = this->errors.size();
+		for(int k = start2; k < end2; k++) {
+			for (int f = 0; f < messWidth1*2; f++) {
+				if (f < this->errors.at(k).size()) {
+					tb_change_cell(f + messWidth1+10, l, this->errors.at(k).at(f), TB_RED, TB_DEFAULT);
+				} else {
+					tb_change_cell(f + messWidth1+10, l, ' ', TB_RED, TB_DEFAULT);
+				}
+			}
+			l++;
+		}
 	}
 
 

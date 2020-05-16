@@ -9,103 +9,9 @@
 #include "../src/DOC_GPU/DOCGPU.h"
 #include "../src/Fast_DOCGPU/Fast_DOCGPU.h"
 #include "../src/MineClusGPU/MineClusGPU.h"
+#include "../src/Evaluation.h"
 
 
-
-
-bool pointEq(std::vector<float>* a, std::vector<float>* b){
-	bool result = true;
-	result &= a->size() == b->size();
-	for(unsigned int i = 0; i < a->size(); i++){
-		result &= abs(a->at(i) - b->at(i)) <= 0.000001;
-		if (!result) return result;
-	}
-	return result;
-}
-
-bool pointInCluster(std::vector<std::vector<float>*>* cluster, std::vector<float>* point){
-	for(unsigned int i = 0; i < cluster->size(); i++){
-		if(pointEq(cluster->at(i), point)){
-			return true;
-		}
-	}
-	return false;
-}
-
-
-std::vector<std::vector<unsigned int>> confusion(std::vector<std::vector<std::vector<float>*>*>* labels,std::vector<std::vector<std::vector<float>*>*>* clusters){
-	std::vector<std::vector<unsigned int>> result = std::vector<std::vector<unsigned int>>(
-		labels->size(),
-		std::vector<unsigned int>(clusters->size(),0));
-
-	for(unsigned int i = 0; i < labels->size(); i++){ // for each cluster
-		for(unsigned int l = 0; l < clusters->size(); l++){ // for each cluster
-			//entry i,l in confusion matrix
-			unsigned int count = 0;
-			for(unsigned int j = 0; j < clusters->at(l)->size(); j++){
-				count += pointInCluster(labels->at(i), clusters->at(l)->at(j));
-			}
-			result.at(i).at(l) = count;
-		}		
-	}
-	return result;
-};
-
-std::vector<std::vector<unsigned int>> confusion(std::vector<std::vector<std::vector<float>*>*>* labels,
-												 std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> clusters){
-	std::vector<std::vector<unsigned int>> result = std::vector<std::vector<unsigned int>>(
-		labels->size(),
-		std::vector<unsigned int>(clusters.size(),0));
-
-	for(unsigned int i = 0; i < labels->size(); i++){ // for each cluster
-		for(unsigned int l = 0; l < clusters.size(); l++){ // for each cluster
-			//entry i,l in confusion matrix
-			unsigned int count = 0;
-			for(unsigned int j = 0; j < clusters.at(l).first->size(); j++){
-				count += pointInCluster(labels->at(i), clusters.at(l).first->at(j));
-			}
-			result.at(i).at(l) = count;
-		}		
-	}
-	return result;
-};
-
-float accuracy(std::vector<std::vector<unsigned int>> confusion){
-	float result = 0;
-	unsigned int trues = 0;
-	unsigned int total = 0;
-	for(unsigned int i = 0; i < confusion.size(); i++){ // for each label
-		unsigned int maxIndex = 0; 
-		for(unsigned int l = 0; l < confusion.at(i).size(); l++){ // for each cluster
-			if(confusion.at(i).at(l) > confusion.at(i).at(maxIndex)){
-				maxIndex = l;
-			}
-			total += confusion.at(i).at(l);
-		}
-
-		trues += confusion.at(i).at(maxIndex);
-	}
-	result += (float)trues/total;
-	return result;	
-}
-
-
-
-std::vector<std::vector<std::vector<float>*>*>* getCluster(std::string path){
-	auto dr = new DataReader(path);
-	auto mdr = new MetaDataFileReader(path);
-
-	std::vector<std::vector<std::vector<float>*>*>* labels = new std::vector<std::vector<std::vector<float>*>*>;
-	for(unsigned int i = 0; i < mdr->getClusterLines().size(); i++){
-		labels->push_back(new std::vector<std::vector<float>*>);		
-	}
-	while(dr->isThereANextPoint()){
-		labels->at(mdr->nextCheat())->push_back(dr->nextPoint());
-	}
-	delete dr;
-	delete mdr;
-	return labels;
-}
 
 
 
@@ -136,7 +42,7 @@ TEST(testAccuracy, testSimple){
 		labels->push_back(cluster2);
 	}
 
-	auto res = confusion(labels, clusters);
+	auto res = Evaluation::confusion(labels, clusters);
 
 	EXPECT_EQ(res.at(0).at(0), 2);
 	EXPECT_EQ(res.at(1).at(1), 2);
@@ -144,7 +50,7 @@ TEST(testAccuracy, testSimple){
 	EXPECT_EQ(res.at(0).at(1), 0);
 	EXPECT_EQ(res.at(1).at(0), 0);
 
-	EXPECT_FLOAT_EQ(accuracy(res), 1);
+	EXPECT_FLOAT_EQ(Evaluation::accuracy(res), 1);
 }
 
 
@@ -183,7 +89,7 @@ TEST(testAccuracy, testSimple2){
 		labels->push_back(cluster3);
 	}
 
-	auto res = confusion(labels, clusters);
+	auto res = Evaluation::confusion(labels, clusters);
 
 	EXPECT_EQ(res.at(0).at(0), 2);
 	EXPECT_EQ(res.at(1).at(1), 2);
@@ -196,7 +102,7 @@ TEST(testAccuracy, testSimple2){
 	EXPECT_EQ(res.at(2).at(0), 0);
 	EXPECT_EQ(res.at(2).at(1), 0);
 	
-	EXPECT_FLOAT_EQ(accuracy(res), 1);
+	EXPECT_FLOAT_EQ(Evaluation::accuracy(res), 1);
 }
 
 
@@ -236,7 +142,7 @@ TEST(testAccuracy, testSimple3){
 		labels->push_back(cluster3);
 	}
 
-	auto res = confusion(labels, clusters);
+	auto res = Evaluation::confusion(labels, clusters);
 
 	EXPECT_EQ(res.at(0).at(0), 2);
 	EXPECT_EQ(res.at(1).at(1), 2);
@@ -249,7 +155,7 @@ TEST(testAccuracy, testSimple3){
 	EXPECT_EQ(res.at(2).at(0), 0);
 	EXPECT_EQ(res.at(2).at(1), 0);
 
-	EXPECT_FLOAT_EQ(accuracy(res), 1);
+	EXPECT_FLOAT_EQ(Evaluation::accuracy(res), 1);
 }
 
 
@@ -290,7 +196,7 @@ TEST(testAccuracy, testSimple4){
 		labels->push_back(cluster3);
 	}
 
-	auto res = confusion(labels, clusters);
+	auto res = Evaluation::confusion(labels, clusters);
 
 	EXPECT_EQ(res.at(0).at(0), 2);
 	EXPECT_EQ(res.at(1).at(1), 2);
@@ -303,7 +209,7 @@ TEST(testAccuracy, testSimple4){
 	EXPECT_EQ(res.at(2).at(0), 0);
 	EXPECT_EQ(res.at(2).at(1), 0);
 
-	EXPECT_FLOAT_EQ(accuracy(res), ((float)6/7));
+	EXPECT_FLOAT_EQ(Evaluation::accuracy(res), ((float)6/7));
 }
 
 
@@ -324,8 +230,8 @@ TEST(testAccuracy, testDataReader){
 	while(dr->isThereANextPoint()){
 		labels->at(mdr->nextCheat())->push_back(dr->nextPoint());
 	}
-	auto res = confusion(labels, labels);
-	EXPECT_FLOAT_EQ(accuracy(res), 1);
+	auto res = Evaluation::confusion(labels, labels);
+	EXPECT_FLOAT_EQ(Evaluation::accuracy(res), 1);
 	
 }
 
@@ -356,8 +262,8 @@ TEST(testAccuracy, testDataReader2){
 	EXPECT_EQ(cluster.at(0).first->size(), 20);
 	EXPECT_EQ(cluster.at(1).first->size(), 20);
 	
-	auto res = confusion(labels, cluster);
-	EXPECT_FLOAT_EQ(accuracy(res), 1);
+	auto res = Evaluation::confusion(labels, cluster);
+	EXPECT_FLOAT_EQ(Evaluation::accuracy(res), 1);
 	
 }
 
@@ -394,7 +300,7 @@ TEST(testAccuracy, SLOW_testDataReader3){
 	auto cluster = d.findKClusters(10);
 	EXPECT_EQ(cluster.size(), 10);
 	
-	auto res = confusion(labels, cluster);
+	auto res = Evaluation::confusion(labels, cluster);
 
 	for(unsigned int i = 0; i < res.size(); i++){
 		for(unsigned int j = 0; j < res.at(i).size(); j++){
@@ -405,7 +311,7 @@ TEST(testAccuracy, SLOW_testDataReader3){
 	
 
 	
-	EXPECT_GT(accuracy(res), 0.99);
+	EXPECT_GT(Evaluation::accuracy(res), 0.99);
 	
 }
 
@@ -416,7 +322,7 @@ TEST(testAccuracy, SLOW_testDataReader4){
 	bool res2 = dgb.buildUClusters("test2222",200,10,15,10,2,0, true);
 	EXPECT_TRUE(res2);
 
-	auto labels = getCluster("test2222");
+	auto labels = Evaluation::getCluster("test2222");
 
 	
 	DOCGPU d = DOCGPU(new DataReader("test2222"));
@@ -425,7 +331,7 @@ TEST(testAccuracy, SLOW_testDataReader4){
 	auto cluster = d.findKClusters(10);
 	EXPECT_EQ(cluster.size(), 10);
 	
-	auto res = confusion(labels, cluster);
+	auto res = Evaluation::confusion(labels, cluster);
 
 	for(unsigned int i = 0; i < res.size(); i++){
 		for(unsigned int j = 0; j < res.at(i).size(); j++){
@@ -434,7 +340,7 @@ TEST(testAccuracy, SLOW_testDataReader4){
 		std::cout << std::endl;
 	}
 	
-	EXPECT_GT(accuracy(res), 0.99);
+	EXPECT_GT(Evaluation::accuracy(res), 0.99);
 	
  }
 
@@ -446,7 +352,7 @@ TEST(testAccuracy, SLOW_testDataReader4_2){
 	bool res2 = dgb.buildUClusters("test2222",200,10,15,10,2,0, true);
 	EXPECT_TRUE(res2);
 
-	auto labels = getCluster("test2222");
+	auto labels = Evaluation::getCluster("test2222");
 
 	
 	DOCGPU d = DOCGPU(new DataReader("test2222"));
@@ -456,7 +362,7 @@ TEST(testAccuracy, SLOW_testDataReader4_2){
 	auto cluster = d.findKClusters(10);
 	EXPECT_EQ(cluster.size(), 10);
 	
-	auto res = confusion(labels, cluster);
+	auto res = Evaluation::confusion(labels, cluster);
 
 	for(unsigned int i = 0; i < res.size(); i++){
 		for(unsigned int j = 0; j < res.at(i).size(); j++){
@@ -465,7 +371,7 @@ TEST(testAccuracy, SLOW_testDataReader4_2){
 		std::cout << std::endl;
 	}
 	
-	EXPECT_GT(accuracy(res), 0.99);
+	EXPECT_GT(Evaluation::accuracy(res), 0.99);
 	
  }
 
@@ -475,7 +381,7 @@ TEST(testAccuracy, SLOW_testDataReader5){
 	bool res2 = dgb.buildUClusters("test2222",200,10,15,10,2,0, true);
 	EXPECT_TRUE(res2);
 
-	auto labels = getCluster("test2222");
+	auto labels = Evaluation::getCluster("test2222");
 
 	
 	Fast_DOCGPU d = Fast_DOCGPU(new DataReader("test2222"));
@@ -484,7 +390,7 @@ TEST(testAccuracy, SLOW_testDataReader5){
 	auto cluster = d.findKClusters(10);
 	EXPECT_EQ(cluster.size(), 10);
 	
-	auto res = confusion(labels, cluster);
+	auto res = Evaluation::confusion(labels, cluster);
 
 	for(unsigned int i = 0; i < res.size(); i++){
 		for(unsigned int j = 0; j < res.at(i).size(); j++){
@@ -493,7 +399,7 @@ TEST(testAccuracy, SLOW_testDataReader5){
 		std::cout << std::endl;
 	}
 	
-	EXPECT_GT(accuracy(res), 0.92);
+	EXPECT_GT(Evaluation::accuracy(res), 0.92);
 	
  }
 
@@ -503,7 +409,7 @@ TEST(testAccuracy, SLOW_testDataReader6){
 	bool res2 = dgb.buildUClusters("test2222",200,10,15,10,2,0, true);
 	EXPECT_TRUE(res2);
 
-	auto labels = getCluster("test2222");
+	auto labels = Evaluation::getCluster("test2222");
 
 	
 	MineClusGPU d = MineClusGPU(new DataReader("test2222"));
@@ -512,7 +418,7 @@ TEST(testAccuracy, SLOW_testDataReader6){
 	auto cluster = d.findKClusters(10);
 	EXPECT_EQ(cluster.size(), 4);
 	
-	auto res = confusion(labels, cluster);
+	auto res = Evaluation::confusion(labels, cluster);
 
 	for(unsigned int i = 0; i < res.size(); i++){
 		for(unsigned int j = 0; j < res.at(i).size(); j++){
@@ -520,6 +426,8 @@ TEST(testAccuracy, SLOW_testDataReader6){
 		}
 		std::cout << std::endl;
 	}
-	EXPECT_GT(accuracy(res), 0.99);
+	EXPECT_GT(Evaluation::accuracy(res), 0.99);
 	
  }
+
+
