@@ -559,7 +559,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			sum_scan_blelloch(stream1_1, prefixSum_d,pointsContained_d,(oldNumberOfPoints+1), false);	
 			checkCudaErrors(cudaMalloc((void**) &newData_d,   sizeOfNewData)); // This can be done at the same time as previous delete
 
-			deleteFromArrayWrapper(ceilf((float)oldNumberOfPoints*dim/dimBlock),  dimBlock, stream1_1,
+			deleteFromArrayWrapper(ceilf((float)(oldNumberOfPoints*dim)/dimBlock),  dimBlock, stream1_1,
 								   data_d, prefixSum_d, oldNumberOfPoints, dim, newData_d);
 
 			checkCudaErrors(cudaFree(pointsContained_d));

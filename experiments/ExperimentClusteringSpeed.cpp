@@ -137,6 +137,8 @@ void ExperimentClusteringSpeed::start(){
 						}
 						delete dr;
 						Experiment::testDone("DOC GPU Number of points: " + std::to_string(j*10) + " Dims used: " + std::to_string(k) + "Dim " + std::to_string(i));
+					}else{
+						Experiment::testDone("timeout");
 					}
 				}catch (std::exception& e){
 					this->repportError("DOC GPU Exception caught : " + std::string(e.what()), this->getName());
