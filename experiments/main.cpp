@@ -10,6 +10,7 @@
 #include "BreakingIntervallExperimentAllOutside.h"
 #include "fakeExperiment.h"
 #include "ExperimentClusteringSpeed.h"
+#include "ExperimentDOCAccuracy.h"
 
 int main() {
     auto runner = new Runner("Main");
@@ -25,7 +26,7 @@ int main() {
 		auto ex4 = new ExperimentRemoveDuplicates("findDuplicates", "output");
 		auto ex5 = new MergeCandidatesExperimentSmem("MergeCandidatesSmem", "output", 11);
 		auto mex1 = new breakingIntervallExperiment("BreakingIntervallExperiment", "output");
-		// auto mex2 = new BreakingIntervallExperimentAllOutside("BreakingIntervallExperimentAllOutside", "output");
+		auto mex2 = new BreakingIntervallExperimentAllOutside("BreakingIntervallExperimentAllOutside", "output");
 
 		auto ex6 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/MineClusNaiveSmallTest_"+std::to_string(i)+".csv ./experimentMineClusNaive", "MineClusNaiveSmall", "output");
 		auto ex7 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/MineClusNaiveMediumTest_"+std::to_string(i)+".csv ./experimentMineClusNaiveMedium", "MineClusNaiveMedium", "output");
@@ -40,14 +41,18 @@ int main() {
 		auto ex10 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/FastDOCNaiveSmallTest_"+std::to_string(i)+".csv ./experimentFastDOCNaive", "FastDOCNaive", "output");
 		auto ex11 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/FastDOCNaiveMediumTest_"+std::to_string(i)+".csv ./experimentFastDOCNaiveMedium", "FastDOCNaiveMedium", "output");
 
-		auto ex12 = new ExperimentClusteringSpeed("ExperimentClusteringSpeed", "output"); 
+		auto ex12 = new ExperimentClusteringSpeed("ClusteringSpeed", "output");
+		auto ex13 = new ExperimentDOCAccuracy("DOCAccuracy", "output"); 
 
 		
 		// auto ex7 = new TerminalComandExperiment("cd bin; nvprof --csv --log-file ../output/MineClusNaiveMnistTest_"+std::to_string(i)+".csv ./experimentMineClusNaiveMnist", "", "output");
 		//runner->addExperiment(mex1);		
 		// runner->addExperiment(mex2);		
-		runner_inner->addExperiment(ex5);
+
+		runner_inner->addExperiment(ex13);
 		runner_inner->addExperiment(ex12);
+		runner_inner->addExperiment(ex5);
+		
 		runner_inner->addExperiment(ex6);
 		runner_inner->addExperiment(ex6_2);
 		runner_inner->addExperiment(ex8);
@@ -57,13 +62,13 @@ int main() {
 		runner_inner->addExperiment(ex7_2);
 		runner_inner->addExperiment(ex9);
 		runner_inner->addExperiment(ex11);
+		
 		runner_inner->addExperiment(ex2);
 		runner_inner->addExperiment(ex4);
 		runner_inner->addExperiment(ex3);
 		runner_inner->addExperiment(ex);
 		runner->addExperiment(runner_inner);
-	}
-	
+	}	
 	runner->start();			
     delete runner;
 	runner->start();

@@ -16,7 +16,7 @@
 #include <chrono>
 
 void ExperimentClusteringSpeed::start(){
-	unsigned int dim = 256;
+	unsigned int dim = 128;
 	unsigned int numberOfPointsPerCluster = 16384;
 	unsigned int usedDim = 25;
 	unsigned int c = 0; 
@@ -68,7 +68,7 @@ void ExperimentClusteringSpeed::start(){
 				if(system("mkdir testData  >>/dev/null 2>>/dev/null")){
 					
 				};
-				bool res = dgb.buildUClusters("testData/test1",j,10,15,i,k,0, true);
+				bool res = dgb.buildUClusters("testData/test1",j,10,15,i,k,5, true);
 				auto labels = Evaluation::getCluster("testData/test1");
 				if(!res){this->repportError("Cluster not generated", this->getName());
 				}else{
