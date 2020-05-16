@@ -193,7 +193,7 @@ void UI::updateProgressbar(unsigned int barNumber) {
 
 	if(tb_height() < 1000){
 		int mesH = tb_height()-this->progressBar.size()-2;
-		unsigned int l = this->progressBar.size()+2; // l is the current height;
+		unsigned int l = this->progressBar.size(); // l is the current height;
 		unsigned int start = std::max((int)this->testsDone.size()-(mesH/2),(int)0);
 		unsigned int end = this->testsDone.size(); 
 		for(int k = start; k < end; k++){
