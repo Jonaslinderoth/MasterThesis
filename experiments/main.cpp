@@ -72,6 +72,7 @@ int main() {
 	runner->start();			
     delete runner;
 	runner->start();
+
 	return 0;
 }
 

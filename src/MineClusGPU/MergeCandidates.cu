@@ -3,24 +3,24 @@
 #include <iostream>
 #include "../randomCudaScripts/Utils.h"
 
-__device__ unsigned int computeI(unsigned int n, unsigned int t){
+__device__ __forceinline__ unsigned int computeI(unsigned int n, unsigned int t){
 	double tmp = __dsqrt_rn((double)(-8)*t + 4*n*(n-1)-7);
 	
 	unsigned int i = n - 2- floor( tmp/ 2.0 - 0.5);	
 	return i;
 }
 
-__device__ unsigned int computeJ(unsigned int n, unsigned int t, unsigned int i){
+__device__  __forceinline__  unsigned int computeJ(unsigned int n, unsigned int t, unsigned int i){
 	unsigned int j = t + i + 1 - n*(n-1)/2 + (n-i)*((n-i)-1)/2;
 	return j;
 }
 
-__device__ unsigned int computeK(unsigned int i, unsigned int j, unsigned int n){
+__device__ __forceinline__ unsigned int computeK(unsigned int i, unsigned int j, unsigned int n){
 	unsigned int k = n*(n-1)/2 - (n-i)*((n-i)-1)/2 + j - i - 1;
 	return k;
 }
 
-__device__ unsigned int numberOfPairs(unsigned int n){
+__device__ __forceinline__ unsigned int numberOfPairs(unsigned int n){
 	unsigned int res = n*(n+1)/2 - n;
 	return res;
 }
@@ -94,7 +94,6 @@ __global__ void mergeCandidatesSmem(unsigned int* candidates,
 			unsigned int b = (k*blockDim.x+ threadIdx.x)/numberOfCandidates; // current block
 			if(b*numberOfCandidates + a < numberOfCandidates*numberOfBlocks){
 				chunkI[b*numberOfCandidates + a] = candidates[b*numberOfCandidates + a]; // number of canidates
-				
 			}
 		}
 

@@ -830,3 +830,95 @@ TEST(testMergeCandidates, _SUPER_SLOW_testMergeSmemRandom9){
 
 	compareResults(resultSmem, resultNaive);
 }
+
+TEST(testMergeCandidates, _SUPER_SLOW_testMergeSmemRandom10_Naive){
+	unsigned int dim = 32*4;
+	unsigned int numberOfPoints = 1000;
+	std::mt19937 rng(std::random_device{}());
+	rng.seed(0);
+	auto candidates = std::vector<std::vector<bool>>();
+	for(int i = 0; i < numberOfPoints; i++){
+		auto point = std::vector<bool>();
+		for(int j = 0; j < dim; j++){
+			point.push_back((std::uniform_int_distribution<int>{}(rng)) & 1);
+		}
+		candidates.push_back(point);
+	}
+
+	auto resultNaive = mergeCandidatesTester(candidates, 2, NaiveMerge);
+
+}
+
+TEST(testMergeCandidates, _SUPER_SLOW_testMergeSmemRandom10_Naive2){
+	unsigned int dim = 32*4;
+	unsigned int numberOfPoints = 3000;
+	std::mt19937 rng(std::random_device{}());
+	rng.seed(0);
+	auto candidates = std::vector<std::vector<bool>>();
+	for(int i = 0; i < numberOfPoints; i++){
+		auto point = std::vector<bool>();
+		for(int j = 0; j < dim; j++){
+			point.push_back((std::uniform_int_distribution<int>{}(rng)) & 1);
+		}
+		candidates.push_back(point);
+	}
+
+	auto resultNaive = mergeCandidatesTester(candidates, 2, NaiveMerge);
+
+}
+
+TEST(testMergeCandidates, _SUPER_SLOW_testMergeSmemRandom10_Smem1024){
+	unsigned int dim = 32*4;
+	unsigned int numberOfPoints = 3000;
+	std::mt19937 rng(std::random_device{}());
+	rng.seed(0);
+	auto candidates = std::vector<std::vector<bool>>();
+	for(int i = 0; i < numberOfPoints; i++){
+		auto point = std::vector<bool>();
+		for(int j = 0; j < dim; j++){
+			point.push_back((std::uniform_int_distribution<int>{}(rng)) & 1);
+		}
+		candidates.push_back(point);
+	}
+
+	auto resultSmem = mergeCandidatesTester(candidates, 2, SharedMemoryMerge, 1024);
+
+}
+
+
+TEST(testMergeCandidates, _SUPER_SLOW_testMergeSmemRandom10_Smem64){
+	unsigned int dim = 32*4;
+	unsigned int numberOfPoints = 3000;
+	std::mt19937 rng(std::random_device{}());
+	rng.seed(0);
+	auto candidates = std::vector<std::vector<bool>>();
+	for(int i = 0; i < numberOfPoints; i++){
+		auto point = std::vector<bool>();
+		for(int j = 0; j < dim; j++){
+			point.push_back((std::uniform_int_distribution<int>{}(rng)) & 1);
+		}
+		candidates.push_back(point);
+	}
+
+	auto resultSmem = mergeCandidatesTester(candidates, 2, SharedMemoryMerge, 64);
+
+}
+
+
+TEST(testMergeCandidates, _SUPER_SLOW_testMergeSmemRandom10_Smem32){
+	unsigned int dim = 32*4;
+	unsigned int numberOfPoints = 3000;
+	std::mt19937 rng(std::random_device{}());
+	rng.seed(0);
+	auto candidates = std::vector<std::vector<bool>>();
+	for(int i = 0; i < numberOfPoints; i++){
+		auto point = std::vector<bool>();
+		for(int j = 0; j < dim; j++){
+			point.push_back((std::uniform_int_distribution<int>{}(rng)) & 1);
+		}
+		candidates.push_back(point);
+	}
+
+	auto resultSmem = mergeCandidatesTester(candidates, 2, SharedMemoryMerge, 32);
+
+}
