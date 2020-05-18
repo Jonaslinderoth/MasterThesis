@@ -4,6 +4,7 @@
 #include "../src/MineClusGPU/MergeCandidates.h"
 
 void MergeCandidatesExperiment::start(){
+	
 	unsigned int c = 0;
 	for(unsigned int numberOfCandidates = 2; numberOfCandidates < 1000000; numberOfCandidates*=2){
 		for(unsigned int dim = 32; dim < 48000; dim *= 2){
@@ -28,7 +29,6 @@ void MergeCandidatesExperiment::start(){
 
 	for(unsigned int numberOfCandidates = 2; numberOfCandidates < 1000000; numberOfCandidates*=2){
 		for(unsigned int dim = 32; dim < 48000; dim *= 2){
-
 			unsigned int numberOfNewCandidates = ((float)(numberOfCandidates*(numberOfCandidates+1)) / 2) - numberOfCandidates;
 			unsigned int numberOfBlocks = ceilf((float)dim/32);
 
@@ -39,7 +39,7 @@ void MergeCandidatesExperiment::start(){
 			size_t sizeOfToBeDeleted = numberOfNewCandidates*sizeof(bool);
 
 			if((sizeOfOutput+sizeOfCandidates+sizeOfToBeDeleted)*3 > this->memLimit*1000*1000*1000){
-				//continue;
+				continue;
 			}
 	
 			unsigned int dimBlock = 1024;
@@ -159,7 +159,7 @@ void MergeCandidatesExperiment::start(){
 			
 				cudaMemcpy(candidates_d, candidates_h, sizeOfCandidates, cudaMemcpyHostToDevice);
 				checkCudaErrors(cudaEventRecord(start_e, stream));
-				mergeCandidatesWrapper(dimGrid, dimBlock, stream, candidates_d, numberOfCandidates, dim, k, output_d, toBeDeleted_d, SharedMemoryMerge, 1024);
+				mergeCandidatesWrapper(dimGrid, dimBlock, stream, candidates_d, numberOfCandidates, dim, k, output_d, toBeDeleted_d, SharedMemoryMerge, 64);
 				checkCudaErrors(cudaEventRecord(stop_e, stream));
 
 				cudaMemcpy(output_smem_h, output_d, sizeOfOutput, cudaMemcpyDeviceToHost);
@@ -173,7 +173,7 @@ void MergeCandidatesExperiment::start(){
 			}
 
 
-	std::cout << "hello " << std::endl;
+
 				bool passed = true;
 				unsigned int trues =0;
 				unsigned int falses = 0;

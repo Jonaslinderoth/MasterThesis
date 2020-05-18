@@ -13,11 +13,12 @@
 #include "../src/MineClusGPU/MineClusGPU.h"
 #include "../src/MineClusGPU/MineClusGPUnified.h"
 #include "../src/Evaluation.h"
+#include <random>
 #include <chrono>
 
 void ExperimentClusteringSpeed::start(){
 	unsigned int dim = 128;
-	unsigned int numberOfPointsPerCluster = 16384;
+	unsigned int numberOfPointsPerCluster = 16384/2;
 	unsigned int usedDim = 25;
 	unsigned int c = 0; 
 	// Count number of tests
@@ -46,6 +47,7 @@ void ExperimentClusteringSpeed::start(){
 	bool MineClusGPUCStop = false;
 	bool MineClusGPUnifiedCStop = false;
 	int seed = 0;
+	unsigned int timeout = 60000000/6;
 	for(unsigned int i = 16; i <= dim; i *= 2){
 		DOCCPUStop = false;
 		DOCGPUStop = false;
@@ -64,12 +66,16 @@ void ExperimentClusteringSpeed::start(){
 				if (k*2 > i) break;
 				// create dataBuilder
 				DataGeneratorBuilder dgb;
-				dgb.setSeed(seed);
+				dgb.setSeed(rand());
 				if(system("mkdir testData  >>/dev/null 2>>/dev/null")){
 					
 				};
 				bool res = dgb.buildUClusters("testData/test1",j,10,15,i,k,5, true);
-				auto labels = Evaluation::getCluster("testData/test1");
+				std::vector<std::vector<std::vector<float>*>*>* labels;
+				if(j <= 2048){
+					labels = Evaluation::getCluster("testData/test1");
+				}
+
 				if(!res){this->repportError("Cluster not generated", this->getName());
 				}else{
 					Experiment::testDone("Cluster generated. Number of points: " + std::to_string(j*10) + " Dims used: " + std::to_string(k) + "Dim " + std::to_string(i));
@@ -92,8 +98,11 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						unsigned int acc = 0;
+						if(j <= 2048){
+							auto confusion = Evaluation::confusion(labels, result);
+							acc = Evaluation::accuracy(confusion);
+						}
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
 											  +  std::to_string(i) + ", "
@@ -102,7 +111,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							DOCCPUStop = true;
 						}
 						delete dr;
@@ -131,8 +140,12 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						unsigned int acc = 0;
+						if(j <= 2048){
+							auto confusion = Evaluation::confusion(labels, result);
+							acc = Evaluation::accuracy(confusion);
+						}
+
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
 											  +  std::to_string(i) + ", "
@@ -141,7 +154,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							DOCGPUStop = true;
 						}
 						delete dr;
@@ -170,8 +183,12 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						unsigned int acc = 0;
+						if(j <= 2048){
+							auto confusion = Evaluation::confusion(labels, result);
+							acc = Evaluation::accuracy(confusion);
+						}
+
 						
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
@@ -181,7 +198,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							DOCGPUnifiedStop = true;
 						}
 						delete dr;
@@ -210,8 +227,12 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						unsigned int acc = 0;
+						if(j <= 2048){
+							auto confusion = Evaluation::confusion(labels, result);
+							acc = Evaluation::accuracy(confusion);
+						}
+
 						
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
@@ -221,7 +242,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							FastDOCCPUStop = true;
 						}
 						delete dr;
@@ -248,8 +269,12 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						unsigned int acc = 0;
+						if(j <= 2048){
+							auto confusion = Evaluation::confusion(labels, result);
+							acc = Evaluation::accuracy(confusion);
+						}
+
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
 											  +  std::to_string(i) + ", "
@@ -258,7 +283,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							FastDOCGPUStop = true;
 						}
 						delete dr;
@@ -287,8 +312,12 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+						unsigned int acc = 0;
+						if(j <= 2048){
 						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						acc = Evaluation::accuracy(confusion);
+						}
+
 						
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
@@ -298,7 +327,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							FastDOCGPUnifiedStop = true;
 						}
 						delete dr;
@@ -331,8 +360,12 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+						unsigned int acc = 0;
+						if(j <= 2048){
 						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						acc = Evaluation::accuracy(confusion);
+						}
+
 						
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
@@ -342,7 +375,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							MineClusCPUStop = true;
 						}
 						delete dr;
@@ -370,8 +403,12 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						unsigned int acc = 0;
+						if(j <= 2048){
+							auto confusion = Evaluation::confusion(labels, result);
+							acc = Evaluation::accuracy(confusion);
+						}
+
 						
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
@@ -381,7 +418,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							MineClusCPUCStop = true;
 						}
 						delete dr;
@@ -411,8 +448,12 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						unsigned int acc = 0;
+						if(j <= 2048){
+							auto confusion = Evaluation::confusion(labels, result);
+							acc = Evaluation::accuracy(confusion);
+						}
+
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
 											  +  std::to_string(i) + ", "
@@ -421,7 +462,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							MineClusGPUStop = true;
 						}
 						delete dr;
@@ -452,8 +493,12 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						unsigned int acc = 0;
+						if(j <= 2048){
+							auto confusion = Evaluation::confusion(labels, result);
+							acc = Evaluation::accuracy(confusion);
+						}
+
 						
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
@@ -463,7 +508,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							MineClusGPUCStop = true;
 						}
 						delete dr;
@@ -494,8 +539,12 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+						unsigned int acc = 0;
+						if(j <= 2048){
 						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						acc = Evaluation::accuracy(confusion);
+						}
+
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
 											  +  std::to_string(i) + ", "
@@ -504,7 +553,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							MineClusGPUnifiedStop = true;
 						}
 						delete dr;
@@ -535,8 +584,12 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						auto confusion = Evaluation::confusion(labels, result);
-						auto acc = Evaluation::accuracy(confusion);
+						unsigned int acc = 0;
+						if(j <= 2048){
+							auto confusion = Evaluation::confusion(labels, result);
+							acc = Evaluation::accuracy(confusion);
+						}
+
 						
 						this->writeLineToFile(std::to_string(10) + ", "
 											  + std::to_string(j*10) + ", "
@@ -546,7 +599,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > 60000000){
+						if(time > timeout){
 							MineClusGPUnifiedCStop = true;
 						}
 						delete dr;
@@ -561,10 +614,12 @@ void ExperimentClusteringSpeed::start(){
 
 
 				checkCudaErrors(cudaDeviceReset());
-				for(unsigned int g = 0; g < labels->size(); g++){
-					delete labels->at(g);
+				if(j <= 2048){
+					for(unsigned int g = 0; g < labels->size(); g++){
+						delete labels->at(g);
+					}
+					delete labels;
 				}
-				delete labels;
 			}
 		}
 	}

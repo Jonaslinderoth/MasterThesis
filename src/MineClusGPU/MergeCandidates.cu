@@ -230,6 +230,7 @@ void mergeCandidatesWrapper(unsigned int dimGrid,
 		gridDimmension = max(gridDimmension,1);
 
 		dimBlock = min(dimBlock, numberOfBlocks*numberOfBlocks);
+		dimBlock = min(dimBlock, 256);
 
 		mergeCandidatesSmem<<<gridDimmension, dimBlock, smemSize, stream>>>(candidates, numberOfCandidates, dim, itrNr, chunkSize, output, toBeDeleted);
 	}
@@ -299,10 +300,11 @@ std::pair<std::vector<unsigned int>,std::vector<bool>> mergeCandidatesTester(std
 		unsigned int gridDimmension = ceilf(((float)numberOfCandidates/chunkSize));
 		gridDimmension = ceilf((float)(gridDimmension*(gridDimmension+1)/2) -gridDimmension);
 		gridDimmension = max(gridDimmension,1);
-
+		dimBlock = 256;
 		mergeCandidatesSmem<<<gridDimmension, dimBlock, smemSize>>>(candidates_d, numberOfCandidates, dim, itrNr, chunkSize, output_d, toBeDeleted_d);
 	}
 
+	
 
 	checkCudaErrors(cudaMemcpy(output_h, output_d, sizeOfOutput, cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(toBeDeleted_h, toBeDeleted_d, sizeOfToBeDeleted, cudaMemcpyDeviceToHost));

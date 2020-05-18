@@ -1,8 +1,10 @@
 #include <iostream>
 #include "../src/MineClusGPU/MineClusGPU.h"
 #include "../experiments/genTestData.cpp"
+#include "../src/randomCudaScripts/dummyKernel.h"
 
 int main(){
+	dummyKernelWrapper();
 	genTestData();
 	DataReader* dr = new DataReader("testData/mediumDataSet");
 	auto c = MineClusGPU(dr);
