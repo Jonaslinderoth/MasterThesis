@@ -6,8 +6,8 @@ CXX = g++
 CXXFLAGS=-I. -nocudalib -O2 #-g -G  
 else
 CXX = nvcc
-CXXFLAGS=-I/usr/local/include/coin -I. -arch=sm_37 -maxrregcount 64 -DNDEBUG -O2 #-g -G #-DNDEBUG -O3 #-g -G # -DNDEBUG -g -G
-#-lineinfo -maxrregcount 64 -lineinfo
+CXXFLAGS=-I/usr/local/include/coin -I. -arch=sm_37 -DNDEBUG -O3 #-g -G #-DNDEBUG -O3 #-g -G # -DNDEBUG -g -G
+#-lineinfo -maxrregcount 64 -lineinfo -maxrregcount 64 -g -G #
 endif
 #-maxrregcount 64 is needed for compiling the new merge support in debug mode, since there is not enough registers if some values are not optimised away
 
@@ -44,6 +44,10 @@ EXPERIMENTSFILES = $(shell find $(EXPERIMENTSDIR) -name '*.cu') $(shell find $(E
 EXPERIMENTSOBJS= $(patsubst %.cu, %.o, $(patsubst %.cpp, %.o, $(EXPERIMENTSFILES)))
 
 
+EXPERIMENTSDIR_ = experiments_exe
+EXPERIMENTSFILES_ = $(shell find $(EXPERIMENTSDIR_) -name '*.cu') $(shell find $(EXPERIMENTSDIR_) -name '*.cpp')
+EXPERIMENTSOBJS_ = $(patsubst %.cu, %.o, $(patsubst %.cpp, %.o, $(EXPERIMENTSFILES_)))
+
 
 all: $(sources) $(EXE_DIR)/${EXE}  $(EXE_DIR)/${TEST}
 
@@ -56,7 +60,12 @@ multi:
 
 multi_test: 
 	make -j4 test
-b: 
+
+a:
+	echo $(EXPERIMENTSFILES_)
+	echo $(EXPERIMENTSOBJS_)
+
+b: $(EXE_DIR)/experimentMineClusNaive
 	echo $(DEPS)
 	echo $(SOURCES)
 	echo $(OBJECTS)	
@@ -64,7 +73,7 @@ b:
 test: $(EXE_DIR)/${TEST}
 	./$(EXE_DIR)/${TEST} --gtest_filter=-*_SUPER_SLOW_*
 
-experiments: $(EXE_DIR)/$(EXPERIMENTS)
+experiments: $(EXE_DIR)/$(EXPERIMENTS) $(EXE_DIR)/experimentMineClusNaive $(EXE_DIR)/experimentMineClusNaiveMedium $(EXE_DIR)/experimentMineClusNaiveMnist $(EXE_DIR)/experimentFastDOCNaive $(EXE_DIR)/experimentFastDOCNaiveMedium $(EXE_DIR)/experimentDOCNaive $(EXE_DIR)/experimentDOCNaiveMedium $(EXE_DIR)/experimentMineClusBest $(EXE_DIR)/experimentMineClusBestMedium
 	./$(EXE_DIR)/$(EXPERIMENTS)
 
 benchmark: $(EXE_DIR)/$(BENCHMARK)
@@ -100,7 +109,8 @@ ${BUILD_DIR}/%.o: %.cpp
 	mkdir -p $(BUILD_DIR)/$(TESTDIR)
 	mkdir -p $(BUILD_DIR)/$(SOURCEDIR)
 	mkdir -p $(BUILD_DIR)/$(BENCHMARKDIR)
-	mkdir -p $(BUILD_DIR)/$(EXPERIMENTSDIR)		
+	mkdir -p $(BUILD_DIR)/$(EXPERIMENTSDIR)
+	mkdir -p $(BUILD_DIR)/$(EXPERIMENTSDIR_)	
 	${CXX} $(CXXFLAGS) -c $(LIBS)  $^ -o $@
 
 
@@ -116,17 +126,62 @@ $(EXE_DIR)/$(BENCHMARK): $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD
 	$(CXX) $(CXXFLAGS) $(addprefix $(BUILD_DIR)/, $(BENCHMARKOBJS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -lbenchmark -lbenchmark_main -o $@
 
 
-#Target for benchmark 	
+#Target for experiments 	
 $(EXE_DIR)/$(EXPERIMENTS): $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(addprefix $(BUILD_DIR)/, $(EXPERIMENTSOBJS))
 	mkdir -p $(EXE_DIR)
 	$(CXX) $(CXXFLAGS) $(addprefix $(BUILD_DIR)/, $(EXPERIMENTSOBJS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -ltermbox -o $@
 
+
+$(EXE_DIR)/experimentMineClusNaive: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentMineClusNaive.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentMineClusNaive.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+
+$(EXE_DIR)/experimentMineClusNaiveMedium: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentMineClusNaiveMedium.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentMineClusNaiveMedium.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+
+$(EXE_DIR)/experimentMineClusNaiveMnist: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentMineClusNaiveMnist.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentMineClusNaiveMnist.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+
+$(EXE_DIR)/experimentFastDOCNaive: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentFastDOCNaive.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentFastDOCNaive.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+
+$(EXE_DIR)/experimentFastDOCNaiveMedium: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentFastDOCNaiveMedium.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentFastDOCNaiveMedium.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+$(EXE_DIR)/experimentDOCNaive: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentDOCNaive.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentDOCNaive.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+
+$(EXE_DIR)/experimentDOCNaiveMedium: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentDOCNaiveMedium.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentDOCNaiveMedium.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+
+
+$(EXE_DIR)/experimentMineClusBest: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentMineClusBest.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentMineClusBest.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+
+$(EXE_DIR)/experimentMineClusBestMedium: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentMineClusBestMedium.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentMineClusBestMedium.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
 
 clean:
 	-rm -rf bin/
 	-rm -rf build/
 	-rm *.dat
 	-rm *.txt
+	-rm -rf testData
 
 
 

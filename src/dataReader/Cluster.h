@@ -19,8 +19,8 @@ enum DistributionType{
 	normalDistributionSpecial,
 	constant
 };
-static const float lowerFloat = 0.0; //std::numeric_limits<float>::lowest();
-static const float upperFloat = 100.0;   //std::numeric_limits<float>::max();
+static const float lowerFloat = -10000.0; //std::numeric_limits<float>::lowest();
+static const float upperFloat = 10000.0;   //std::numeric_limits<float>::max();
 
 struct BoundsForUniformDistribution{
 	float lower = lowerFloat;

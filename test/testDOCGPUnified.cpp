@@ -38,8 +38,6 @@ public:
 	virtual void SetUp() {
 	}
 
-
-
 };
 
 
@@ -652,3 +650,23 @@ TEST_F(testDOCGPUnified, SLOW_testWithDataReader5){
 	EXPECT_EQ(res.at(1).first->size(), 20);
 	
 }
+
+
+TEST_F(testDOCGPUnified, SLOW_testWithDataReaderUCluster){
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
+	bool res2 = dgb.buildUClusters("test/testData/test1111",256,10,15,16,5,0, true);
+	EXPECT_TRUE(res2);
+	DataReader* dr = new DataReader("test/testData/test1111");
+
+	DOCGPUnified c(dr);
+	c.setWidth(15);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	c.setNumberOfSamples(4096*2);
+	std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> > res = c.findKClusters(10);
+	EXPECT_EQ(res.size(), 10);
+}
+	
+	

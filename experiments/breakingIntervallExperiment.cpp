@@ -113,6 +113,7 @@ void breakingIntervallExperiment::start(){
 	cudaStream_t stream;
 	checkCudaErrors((cudaStreamCreate(&stream)));
 
+
 	//time taking
 	cudaEvent_t start_naive, stop_naive;
 	checkCudaErrors(cudaEventCreate(&start_naive));

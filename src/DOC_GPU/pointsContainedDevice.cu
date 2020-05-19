@@ -66,7 +66,7 @@ __global__ void pointsContainedDeviceNaiveBreak(float* data,
 											    unsigned int no_dims,
 											    unsigned int m,
 											    unsigned int breakingIntervall){
-	// one kernel for each hypercube
+	// one kernel for each hypercub
 	unsigned int entry = blockIdx.x*blockDim.x+threadIdx.x;
 	unsigned int currentCentroid = entry/m;
 	if(entry < no_dims){

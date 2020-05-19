@@ -190,7 +190,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			checkCudaErrors(cudaMemPrefetchAsync(score_d, sizeOfScore, device, stream1_1));
 			countSupportWrapper(ceilf((float)dim/dimBlock), dimBlock, stream1_1,
 								candidates_d, itemSet_d, dim, numberOfPoints, dim, minSupp,
-								this->beta, support_d, score_d, toBeDeleted_d);
+								this->beta, support_d, score_d, toBeDeleted_d, this->countSupportKernelVersion);
 
 			// Create the PrefixSum, and find the number of elements left
 			// The number elements to be deleted is the last value in the prefixSum
@@ -206,8 +206,8 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			// Find the number of candidates after deletion of the small candidates
 			checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d+dim, sizeof(unsigned int), cudaCpuDeviceId, stream1_1));			
 			checkCudaErrors(cudaStreamSynchronize(stream1_1));
-			unsigned int oldNumberOfCandidates = dim;	
-			unsigned int numberOfCandidates = dim-prefixSum_d[dim];
+			size_t oldNumberOfCandidates = dim;	
+			size_t numberOfCandidates = dim-prefixSum_d[dim];
 			
 
 			// if there are any candidates left
@@ -294,7 +294,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					// The number of candidates after a merge can be seen as
 					//   an upper triangular matrix without the diagonal
 					oldNumberOfCandidates = numberOfCandidates;
-					numberOfCandidates = (numberOfCandidates*(numberOfCandidates+1))/2-numberOfCandidates;
+					numberOfCandidates = ((size_t)numberOfCandidates*(numberOfCandidates+1))/2-numberOfCandidates;
 					sizeOfCandidates = (numberOfCandidates)*numberOfBlocksPrPoint * sizeof(unsigned int);
 					sizeOfToBeDeleted = (numberOfCandidates+1)*sizeof(bool);
 					
@@ -312,24 +312,26 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 										   candidates_d, oldNumberOfCandidates, dim, iterationNr,
 										   newCandidates_d, deletedFromCount_d);
 
+					//std::cout << "oldNumberOfCandidates: " << oldNumberOfCandidates << std::endl;
+					//std::cout << "numberOfCandidates: " << numberOfCandidates << std::endl;
 					checkCudaErrors(cudaFree(candidates_d)); // delete the old candidate array
 					candidates_d = newCandidates_d;
 
 					checkCudaErrors(cudaMallocManaged((void**) &toBeDeleted_d, sizeOfToBeDeleted));
-
 					
 					// Find all the dublicate candidates
 					// For the find dublicates call the output vector needs to be sat to 0,
 					//    because it only writes the true values
 					//checkCudaErrors(cudaMemsetAsync(toBeDeleted_d, 0, sizeOfToBeDeleted, stream1_1));
-
 					checkCudaErrors(cudaMemPrefetchAsync(candidates_d, sizeOfCandidates, device, stream1_1));
 					checkCudaErrors(cudaMemPrefetchAsync(deletedFromCount_d, sizeOfToBeDeleted, device, stream1_1));
 					checkCudaErrors(cudaMemPrefetchAsync(toBeDeleted_d, sizeOfToBeDeleted, device, stream1_1));
 					
 					findDublicatesWrapper_mananged(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1,
 										  candidates_d, numberOfCandidates, dim,
-										  deletedFromCount_d, toBeDeleted_d, Hash);
+										  deletedFromCount_d, toBeDeleted_d, this->duplicateKernelVerison);
+					
+					
 					
 					orKernelWrapper(ceilf((float)(numberOfCandidates+1)/dimBlock), dimBlock, stream1_1,
 									numberOfCandidates+1, toBeDeleted_d, deletedFromCount_d);
@@ -351,6 +353,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 
 					checkCudaErrors(cudaMemPrefetchAsync(prefixSum_d+numberOfCandidates, sizeof(unsigned int), cudaCpuDeviceId, stream1_1));			
 					assert(numberOfCandidates >= prefixSum_d[numberOfCandidates]); // avoid underflow
+					
 				
 					// Calculate the new number of candidates, based on the amount that should be deleted
 					oldNumberOfCandidates = numberOfCandidates;
@@ -398,7 +401,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 						
 					countSupportWrapper(ceilf((float)numberOfCandidates/dimBlock), dimBlock, stream1_1,
 										candidates_d, itemSet_d, dim, numberOfPoints, numberOfCandidates, minSupp,
-										this->beta, support_d, score_d, toBeDeleted_d);
+										this->beta, support_d, score_d, toBeDeleted_d, this->countSupportKernelVersion);
 
 
 
@@ -478,7 +481,13 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 					checkCudaErrors(cudaFree(index_d));
 					checkCudaErrors(cudaFree(score_d));
 				} // Apriori iterations
-			}else{ // Number of candidates > 0 for outer 
+			}else{ // Number of candidates > 0 for outer
+				checkCudaErrors(cudaMemPrefetchAsync(bestScore_d+i, sizeof(float), cudaCpuDeviceId, stream1_1));
+				checkCudaErrors(cudaMemPrefetchAsync(bestCentroid_d+i, sizeof(unsigned int), cudaCpuDeviceId, stream1_1));
+				checkCudaErrors(cudaStreamSynchronize(stream1_1));
+				bestScore_d[i] = 0;
+				bestCentroid_d[i] = 0;
+				
 				checkCudaErrors(cudaFree(prefixSum_d));
 
 				checkCudaErrors(cudaFree(support_d));
@@ -682,7 +691,6 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Mi
 			for(unsigned int i = 0; i < oldNumberOfPoints - numberOfPoints; i++){
 				auto point = new std::vector<float>;
 				for(unsigned int j = 0; j < dim; j++){
-					// std::cout << "i " << i << ", j " << j << std::endl;
 					point->push_back(outputCluster_d[i*dim+j]);
 				}
 				outputCluster->push_back(point);

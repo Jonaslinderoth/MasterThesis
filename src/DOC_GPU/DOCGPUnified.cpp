@@ -158,6 +158,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	// allocate memory for storing the current best clusters in one-hot format.
 	bool* bestDims_d;
 	checkCudaErrors(cudaMallocManaged((void **) &bestDims_d, sizes.size_of_bestDims));
+
 	
 	// allocating memory for random samples
 	unsigned int* centroids_d;
@@ -197,6 +198,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 	float* score_d;
 	checkCudaErrors(cudaMallocManaged((void **) &score_d, sizes.size_of_score));
 
+	
 	//allocating memory for index
 	unsigned int* index_d;
 	checkCudaErrors(cudaMallocManaged((void **) &index_d, sizes.size_of_index));
@@ -340,7 +342,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 					notDevice(dimGrid, dimBlock, stream1, pointsContained_d+(bestIndex*number_of_points), number_of_points);
 					
 					assert(sizes.size_of_data >= number_of_points*dim*sizeof(float));
-					checkCudaErrors(cudaMemPrefetchAsync(outputCluster_d, sizeof(float)*(clusterSize*dim), device, stream1));			   					
+					checkCudaErrors(cudaMemPrefetchAsync(outputCluster_d, sizeof(float)*(clusterSize*dim), device, stream1));
 					deleteFromArray_managed(stream1, outputCluster_d, pointsContained_d+(bestIndex*number_of_points),
 									data_d, number_of_points, dim);
 					

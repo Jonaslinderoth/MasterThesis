@@ -15,6 +15,7 @@ Cluster::Cluster() {
 
 }
 
+
 Cluster::~Cluster() {
 	// TODO Auto-generated destructor stub
 }

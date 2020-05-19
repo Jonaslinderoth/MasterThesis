@@ -2,9 +2,11 @@
 #include "testingTools.h"
 #include <random>
 #include "../src/MineClusGPU/MineClusGPU.h"
+#include "../src/MineClusGPU/MineClusGPUnified.h"
 #include "../src/MineClus/MineClus.h"
 #include <vector>
-
+#include "../src/testingTools/DataGeneratorBuilder.h"
+#include "../src/dataReader/DataReader.h"
 
 
 TEST(testMineClusGPU, testSetup){
@@ -115,7 +117,7 @@ TEST(testMineClusGPU, testNoise){
 		for(int i = 0; i < 3000; i++){
 			auto point = new std::vector<float>;
 			for(int j = 0; j < 66; j++){
-					point->push_back(noise(gen));					
+				point->push_back(noise(gen));					
 			}
 			data->push_back(point);
 		}
@@ -1242,7 +1244,7 @@ TEST(testMineClusCompare, testNoise){
 		for(int i = 0; i < 3000; i++){
 			auto point = new std::vector<float>;
 			for(int j = 0; j < 66; j++){
-					point->push_back(noise(gen));					
+				point->push_back(noise(gen));					
 			}
 			data->push_back(point);
 		}
@@ -1274,7 +1276,7 @@ TEST(testMineClusCompare, testNoise2){
 		for(int i = 0; i < 3000; i++){
 			auto point = new std::vector<float>;
 			for(int j = 0; j < 66; j++){
-					point->push_back(noise(gen));					
+				point->push_back(noise(gen));					
 			}
 			data->push_back(point);
 		}
@@ -1305,7 +1307,7 @@ TEST(testMineClusCompare, testNoise3){
 		for(int i = 0; i < 3000; i++){
 			auto point = new std::vector<float>;
 			for(int j = 0; j < 66; j++){
-					point->push_back(noise(gen));					
+				point->push_back(noise(gen));					
 			}
 			data->push_back(point);
 		}
@@ -1325,4 +1327,191 @@ TEST(testMineClusCompare, testNoise3){
 	cCPU.setConcurentVersion(true);
 	auto resCPU = cCPU.findKClusters(1);
 	EXPECT_EQ(resCPU.size(), 0);	
+}
+
+TEST(testMineClusDataReader, _SLOW_testSmall_2){
+	(system("mkdir testData  >>/dev/null 2>>/dev/null"));
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
+	bool res = dgb.buildUClusters("testData/test1",32,10,15,16,5,0, true);
+	EXPECT_TRUE(res);
+	DataReader* dr = new DataReader("testData/test1");
+	EXPECT_EQ(dr->getSize(), 322);
+	MineClusGPUnified c = MineClusGPUnified(dr);
+	c.setWidth(15);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	c.setConcurentVersion(false);
+	c.setDuplicatesVersion(Hash);
+	c.setCountSupportVersion(SmemCount);
+	auto result = c.findKClusters(10);
+	EXPECT_EQ(result.size(), 10);
+}
+
+
+
+TEST(testMineClusDataReader, _SLOW_testSmall){
+	(system("mkdir testData  >>/dev/null 2>>/dev/null"));
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
+	bool res = dgb.buildUClusters("testData/test1",32,10,15,16,5,0, true);
+	EXPECT_TRUE(res);
+	DataReader* dr = new DataReader("testData/test1");
+	EXPECT_EQ(dr->getSize(), 322);
+	MineClusGPU c = MineClusGPU(dr);
+	c.setWidth(15);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	c.setConcurentVersion(false);
+	c.setDuplicatesVersion(Hash);
+	c.setCountSupportVersion(SmemCount);
+	auto result = c.findKClusters(10);
+	EXPECT_EQ(result.size(), 10);
+}
+
+
+TEST(testMineClusDataReader, _SLOW_testSmall2){
+	(system("mkdir testData  >>/dev/null 2>>/dev/null"));
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
+	bool res = dgb.buildUClusters("testData/test1",16,10,15,16,5,0, true);
+	EXPECT_TRUE(res);
+	DataReader* dr = new DataReader("testData/test1");
+	MineClusGPU c = MineClusGPU(dr);
+	c.setWidth(15);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	c.setConcurentVersion(false);
+	c.setDuplicatesVersion(Hash);
+	c.setCountSupportVersion(SmemCount);
+	auto result = c.findKClusters(10);
+	EXPECT_EQ(result.size(), 10);
+}
+
+
+TEST(testMineClusDataReader, _SLOW_testSmall3){
+	(system("mkdir testData  >>/dev/null 2>>/dev/null"));
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
+	bool res = dgb.buildUClusters("testData/test1",16,9,15,8,5,0, true);
+	EXPECT_TRUE(res);
+	DataReader* dr = new DataReader("testData/test1");
+	MineClusGPU c = MineClusGPU(dr);
+	c.setWidth(15);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	c.setConcurentVersion(false);
+	c.setDuplicatesVersion(Hash);
+	c.setCountSupportVersion(SmemCount);
+	auto result = c.findKClusters(100);
+	EXPECT_EQ(result.size(), 11);
+}
+
+
+
+TEST(testMineClusDataReader, _SLOW_testSmall33){
+	(system("mkdir testData  >>/dev/null 2>>/dev/null"));
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
+	bool res = dgb.buildUClusters("testData/test1",16,9,15,8,5,0, true);
+	EXPECT_TRUE(res);
+	DataReader* dr = new DataReader("testData/test1");
+	MineClusGPU c = MineClusGPU(dr);
+	c.setWidth(15);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	c.setConcurentVersion(false);
+	c.setDuplicatesVersion(Hash);
+	c.setCountSupportVersion(SmemCount);
+	auto result = c.findKClusters(100);
+
+	delete dr;
+	dr = new DataReader("testData/test1");
+	MineClus c1 = MineClus(dr);
+	c1.setWidth(15);
+	c1.setSeed(1);
+	c1.setAlpha(0.1);
+	c1.setBeta(0.25);
+	c1.setConcurentVersion(false);
+	auto result2 = c1.findKClusters(100);
+
+	int c3 = 0;
+	for(int j = 0; j < result2.size(); j++){
+		// std::cout << result2.at(j).first->size() << " ";
+		c3 +=result2.at(j).first->size(); 
+	}
+	// std::cout << std::endl;
+	int c2 = 0;
+	for(int j = 0; j < result.size(); j++){
+		// std::cout << result.at(j).first->size() << " ";
+		c2 +=result.at(j).first->size();
+	}
+	// std::cout << std::endl;
+
+	// std::cout << c3 << "vs" << c2 << std::endl;
+
+	EXPECT_EQ(c3, dr->getSize());
+	EXPECT_EQ(c2, dr->getSize());
+
+
+
+	
+	
+	EXPECT_EQ(result.size(), 11);
+}
+
+
+
+TEST(testMineClusDataReader, _SLOW_testSmall333){
+	(system("mkdir testData  >>/dev/null 2>>/dev/null"));
+	DataGeneratorBuilder dgb;
+	dgb.setSeed(1);
+	bool res = dgb.buildUClusters("testData/test1",1024,9,15,8,5,0, true);
+	EXPECT_TRUE(res);
+	DataReader* dr = new DataReader("testData/test1");
+	MineClusGPU c = MineClusGPU(dr);
+	c.setWidth(15);
+	c.setSeed(1);
+	c.setAlpha(0.1);
+	c.setBeta(0.25);
+	c.setConcurentVersion(false);
+	c.setDuplicatesVersion(Hash);
+	c.setCountSupportVersion(SmemCount);
+	auto result = c.findKClusters(100);
+
+	delete dr;
+	dr = new DataReader("testData/test1");
+	MineClus c1 = MineClus(dr);
+	c1.setWidth(15);
+	c1.setSeed(2);
+	c1.setAlpha(0.1);
+	c1.setBeta(0.25);
+	c1.setConcurentVersion(false);
+	auto result2 = c1.findKClusters(100);
+
+	int c3 = 0;
+	for(int j = 0; j < result2.size(); j++){
+		// std::cout << result2.at(j).first->size() << " ";
+		c3 +=result2.at(j).first->size(); 
+	}
+	// std::cout << std::endl;
+	int c2 = 0;
+	for(int j = 0; j < result.size(); j++){
+		// std::cout << result.at(j).first->size() << " ";
+		c2 +=result.at(j).first->size();
+	}
+	// std::cout << std::endl;
+
+	// std::cout << c3 << "vs" << c2 << std::endl;
+
+	EXPECT_EQ(c3, dr->getSize());
+	EXPECT_EQ(c2, dr->getSize());
+	
+	
+	EXPECT_EQ(result.size(), 10);
 }

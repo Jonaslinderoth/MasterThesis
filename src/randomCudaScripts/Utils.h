@@ -22,9 +22,10 @@
 template<typename T>
 void check(T err, const char* const func, const char* const file, const int line) {
   if (err != cudaSuccess) {
-    std::cerr << "CUDA error at: " << file << ":" << line << std::endl;
-    std::cerr << cudaGetErrorString(err) << " " << func << std::endl;
-    exit(1);
+	  throw std::runtime_error("CUDA error at: " + std::string(file) + ":" + std::to_string(line) + " "+ cudaGetErrorString(err) + " " + std::string(func) );
+    /* std::cerr << "CUDA error at: " << file << ":" << line << std::endl; */
+    /* std::cerr << cudaGetErrorString(err) << " " << func << std::endl; */
+    /* exit(1); */
   }
 }
 

@@ -24,6 +24,24 @@ Fast_DOC::Fast_DOC(std::vector<std::vector<float>*>* input, float alpha, float b
 }
 
 
+
+/**
+ * Used for loading the data from the data reader into main memory.
+ */
+std::vector<std::vector<float>*>* Fast_DOC::initDataReader(DataReader* dr){
+	auto size = dr->getSize();
+	std::vector<std::vector<float>*>* data = new std::vector<std::vector<float>*>(0);
+	data->reserve(size);
+	while(dr->isThereANextBlock()){
+		std::vector<std::vector<float>*>* block = dr->next();
+		data->insert(data->end(), block->begin(), block->end());
+		delete block;
+	}
+	return data;
+};
+
+
+
 std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*> Fast_DOC::findCluster(){
 	float d = this->data->at(0)->size();
 	float r = log2(2*d)/log2(1/(2*this->beta));
