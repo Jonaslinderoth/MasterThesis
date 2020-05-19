@@ -137,7 +137,6 @@ void PointsContainedDeviceNormalData::start(){
 
 	//making the data array
 	DataGeneratorBuilder dgb;
-
 	std::string fineName = "dataExperimentBreakingIntervalNormalData";
 	bool res = dgb.buildUClusters(fineName,no_of_points/numberOfClusters,numberOfClusters,width,point_dim,numberOfDimensionsUsed,0);
 
