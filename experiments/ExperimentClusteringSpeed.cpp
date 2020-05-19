@@ -19,7 +19,7 @@
 void ExperimentClusteringSpeed::start(){
 	unsigned int dim = 128;
 	unsigned int numberOfPointsPerCluster = 16384/2;
-	unsigned int usedDim = 25;
+	unsigned int usedDim = 20;
 	unsigned int c = 0; 
 	// Count number of tests
 	for(unsigned int i = 16; i <= dim; i *= 2){
@@ -111,7 +111,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
-						if(time > timeout){
+						if(time > timeout*2){
 							DOCCPUStop = true;
 						}
 						delete dr;
@@ -132,6 +132,7 @@ void ExperimentClusteringSpeed::start(){
 						c.setSeed(seed);
 						c.setAlpha(0.1);
 						c.setBeta(0.25);
+						c.setFindDimVersion(chunksFindDim);
 						c.setNumberOfSamples(4096*2);
 
 						// start timer
@@ -175,6 +176,7 @@ void ExperimentClusteringSpeed::start(){
 						c.setSeed(seed);
 						c.setAlpha(0.1);
 						c.setBeta(0.25);
+						c.setFindDimVersion(chunksFindDim);
 						c.setNumberOfSamples(4096*2);
 
 						// start timer
@@ -261,6 +263,7 @@ void ExperimentClusteringSpeed::start(){
 						c.setWidth(15);
 						c.setSeed(seed);
 						c.setAlpha(0.1);
+						c.setFindDimVersion(chunksFindDim);
 						c.setBeta(0.25);
 
 						// start timer
@@ -279,7 +282,7 @@ void ExperimentClusteringSpeed::start(){
 											  + std::to_string(j*10) + ", "
 											  +  std::to_string(i) + ", "
 											  + std::to_string(k) +
-											  ",Fast_DOC GPU, "
+											  ",FastDOC GPU, "
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
 											  + std::to_string(acc));
@@ -304,6 +307,7 @@ void ExperimentClusteringSpeed::start(){
 						c.setWidth(15);
 						c.setSeed(seed);
 						c.setAlpha(0.1);
+						c.setFindDimVersion(chunksFindDim);
 						c.setBeta(0.25);
 
 						// start timer
@@ -345,7 +349,7 @@ void ExperimentClusteringSpeed::start(){
 				
 				/****************************** MINECLUS TESTS *****************************/
 				try{
-					if(!MineClusCPUStop){
+					if(!MineClusCPUStop && i < 128){
 						DataReader* dr = new DataReader("testData/test1");
 						MineClus c = MineClus(dr);
 						c.setWidth(15);
@@ -388,7 +392,7 @@ void ExperimentClusteringSpeed::start(){
 				}
 
 				try{
-					if(!MineClusCPUCStop){
+					if(!MineClusCPUCStop && i < 128){
 						DataReader* dr = new DataReader("testData/test1");
 						MineClus c = MineClus(dr);
 						c.setWidth(15);
@@ -431,7 +435,7 @@ void ExperimentClusteringSpeed::start(){
 				}
 
 				try{
-					if(!MineClusGPUStop){
+					if(!MineClusGPUStop && i < 128){
 						DataReader* dr = new DataReader("testData/test1");
 						MineClusGPU c = MineClusGPU(dr);
 						c.setWidth(15);
@@ -476,7 +480,7 @@ void ExperimentClusteringSpeed::start(){
 				}
 				
 				try{
-					if(!MineClusGPUCStop){
+					if(!MineClusGPUCStop && i < 128){
 						DataReader* dr = new DataReader("testData/test1");
 						MineClusGPU c = MineClusGPU(dr);
 						c.setWidth(15);
@@ -522,7 +526,7 @@ void ExperimentClusteringSpeed::start(){
 				}
 
 				try{
-					if(!MineClusGPUnifiedStop){
+					if(!MineClusGPUnifiedStop && i < 128){
 						DataReader* dr = new DataReader("testData/test1");
 						MineClusGPUnified c = MineClusGPUnified(dr);
 						c.setWidth(15);
@@ -567,7 +571,7 @@ void ExperimentClusteringSpeed::start(){
 				}
 
 				try{
-					if(!MineClusGPUnifiedCStop){
+					if(!MineClusGPUnifiedCStop && i < 128){
 						DataReader* dr = new DataReader("testData/test1");
 						MineClusGPUnified c = MineClusGPUnified(dr);
 						c.setWidth(15);

@@ -257,7 +257,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 			// Find dimensions
 			findDimmensionsKernel(dimGrid, dimBlock, stream1, samples_d, centroids_d, data_d,  findDim_d,
 								  findDim_count_d, dim, arr_sizes.number_of_samples, sample_size, arr_sizes.number_of_centroids,
-								  m, width, number_of_points);
+								  m, width, number_of_points,this->findDimKernelVersion);
 
 			// Create indices for the scores
 			checkCudaErrors(cudaMemPrefetchAsync(index_d, arr_sizes.number_of_samples*sizeof(unsigned int), device, stream2));

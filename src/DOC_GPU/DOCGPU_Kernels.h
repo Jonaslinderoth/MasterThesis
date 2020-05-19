@@ -42,12 +42,12 @@ float* scoreHost(unsigned int* Cluster_size,
 				 float beta,
 				 unsigned int number_of_points);
 
-
+enum findDimVersion {naiveFindDim, chunksFindDim};
 void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock,
                            cudaStream_t stream,
         unsigned int* Xs_d, unsigned int* ps_d, float* data_d, bool* res_d,
 						   unsigned int* Dsum_out, unsigned int point_dim, unsigned int no_of_samples, unsigned int no_in_sample, unsigned int no_of_ps,
-						   unsigned int m, float width, unsigned int number_of_points);
+						   unsigned int m, float width, unsigned int number_of_points, findDimVersion version = naiveFindDim);
 
 void scoreKernel(unsigned int dimGrid,
 				 unsigned int dimBlock,

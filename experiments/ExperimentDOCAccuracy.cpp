@@ -14,7 +14,7 @@ void ExperimentDOCAccuracy::start(){
 	unsigned int numberOfPointsPerCluster = 128;
 	unsigned int usedDim = 4;
 	unsigned int c = 0;
-	unsigned int numberOfSamples = 1048576;
+	unsigned int numberOfSamples = 262144;
 	// Count number of tests
 	for(unsigned int i = 1024; i <= numberOfSamples; i *= 2){
 		c++;;

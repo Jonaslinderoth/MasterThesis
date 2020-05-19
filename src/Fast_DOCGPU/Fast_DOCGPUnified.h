@@ -5,6 +5,7 @@
 #include <curand.h>
 #include "../dataReader/DataReader.h"
 #include "../Clustering.h"
+#include "../DOC_GPU/DOCGPU_Kernels.h"
 
 class Fast_DOCGPUnified : public Clustering{
  public:
@@ -27,6 +28,10 @@ class Fast_DOCGPUnified : public Clustering{
 	float getWidth(){return this->width;};
 	void setd0(unsigned int value){this->d0 = value;};
 	unsigned int getd0(){return this->d0;};
+	void setFindDimVersion(findDimVersion a){
+		this->findDimKernelVersion = a;
+	}
+
 	
  private:
 	float alpha;
@@ -38,6 +43,7 @@ class Fast_DOCGPUnified : public Clustering{
 	std::vector<std::vector<float>*>* data;
 	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 	float* transformData();
+	findDimVersion findDimKernelVersion = naiveFindDim;
 };
 
 #endif

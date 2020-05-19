@@ -271,7 +271,7 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 			// Find dimensions
 			findDimmensionsKernel(dimGrid, dimBlock, stream1, samples_d, centroids_d, data_d,  findDim_d,
 								  findDim_count_d, dim, arr_sizes.number_of_samples, sample_size, arr_sizes.number_of_centroids,
-								  m, width, number_of_points);
+								  m, width, number_of_points, this->findDimKernelVersion);
 
 			checkCudaErrors(cudaMemPrefetchAsync(data_d, number_of_points*dim*sizeof(float), device, stream2));
 			checkCudaErrors(cudaMemPrefetchAsync(centroids_d, arr_sizes.number_of_centroids*sizeof(unsigned int), device, stream2));

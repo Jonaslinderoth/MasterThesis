@@ -277,11 +277,18 @@ void findDimmensionsKernel(unsigned int dimGrid, unsigned int dimBlock, cudaStre
 						   unsigned int* Dsum_out, unsigned int point_dim,
 						   unsigned int no_of_samples, unsigned int sample_size,
 						   unsigned int no_of_ps,
-						   unsigned int m, float width, unsigned int no_data){
+						   unsigned int m, float width, unsigned int no_data,
+						   findDimVersion version){
 
-    findDimmensionsDevice<<<dimGrid, dimBlock, 0, stream>>>(Xs_d, ps_d, data, res_d, Dsum_out,
+	if(version == naiveFindDim){
+	    findDimmensionsDevice<<<dimGrid, dimBlock, 0, stream>>>(Xs_d, ps_d, data, res_d, Dsum_out,
 												 point_dim, no_of_samples, sample_size,
-												 no_of_ps, m, width, no_data);
+												 no_of_ps, m, width, no_data);	
+	}else{
+		findDimmensionsLoadChunks<<<dimGrid, dimBlock, 0, stream>>>(Xs_d, ps_d, data, res_d, Dsum_out,
+												 point_dim, no_of_samples, sample_size,
+												 no_of_ps, m, width, no_data);	
+	}
 	
 };
 

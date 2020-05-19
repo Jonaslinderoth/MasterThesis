@@ -38,6 +38,9 @@ public:
 	unsigned int getSize(){return this->size;};
 	unsigned int dimension(){return this->dim;};
 	void setNumberOfSamples(unsigned int m){this->m = m;};
+	void setFindDimVersion(findDimVersion a){
+		this->findDimKernelVersion = a;
+	}
 
 
  private:
@@ -50,6 +53,7 @@ public:
 	std::vector<std::vector<float>*>* data;
 	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 	float* transformData();
+	findDimVersion findDimKernelVersion = naiveFindDim;
 
 
 

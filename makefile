@@ -73,7 +73,7 @@ b: $(EXE_DIR)/experimentMineClusNaive
 test: $(EXE_DIR)/${TEST}
 	./$(EXE_DIR)/${TEST} --gtest_filter=-*_SUPER_SLOW_*
 
-experiments: $(EXE_DIR)/$(EXPERIMENTS) $(EXE_DIR)/experimentMineClusNaive $(EXE_DIR)/experimentMineClusNaiveMedium $(EXE_DIR)/experimentMineClusNaiveMnist $(EXE_DIR)/experimentFastDOCNaive $(EXE_DIR)/experimentFastDOCNaiveMedium $(EXE_DIR)/experimentDOCNaive $(EXE_DIR)/experimentDOCNaiveMedium $(EXE_DIR)/experimentMineClusBest $(EXE_DIR)/experimentMineClusBestMedium
+experiments: $(EXE_DIR)/$(EXPERIMENTS) $(EXE_DIR)/experimentMineClusNaive $(EXE_DIR)/experimentMineClusNaiveMedium $(EXE_DIR)/experimentMineClusNaiveMnist $(EXE_DIR)/experimentFastDOCNaive $(EXE_DIR)/experimentFastDOCNaiveMedium $(EXE_DIR)/experimentDOCNaive $(EXE_DIR)/experimentDOCNaiveMedium $(EXE_DIR)/experimentMineClusBest $(EXE_DIR)/experimentMineClusBestMedium $(EXE_DIR)/experimentFastDOCBest $(EXE_DIR)/experimentFastDOCBestMedium $(EXE_DIR)/experimentDOCBest $(EXE_DIR)/experimentDOCBestMedium
 	./$(EXE_DIR)/$(EXPERIMENTS)
 
 benchmark: $(EXE_DIR)/$(BENCHMARK)
@@ -175,6 +175,30 @@ $(EXE_DIR)/experimentMineClusBest: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addpref
 $(EXE_DIR)/experimentMineClusBestMedium: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentMineClusBestMedium.o
 	mkdir -p $(EXE_DIR)
 	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentMineClusBestMedium.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+
+
+
+$(EXE_DIR)/experimentFastDOCBest: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentFastDOCBest.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentFastDOCBest.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+
+$(EXE_DIR)/experimentFastDOCBestMedium: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentFastDOCBestMedium.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentFastDOCBestMedium.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+$(EXE_DIR)/experimentDOCBest: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentDOCBest.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentDOCBest.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+
+$(EXE_DIR)/experimentDOCBestMedium: $(addprefix $(BUILD_DIR)/, $(DEPS)) $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(BUILD_DIR)/experiments_exe/experimentDOCBestMedium.o
+	mkdir -p $(EXE_DIR)
+	$(CXX) $(CXXFLAGS) $(BUILD_DIR)/experiments_exe/experimentDOCBestMedium.o $(addprefix $(BUILD_DIR)/, $(OBJECTS)) $(LIBS) -o $@
+
+
+
 
 clean:
 	-rm -rf bin/
