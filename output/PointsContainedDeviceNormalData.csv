@@ -1,0 +1,15 @@
+number of points, dim, version, break interval, time
+20000, 200, pointsContainedKernelNaive, 5 , 2357.689453
+20000, 200, pointsContainedKernelSharedMemory, 5 , 1326.195435
+20000, 200, pointsContainedKernelSharedMemoryFewBank, 5 , 1720.926758
+20000, 200, pointsContainedKernelSharedMemoryFewerBank, 5 , 1737.376343
+20000, 200, whatDataIsInCentroidKernelFewPointsKernel, 5 , 1.066912
+20000, 200, pointsContainedKernelNaiveBreak, 5 , 2330.805908
+20000, 200, pointsContainedKernelSharedMemoryBreak, 5 , 1873.617676
+20000, 200, pointsContainedKernelNaive, 5 , 2341.581543
+20000, 200, pointsContainedKernelSharedMemory, 5 , 1327.557495
+20000, 200, pointsContainedKernelSharedMemoryFewBank, 5 , 1721.343140
+20000, 200, pointsContainedKernelSharedMemoryFewerBank, 5 , 1738.495483
+20000, 200, whatDataIsInCentroidKernelFewPointsKernel, 5 , 0.894848
+20000, 200, pointsContainedKernelNaiveBreak, 5 , 2331.143066
+20000, 200, pointsContainedKernelSharedMemoryBreak, 5 , 1873.692627

@@ -5,7 +5,9 @@
 #include "ExperimentCountSupport.h"
 #include "breakingIntervallExperiment.h"
 #include "BreakingIntervallExperimentAllOutside.h"
+#include "BreakingIntervallExperimentNormalData.h"
 #include "fakeExperiment.h"
+#include "PointsContainedDeviceNormalData.h"
 
 int main() {
     auto runner = new Runner("Main");
@@ -27,13 +29,20 @@ int main() {
     }
 
 
-    bool experimentsThatIDontTestRightNow = false;
+    bool experimentsThatIDontTestRightNow = true;
     if(experimentsThatIDontTestRightNow){
     	auto mex1 = new breakingIntervallExperiment("BreakingIntervallExperiment", "output");
 		runner->addExperiment(mex1);
+	    auto mex2 = new BreakingIntervallExperimentAllOutside("BreakingIntervallExperimentAllOutside", "output");
+	    runner->addExperiment(mex2);
+	    auto mex3 = new BreakingIntervallExperimentNormalData("BreakingIntervallExperimentNormalData", "output");
+	    runner->addExperiment(mex3);
+	    auto mex4 = new PointsContainedDeviceNormalData("PointsContainedDeviceNormalData", "output");
+		runner->addExperiment(mex4);
+    }else{
+
     }
-    auto mex2 = new BreakingIntervallExperimentAllOutside("BreakingIntervallExperimentAllOutside", "output");
-    runner->addExperiment(mex2);
+
 
     runner->start();
     delete runner;

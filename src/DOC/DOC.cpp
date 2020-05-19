@@ -126,7 +126,6 @@ int DOC::size() {
 	return data->size();
 }
 
-
 std::vector<std::vector<float>*>* DOC::pickRandom(int n) {
 	std::vector<int> is = this->randInt(0,this->size()-1,n);
 	std::vector<std::vector<float>*>* res = new std::vector<std::vector<float>*>;
@@ -135,7 +134,6 @@ std::vector<std::vector<float>*>* DOC::pickRandom(int n) {
 	}
 	return res;
 }
-
 
 std::vector<bool>* DOC::findDimensions(std::vector<float>* centroid,
 		std::vector<std::vector<float>* >* points, float width) {
