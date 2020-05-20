@@ -217,8 +217,8 @@ bool whatDataIsInCentroidFewPoints(size_t dimGrid,
 								   cudaStream_t stream,
 						  	  	   bool* output,
 						  	  	   float* data,
+						  	  	   bool* dimensions,
 						  	  	   unsigned int* centroids,
-								   bool* dimensions,
 						  	  	   const float width,
 						  	  	   const unsigned int point_dim,
 						  	  	   const unsigned int no_data_p){
@@ -280,8 +280,7 @@ __global__ void gpuDimensionChanger(float* d_outData,
 }
 
 	
-void whatDataIsInCentroidKernelFewPointsKernel(
-											   unsigned int dimGrid,
+void whatDataIsInCentroidKernelFewPointsKernel(unsigned int dimGrid,
 											   unsigned int dimBlock,
 											   cudaStream_t stream,
 											   bool* output,
@@ -328,13 +327,14 @@ void whatDataIsInCentroidKernelFewPointsKernel(
 	}
 	gpuDimensionChanger<<<dimGridgpuDimensionChanger,dimBlockgpuDimensionChanger,0,stream>>>(d_reducedData,d_out_whereThingsGo,data,no_data,point_dim,dimensionsLeft);
 
+
 	whatDataIsInCentroidFewPoints(dimGrid,
 								  dimBlock,
 								  stream,
 								  output,
 								  d_reducedData,
-								  centroids,
 								  dims,
+								  centroids,
 								  width,
 								  dimensionsLeft,
 								  no_data);

@@ -68,8 +68,7 @@ bool whatDataIsInCentroidLessReadingAndBreakingWrapper(size_t dimGrid,
 													   const unsigned int no_data_p);
 	
 
-void whatDataIsInCentroidKernelFewPointsKernel(
-											   unsigned int dimGrid,
+void whatDataIsInCentroidKernelFewPointsKernel(unsigned int dimGrid,
 											   unsigned int dimBlock,
 											   cudaStream_t stream,
 											   bool* output,
