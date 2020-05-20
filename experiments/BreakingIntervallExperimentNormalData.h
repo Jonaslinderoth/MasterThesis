@@ -1,0 +1,30 @@
+/*
+ * BreakingIntervallExperimentNormalData.h
+ *
+ *  Created on: May 14, 2020
+ *      Author: mikkel
+ */
+
+#ifndef BREAKINGINTERVALLEXPERIMENTNORMALDATA_H_
+#define BREAKINGINTERVALLEXPERIMENTNORMALDATA_H_
+
+#include "Experiment.h"
+#include <random>
+#include <vector>
+class BreakingIntervallExperimentNormalData: public Experiment{
+ public:
+	BreakingIntervallExperimentNormalData(std::string name, std::string dir): Experiment(0,name, dir, "number of points, dim, version, break interval, time"){}
+
+	void start() override;
+ private:
+	std::vector<std::vector<float>*>* pickRandomPointFromData(std::vector<std::vector<float>*>* data, unsigned int size);
+	std::vector<int> randIntVec(unsigned int lower,unsigned int upper,unsigned int n);
+	std::vector<bool>* findDimensionsEx(std::vector<float>* centroid,std::vector<std::vector<float>* >* points,float width);
+	std::mt19937 gen;
+};
+
+
+
+
+
+#endif /* BREAKINGINTERVALLEXPERIMENTNORMALDATA_H_ */

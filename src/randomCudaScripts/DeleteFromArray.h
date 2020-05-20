@@ -41,6 +41,21 @@ void cpu_sum_scan(unsigned int* const h_out, const unsigned int* const h_in,cons
 void cpuDeleteFromArray(float* const d_outData, const bool* delete_array, const float* data,
 						const size_t numElements, unsigned int dimension = 1);
 
+
+void deleteFromArrayWrapper(cudaStream_t stream,
+							float* data,
+							unsigned int* prefixSum,
+							unsigned int numberOfPoints,
+							unsigned int dim,
+							float* output);
+
+void deleteFromArraySpecialWrapper(cudaStream_t stream,
+								   float* data,
+								   unsigned int* prefixSum,
+								   unsigned int numberOfPoints,
+								   unsigned int dim,
+								   float* output);
+
 void deleteFromArray(cudaStream_t stream,
 					 float* d_outData,
 					 bool* delete_array,

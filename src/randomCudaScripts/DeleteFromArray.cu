@@ -527,6 +527,15 @@ __global__ void gpuDeleteFromArray(T* d_outData,
 
 }
 
+void deleteFromArrayWrapper(cudaStream_t stream,
+							float* data,
+							unsigned int* prefixSum,
+							unsigned int numberOfPoints,
+							unsigned int dim,
+							float* output){
+	gpuDeleteFromArray<<<ceilf((float)(numberOfPoints*dim)/1024),1024,0,stream>>>(output, prefixSum, data, numberOfPoints, dim);
+};
+
 
 __global__ void gpuDeleteFromArraySpeical(float* d_outData,
 								          const unsigned int* d_delete_array,
@@ -619,6 +628,18 @@ __global__ void gpuDeleteFromArraySpeical(float* d_outData,
 
 
 }
+
+
+
+void deleteFromArraySpecialWrapper(cudaStream_t stream,
+								   float* data,
+								   unsigned int* prefixSum,
+								   unsigned int numberOfPoints,
+								   unsigned int dim,
+								   float* output){
+	
+	gpuDeleteFromArraySpeical<<<ceilf((float)(numberOfPoints)/1024),1024,0,stream>>>(output, prefixSum, data, numberOfPoints, dim);
+};
 
 
 template<typename T>
