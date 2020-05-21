@@ -544,12 +544,12 @@ __global__ void gpuDeleteFromArraySpeical(float* d_outData,
 								          const unsigned int dimensions){
 	const size_t idx = blockIdx.x*blockDim.x+threadIdx.x;
 
-	for(size_t howLongOnTheData = 0 ; howLongOnTheData < numElements*dimensions ; howLongOnTheData+=4*blockDim.x){
+	for(size_t howLongOnTheData = 0 ; howLongOnTheData < numElements*dimensions ; howLongOnTheData+=4*blockDim.x*gridDim.x){
 
 		const size_t advIdex1 = idx+howLongOnTheData;
-		const size_t advIdex2 = idx+howLongOnTheData+blockDim.x;
-		const size_t advIdex3 = idx+howLongOnTheData+2*blockDim.x;
-		const size_t advIdex4 = idx+howLongOnTheData+3*blockDim.x;
+		const size_t advIdex2 = idx+howLongOnTheData+blockDim.x*gridDim.x;
+		const size_t advIdex3 = idx+howLongOnTheData+2*blockDim.x*gridDim.x;
+		const size_t advIdex4 = idx+howLongOnTheData+3*blockDim.x*gridDim.x;
 		float theData1;
 		float theData2;
 		float theData3;
