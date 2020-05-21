@@ -177,13 +177,13 @@ bool whatDataIsInCentroid(size_t dimGrid,
 
 
 
-	whatDataIsInCentroidKernel<<<dimGrid,dimBlock,dimBlock*sizeof(unsigned int),stream>>>(output,
-																					data,
-																					dimensions,
-																					centroids,
-																					no_data_p,
-																					point_dim,
-																					width);
+	whatDataIsInCentroidKernel<<<dimGrid,dimBlock,0,stream>>>(output,
+															data,
+															dimensions,
+															centroids,
+															no_data_p,
+															point_dim,
+															width);
 	return true;
 }
 
@@ -201,13 +201,13 @@ bool whatDataIsInCentroidChunks(size_t dimGrid,
 
 
 
-	whatDataIsInCentroidChunks<<<dimGrid,dimBlock,dimBlock*sizeof(unsigned int),stream>>>(output,
-																					data,
-																					dimensions,
-																					centroids,
-																					no_data_p,
-																					point_dim,
-																					width);
+	whatDataIsInCentroidChunks<<<dimGrid,dimBlock,0,stream>>>(output,
+															  data,
+															  dimensions,
+															  centroids,
+															  no_data_p,
+															  point_dim,
+															  width);
 	return true;
 }
 
@@ -217,20 +217,20 @@ bool whatDataIsInCentroidFewPoints(size_t dimGrid,
 								   cudaStream_t stream,
 						  	  	   bool* output,
 						  	  	   float* data,
+						  	  	   bool* dimensions,
 						  	  	   unsigned int* centroids,
-								   bool* dimensions,
 						  	  	   const float width,
 						  	  	   const unsigned int point_dim,
 						  	  	   const unsigned int no_data_p){
 
 
 
-	whatDataIsInCentroidKernelFewPoints<<<dimGrid,dimBlock,dimBlock*sizeof(unsigned int),stream>>>(output,
-																					 	 	 data,
-																					 	 	 centroids,
-																					 	 	 no_data_p,
-																					 	 	 point_dim,
-																					 	 	 width);
+	whatDataIsInCentroidKernelFewPoints<<<dimGrid,dimBlock,0,stream>>>(output,
+																	   data,
+																	   centroids,
+																	   no_data_p,
+																	   point_dim,
+																	   width);
 	return true;
 }
 
@@ -280,8 +280,7 @@ __global__ void gpuDimensionChanger(float* d_outData,
 }
 
 	
-void whatDataIsInCentroidKernelFewPointsKernel(
-											   unsigned int dimGrid,
+void whatDataIsInCentroidKernelFewPointsKernel(unsigned int dimGrid,
 											   unsigned int dimBlock,
 											   cudaStream_t stream,
 											   bool* output,
@@ -328,13 +327,14 @@ void whatDataIsInCentroidKernelFewPointsKernel(
 	}
 	gpuDimensionChanger<<<dimGridgpuDimensionChanger,dimBlockgpuDimensionChanger,0,stream>>>(d_reducedData,d_out_whereThingsGo,data,no_data,point_dim,dimensionsLeft);
 
+
 	whatDataIsInCentroidFewPoints(dimGrid,
 								  dimBlock,
 								  stream,
 								  output,
 								  d_reducedData,
-								  centroids,
 								  dims,
+								  centroids,
 								  width,
 								  dimensionsLeft,
 								  no_data);
@@ -414,13 +414,13 @@ bool whatDataIsInCentroidLessReadingWrapper(size_t dimGrid,
 
 
 
-	whatDataIsInCentroidLessReading<<<dimGrid,dimBlock,dimBlock*sizeof(unsigned int),stream>>>(output,
-																					data,
-																					dimensions,
-																					centroids,
-																					no_data_p,
-																					point_dim,
-																					width);
+	whatDataIsInCentroidLessReading<<<dimGrid,dimBlock,0,stream>>>(output,
+																   data,
+																   dimensions,
+																   centroids,
+																   no_data_p,
+																   point_dim,
+																   width);
 	return true;
 }
 
@@ -437,13 +437,13 @@ bool whatDataIsInCentroidLessReadingAndBreakingWrapper(size_t dimGrid,
 
 
 
-	whatDataIsInCentroidLessReadingAndBreaking<<<dimGrid,dimBlock,dimBlock*sizeof(unsigned int),stream>>>(output,
-																					data,
-																					dimensions,
-																					centroids,
-																					no_data_p,
-																					point_dim,
-																					width);
+	whatDataIsInCentroidLessReadingAndBreaking<<<dimGrid,dimBlock,0,stream>>>(output,
+																			  data,
+																			  dimensions,
+																			  centroids,
+																			  no_data_p,
+																			  point_dim,
+																			  width);
 	return true;
 }
 
@@ -571,3 +571,75 @@ std::vector<bool>* whatDataIsInCentroidTester(std::vector<bool>* dims,
 	
 	return output;
 };
+
+
+
+bool whatDataIsInCentroidWrapper(size_t dimGrid,
+								 size_t dimBlock,
+								 cudaStream_t stream,
+								 bool* output,
+								 float* data,
+								 unsigned int* centroids,
+								 bool* dimensions,
+								 const float width,
+								 const unsigned int point_dim,
+								 const unsigned int no_data_p,
+								 containedType type){
+	if(type == NaiveContained){
+		whatDataIsInCentroid(dimGrid,
+							 dimBlock,
+							 stream,
+							 output,
+							 data,
+							 centroids,
+							 dimensions,
+							 width,
+							 point_dim,
+							 no_data_p);
+	}else if(type == ChunksContained){
+		whatDataIsInCentroidChunks(dimGrid,
+								   dimBlock,
+								   stream,
+								   output,
+								   data,
+								   centroids,
+								   dimensions,
+								   width,
+								   point_dim,
+								   no_data_p);		
+	}else if(type == FewDimsContained){
+		whatDataIsInCentroidKernelFewPointsKernel(dimGrid,
+												  dimBlock,
+												  stream,
+												  output,
+												  data,
+												  centroids,
+												  dimensions,
+												  width,
+												  point_dim,
+												  no_data_p);		
+	}else if(type == LessReadingContained){
+		whatDataIsInCentroidLessReadingWrapper(dimGrid,
+											   dimBlock,
+											   stream,
+											   output,
+											   data,
+											   centroids,
+											   dimensions,
+											   width,
+											   point_dim,
+											   no_data_p);
+	}else if(type == LessReadingBreakContained){
+		whatDataIsInCentroidLessReadingAndBreakingWrapper(dimGrid,
+														  dimBlock,
+														  stream,
+														  output,
+														  data,
+														  centroids,
+														  dimensions,
+														  width,
+														  point_dim,
+														  no_data_p);
+	}
+	
+}

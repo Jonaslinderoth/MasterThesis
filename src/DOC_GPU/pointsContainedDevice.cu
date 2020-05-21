@@ -1050,5 +1050,55 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 
 
 
+void pointsContainedWrapper(unsigned int dimGrid,
+							unsigned int dimBlock,
+							cudaStream_t stream,
+							float* data,
+							unsigned int* centroids,
+							bool* dims,
+							bool* output,
+							unsigned int* Csum_out,
+							float width,
+							unsigned int point_dim,
+							unsigned int no_data,
+							unsigned int no_dims,
+							unsigned int m,
+							pointContainedType type
+							){
+
+	if(type == pointContainedNaive){
+		pointsContainedKernelNaive(dimGrid,
+								   dimBlock,
+								   stream,
+								   data,
+								   centroids,
+								   dims,
+								   output,
+								   Csum_out,
+								   width,
+								   point_dim,
+								   no_data,
+								   no_dims,
+								   m);
+	}else if(type == pointContainedSmem){
+		pointsContainedKernelSharedMemory(dimGrid,
+										  dimBlock,
+										  stream,
+										  data,
+										  centroids,
+										  dims,
+										  output,
+										  Csum_out,
+										  width,
+										  point_dim,
+										  no_data,
+										  no_dims,
+										  m,
+										  ceilf((float)no_dims/m));
+	}
+};
+
+
+
 
 

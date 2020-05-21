@@ -281,9 +281,9 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> DO
 			cudaStreamSynchronize(stream2);
 
 			// Find points contained
-			pointsContainedKernelNaive(dimGrid, dimBlock, stream1, data_d, centroids_d, findDim_d,
+			pointsContainedWrapper(dimGrid, dimBlock, stream1, data_d, centroids_d, findDim_d,
 								  pointsContained_d, pointsContained_count_d,
-								  width, dim, number_of_points, arr_sizes.number_of_samples, m);
+								   width, dim, number_of_points, arr_sizes.number_of_samples, m, this->pointsContainedVersion);
 
 
 			// Calculate scores

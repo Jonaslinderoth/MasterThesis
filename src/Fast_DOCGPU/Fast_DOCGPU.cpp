@@ -281,16 +281,17 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 										   width, dim, number_of_points, 1, 1);
 				*/
 				assert(dimGrid*dimBlock >= number_of_centroids);
-				whatDataIsInCentroid(ceilf((float)number_of_points/dimBlock),
-									 dimBlock,
-									 stream1,
-									 pointsContained_d,
-									 data_d,
-									 centroids_d+(((size_t)(best_index_h[0]/m))),
-									 findDim_d+(best_index_h[0]*dim),
-									 width,
-									 dim,
-									 number_of_points);
+				whatDataIsInCentroidWrapper(ceilf((float)number_of_points/dimBlock),
+											dimBlock,
+											stream1,
+											pointsContained_d,
+											data_d,
+											centroids_d+(((size_t)(best_index_h[0]/m))),
+											findDim_d+(best_index_h[0]*dim),
+											width,
+											dim,
+											number_of_points,
+											this->containedVersion);
 
 
 				bool* b_h = (bool*) malloc((number_of_points+1)*sizeof(bool));

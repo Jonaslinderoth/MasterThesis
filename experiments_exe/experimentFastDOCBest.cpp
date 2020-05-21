@@ -11,6 +11,7 @@ int main(){
 	c.setWidth(15);
 	c.setSeed(1);
 	c.setFindDimVersion(chunksFindDim);
+	c.setContainedVersion(LessReadingBreakContained);
 	auto res = c.findKClusters(10);
 	
 	// std::cout << res.size() << std::endl;

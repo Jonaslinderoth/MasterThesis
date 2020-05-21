@@ -638,7 +638,7 @@ void deleteFromArraySpecialWrapper(cudaStream_t stream,
 								   unsigned int dim,
 								   float* output){
 	
-	gpuDeleteFromArraySpeical<<<ceilf((float)(numberOfPoints)/1024),1024,0,stream>>>(output, prefixSum, data, numberOfPoints, dim);
+	gpuDeleteFromArraySpeical<<<ceilf((float)((numberOfPoints*dim)/4)/1024),1024,0,stream>>>(output, prefixSum, data, numberOfPoints, dim);
 };
 
 

@@ -11,6 +11,18 @@
 
 enum containedType {NaiveContained, ChunksContained, FewDimsContained, LessReadingContained, LessReadingBreakContained};
 
+bool whatDataIsInCentroidWrapper(size_t dimGrid,
+								 size_t dimBlock,
+								 cudaStream_t stream,
+								 bool* output,
+								 float* data,
+								 unsigned int* centroids,
+								 bool* dimensions,
+								 const float width,
+								 const unsigned int point_dim,
+								 const unsigned int no_data_p,
+								 containedType type);
+
 bool whatDataIsInCentroid(size_t dimGrid,
 						  size_t dimBlock,
 						  cudaStream_t stream,
@@ -22,6 +34,9 @@ bool whatDataIsInCentroid(size_t dimGrid,
 						  const unsigned int point_dim,
 						  const unsigned int no_data_p);
 
+/*
+  This version is looking at all dimensions... and should not be used
+*/
 bool whatDataIsInCentroidFewPoints(size_t dimGrid,
 								   size_t dimBlock,
 								   cudaStream_t stream,
@@ -68,8 +83,7 @@ bool whatDataIsInCentroidLessReadingAndBreakingWrapper(size_t dimGrid,
 													   const unsigned int no_data_p);
 	
 
-void whatDataIsInCentroidKernelFewPointsKernel(
-											   unsigned int dimGrid,
+void whatDataIsInCentroidKernelFewPointsKernel(unsigned int dimGrid,
 											   unsigned int dimBlock,
 											   cudaStream_t stream,
 											   bool* output,

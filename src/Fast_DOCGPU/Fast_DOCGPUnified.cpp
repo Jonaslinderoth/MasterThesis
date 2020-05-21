@@ -306,16 +306,17 @@ std::vector<std::pair<std::vector<std::vector<float>*>*, std::vector<bool>*>> Fa
 				// std::cout << "findDim_d+(index_d[0]*dim): " << findDim_d+(index_d[0]*dim) << " to " << findDim_d+(index_d[0]*dim)+dim+1 << std::endl;
 				// std::cout << "pointsContained_d: " << pointsContained_d << " to " << pointsContained_d+(number_of_points+1) << std::endl;
 				// std::cout << "data_d: " << data_d << " to " << data_d+(number_of_points*dim) << std::endl;
-				whatDataIsInCentroid(ceilf((float)number_of_points/dimBlock),
-									 dimBlock,
-									 stream1,
-									 pointsContained_d,
-									 data_d,
-									 centroids_d+(((size_t)(tmp/m))),
-									 findDim_d+(tmp*dim),
-									 width,
-									 dim,
-									 number_of_points);
+				whatDataIsInCentroidWrapper(ceilf((float)number_of_points/dimBlock),
+											dimBlock,
+											stream1,
+											pointsContained_d,
+											data_d,
+											centroids_d+(((size_t)(tmp/m))),
+											findDim_d+(tmp*dim),
+											width,
+											dim,
+											number_of_points,
+											this->containedVersion);
 
 				//prefixsum....
 

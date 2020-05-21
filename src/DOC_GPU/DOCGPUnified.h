@@ -16,6 +16,7 @@
 #include "../dataReader/DataReader.h"
 #include "../Clustering.h"
 #include "DOCGPU_Kernels.h"
+#include "pointsContainedDevice.h"
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -41,6 +42,9 @@ public:
 	void setFindDimVersion(findDimVersion a){
 		this->findDimKernelVersion = a;
 	}
+	void setPointsContainedVersion(pointContainedType a){
+		this->pointsContainedVersion = a;
+	}
 
  private:
 	unsigned int m = 0;
@@ -53,7 +57,7 @@ public:
 	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 	float* transformData();
 	findDimVersion findDimKernelVersion = naiveFindDim;
-
+	pointContainedType pointsContainedVersion = pointContainedNaive;
 
 
 

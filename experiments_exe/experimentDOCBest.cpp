@@ -12,6 +12,7 @@ int main(){
 	c.setWidth(15);
 	c.setSeed(1);
 	c.setFindDimVersion(chunksFindDim);
+	c.setPointsContainedVersion(pointContainedSmem);
 	auto res = c.findKClusters(10);
 
 	// std::cout << res.size() << std::endl;

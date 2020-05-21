@@ -6,6 +6,7 @@
 #include "../dataReader/DataReader.h"
 #include "../Clustering.h"
 #include "../DOC_GPU/DOCGPU_Kernels.h"
+#include "../Fast_DOCGPU/whatDataInCentroid.h"
 
 class Fast_DOCGPU : public Clustering{
  public:
@@ -31,6 +32,9 @@ class Fast_DOCGPU : public Clustering{
 	void setFindDimVersion(findDimVersion a){
 		this->findDimKernelVersion = a;
 	}
+	void setContainedVersion(containedType a){
+		this->containedVersion = a;
+	}
  private:
 	float alpha;
 	float beta;
@@ -42,6 +46,7 @@ class Fast_DOCGPU : public Clustering{
 	std::vector<std::vector<float>*>* initDataReader(DataReader* dr);
 	float* transformData();
 	findDimVersion findDimKernelVersion = naiveFindDim;
+	containedType containedVersion = NaiveContained;
 };
 
 #endif
