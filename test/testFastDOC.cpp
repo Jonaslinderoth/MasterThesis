@@ -1,3 +1,4 @@
+
 #include <gtest/gtest.h>
 #include "../src/Fast_DOC/Fast_DOC.h"
 #include "../src/Fast_DOCGPU/Fast_DOCGPU.h"

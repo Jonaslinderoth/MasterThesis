@@ -110,7 +110,7 @@ Memory_sizes MemSolver_Fast_DOC::computeForAllocations(unsigned int dim, unsigne
 						== size_of_memory);
 	
 	model.addConstraint(size_of_memory
-						<= (size_t)(freeMem*0.94) // only utilise some fraction of memory, due to allocation overheads...
+						<= (size_t)(freeMem*0.90) // only utilise some fraction of memory, due to allocation overheads...
 
 						);
 

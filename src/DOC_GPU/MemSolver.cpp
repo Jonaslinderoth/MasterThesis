@@ -109,7 +109,7 @@ Memory_sizes MemSolver::computeForAllocations(unsigned int dim, unsigned int num
 						size_of_index_max +
 						size_of_randomStates_max +
 						size_of_bestDims_max
-						<= (size_t)(freeMem*0.95) // only utilise some fraction of memory, due to allocation overheads...
+						<= (size_t)(freeMem*0.90) // only utilise some fraction of memory, due to allocation overheads...
 
 						);
 
