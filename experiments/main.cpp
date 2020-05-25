@@ -13,6 +13,7 @@
 #include "fakeExperiment.h"
 #include "PointsContainedDeviceNormalData.h"
 #include "ExperimentClusteringSpeed.h"
+#include "ExperimentClusteringSpeedLarge.h"
 #include "ExperimentDOCAccuracy.h"
 #include "ExperimentFindDimensions.h"
 #include "ExperimentDelete.h"
@@ -24,7 +25,9 @@ int main() {
 	auto mex0 = new fakeExperiment("fakeExperiment", "output");
     runner->addExperiment(mex0);
 	
-	
+	auto ex12 = new ExperimentClusteringSpeedLarge("ClusteringSpeed", "output");
+	runner->addExperiment(ex12);
+
 	for(unsigned int i = 0; i < 10; i++){
 		auto runner_inner = new Runner("iteration " + std::to_string(i));
 		auto ex123 = new ExperimentDelete("deleteExperiments", "output");
