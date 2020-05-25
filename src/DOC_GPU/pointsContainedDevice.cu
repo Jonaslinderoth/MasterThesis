@@ -78,22 +78,27 @@ __global__ void pointsContainedDeviceNaiveBreak(float* data,
 			bool d = true;
 			for(unsigned int i = 0; i < point_dim; i++){
 				//(not (dims[entry*point_dim+i])) ||
-				unsigned int centroid_index = centroids[currentCentroid];
-				//if(!(centroid_index < no_data)){
-				//    printf("num_data: %u, centroid_index: %u, currentCentroid: %u \n", no_data, centroid_index, currentCentroid);
-				//}
-				assert(centroid_index < no_data);
-				assert(entry*point_dim+i < no_dims*point_dim);
-				assert(centroid_index*point_dim+i < no_data*point_dim);
-				assert(j*point_dim+i < no_data*point_dim);
 				const unsigned long entryDims = entry*point_dim+i;
-				const float centro = data[centroid_index*point_dim+i];
-				const float punto = data[j*point_dim+i];
-				const float abss = abs(centro - punto);
-				d &= (not (dims[entryDims])) || (abss < width);
-				if(i%breakingIntervall == 0 and (not d)){
-					break;
+				bool dim = dims[entryDims];
+				if(dim){
+					unsigned int centroid_index = centroids[currentCentroid];
+					//if(!(centroid_index < no_data)){
+					//    printf("num_data: %u, centroid_index: %u, currentCentroid: %u \n", no_data, centroid_index, currentCentroid);
+					//}
+				
+					assert(centroid_index < no_data);
+					assert(entry*point_dim+i < no_dims*point_dim);
+					assert(centroid_index*point_dim+i < no_data*point_dim);
+					assert(j*point_dim+i < no_data*point_dim);
 
+					const float centro = data[centroid_index*point_dim+i];
+					const float punto = data[j*point_dim+i];
+					const float abss = abs(centro - punto);
+					d &= (not (dim)) || (abss < width);
+					if(i%breakingIntervall == 0 and (not d)){
+						break;
+
+					}
 				}
 			}
 			assert(entry < no_dims);
