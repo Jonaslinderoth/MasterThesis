@@ -43,7 +43,7 @@ int main() {
 
 
 		auto ex6_2 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/MineClusBestSmallTest_"+std::to_string(i)+".csv ./experimentMineClusNaive", "MineClusBestSmall", "output");
-		auto ex7_2 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --printapi-trace --csv --log-file ../output/MineClusBestMediumTest_"+std::to_string(i)+".csv ./experimentMineClusNaiveMedium", "MineClusBestMedium", "output");
+		auto ex7_2 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/MineClusBestMediumTest_"+std::to_string(i)+".csv ./experimentMineClusNaiveMedium", "MineClusBestMedium", "output");
 
 		auto ex8 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/DOCNaiveSmallTest_"+std::to_string(i)+".csv ./experimentDOCNaive", "DOCNaiveSmall", "output");
 		auto ex9 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/DOCNaiveMediumTest_"+std::to_string(i)+".csv ./experimentDOCNaiveMedium", "DOCNaiveMedium", "output");
