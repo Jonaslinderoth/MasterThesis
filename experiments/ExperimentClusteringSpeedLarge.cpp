@@ -78,10 +78,7 @@ void ExperimentClusteringSpeedLarge::start(){
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
 						float acc = 0;
-						if(j <= 2048){
-							auto confusion = Evaluation::confusion(labels, result);
-							acc = Evaluation::accuracy(confusion);
-						}
+
 
 						
 						this->writeLineToFile(std::to_string(10) + ", "
@@ -153,7 +150,7 @@ void ExperimentClusteringSpeedLarge::start(){
 
 
 				try{
-					if(!MineClusGPUnifiedStop && i < 128){
+					if(true){
 						DataReader* dr = new DataReader("testData/test1");
 						MineClusGPUnified c = MineClusGPUnified(dr);
 						c.setWidth(15);
