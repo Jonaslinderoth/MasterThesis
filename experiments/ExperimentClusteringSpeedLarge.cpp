@@ -37,10 +37,10 @@ void ExperimentClusteringSpeedLarge::start(){
 	int seed = 0;
 		// for(unsigned int i = 16; i <= dim; i *= 2)
 	{
-		i = dim;
+		unsigned int i = dim;
 		//for(unsigned int j = 32; j <= numberOfPointsPerCluster; j *=2)
 		{
-			j = numberOfPointsPerCluster;
+			unsigned int j = numberOfPointsPerCluster;
 			for(unsigned int k = 5; k <= usedDim; k +=10){
 				if (k*2 > i) break;
 				// create dataBuilder
