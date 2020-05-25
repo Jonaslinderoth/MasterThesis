@@ -13,7 +13,7 @@
 #include <vector>
 class PointsContainedDeviceNormalDataSharedMem: public Experiment{
  public:
-	PointsContainedDeviceNormalDataSharedMem(std::string name, std::string dir): Experiment(0,name, dir, "number of points, dim, version, break interval, time"){}
+	PointsContainedDeviceNormalDataSharedMem(std::string name, std::string dir): Experiment(0,name, dir, "number of points, dim, version, block size, shared memory size, time"){}
 	void start() override;
  private:
 	std::vector<std::vector<float>*>* pickRandomPointFromData(std::vector<std::vector<float>*>* data, unsigned int size);

@@ -110,7 +110,7 @@ void ExperimentClusteringSpeed::start(){
 											  ",DOC CPU, "
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
-											  + std::to_strqing(acc));
+											  + std::to_string(acc));
 						if(time > timeout*2){
 							DOCCPUStop = true;
 						}
