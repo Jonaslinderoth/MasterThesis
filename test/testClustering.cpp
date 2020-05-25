@@ -121,7 +121,7 @@ INSTANTIATE_TEST_CASE_P(ValidInput,
 										  "Fast_DOC",
 										  "Fast_DOCGPU",
 										  "MineClus"
-										  ),
+										  )
                         );
  
 TEST_P(testClusteringPattern, testSetup){

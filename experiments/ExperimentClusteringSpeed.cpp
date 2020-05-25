@@ -66,7 +66,7 @@ void ExperimentClusteringSpeed::start(){
 				if (k*2 > i) break;
 				// create dataBuilder
 				DataGeneratorBuilder dgb;
-				dgb.setSeed(rand());
+				dgb.setSeed(0);
 				if(system("mkdir testData  >>/dev/null 2>>/dev/null")){
 					
 				};
