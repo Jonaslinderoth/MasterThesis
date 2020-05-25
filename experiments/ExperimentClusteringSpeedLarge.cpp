@@ -18,19 +18,13 @@
 
 void ExperimentClusteringSpeedLarge::start(){
 	unsigned int dim = 2000;
-	unsigned int numberOfPointsPerCluster = 1000000;
+	unsigned int numberOfPointsPerCluster = 100000;
 	unsigned int usedDim = 5;
 	unsigned int c = 0; 
 	// Count number of tests
-	for(unsigned int i = 16; i <= dim; i *= 2){
-		for(unsigned int j = 32; j <= numberOfPointsPerCluster; j *=2){
-			for(unsigned int k = 5; k <= usedDim; k +=10){
-				if (k*2 > i) break;
-				c+=13;
-			}
-		}
-	}
 
+				c+=4;
+				
 	Experiment::addTests(c);
 	
 	Experiment::start();
