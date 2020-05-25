@@ -290,7 +290,7 @@ void PointsContainedDeviceNormalDataSharedMem::start(){
 				{
 					std::string text = std::to_string(no_of_points) + ", " + std::to_string(point_dim) + ", " + "Shared memory" + ", " + std::to_string(block_size) + ", "+ std::to_string(smemSize) +" , " + std::to_string(millis);
 					Experiment::writeLineToFile(text);
-					Experiment::testDone(iter->print);
+					Experiment::testDone("SharedMem " + std::to_string(block_size) + ", "+ std::to_string(smemSize));
 
 				}
 
