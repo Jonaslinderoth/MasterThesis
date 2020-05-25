@@ -98,7 +98,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 							auto confusion = Evaluation::confusion(labels, result);
 							acc = Evaluation::accuracy(confusion);
@@ -110,7 +110,7 @@ void ExperimentClusteringSpeed::start(){
 											  ",DOC CPU, "
 											  + std::to_string(time) + ", "
 											  + std::to_string(result.size()) + ", "
-											  + std::to_string(acc));
+											  + std::to_strqing(acc));
 						if(time > timeout*2){
 							DOCCPUStop = true;
 						}
@@ -142,7 +142,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 							auto confusion = Evaluation::confusion(labels, result);
 							acc = Evaluation::accuracy(confusion);
@@ -187,7 +187,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 							auto confusion = Evaluation::confusion(labels, result);
 							acc = Evaluation::accuracy(confusion);
@@ -231,7 +231,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 							auto confusion = Evaluation::confusion(labels, result);
 							acc = Evaluation::accuracy(confusion);
@@ -275,7 +275,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 							auto confusion = Evaluation::confusion(labels, result);
 							acc = Evaluation::accuracy(confusion);
@@ -320,7 +320,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 						auto confusion = Evaluation::confusion(labels, result);
 						acc = Evaluation::accuracy(confusion);
@@ -368,7 +368,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 						auto confusion = Evaluation::confusion(labels, result);
 						acc = Evaluation::accuracy(confusion);
@@ -411,7 +411,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 							auto confusion = Evaluation::confusion(labels, result);
 							acc = Evaluation::accuracy(confusion);
@@ -456,7 +456,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 							auto confusion = Evaluation::confusion(labels, result);
 							acc = Evaluation::accuracy(confusion);
@@ -501,7 +501,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 							auto confusion = Evaluation::confusion(labels, result);
 							acc = Evaluation::accuracy(confusion);
@@ -547,7 +547,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 						auto confusion = Evaluation::confusion(labels, result);
 						acc = Evaluation::accuracy(confusion);
@@ -592,7 +592,7 @@ void ExperimentClusteringSpeed::start(){
 						auto t2 = std::chrono::high_resolution_clock::now();
 						// stop timer
 						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						unsigned int acc = 0;
+						float acc = 0;
 						if(j <= 2048){
 							auto confusion = Evaluation::confusion(labels, result);
 							acc = Evaluation::accuracy(confusion);
