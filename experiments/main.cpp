@@ -16,14 +16,16 @@
 #include "ExperimentDOCAccuracy.h"
 #include "ExperimentFindDimensions.h"
 #include "ExperimentDelete.h"
-
+#include "PointsContainedDeviceNormalDataSharedMem.h"
 int main() {
     auto runner = new Runner("Main");
 	if(system("mkdir output   >>/dev/null 2>>/dev/null")){
 	};
 	auto mex0 = new fakeExperiment("fakeExperiment", "output");
     runner->addExperiment(mex0);
-
+	auto a1 = new PointsContainedDeviceNormalDataSharedMem("PointsContainedDeviceSharedMemSize", "output");
+	runner->addExperiment(a1);
+	
 	
 	for(unsigned int i = 0; i < 10; i++){
 		auto runner_inner = new Runner("iteration " + std::to_string(i));

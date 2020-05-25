@@ -741,9 +741,8 @@ void pointsContainedKernelSharedMemory(unsigned int dimGrid,
 									   unsigned int no_data,
 									   unsigned int number_of_samples,
 									   unsigned int m,
-									   unsigned int numberOfCentroids){
-
-	unsigned long maxSharedmemory = 48000; //48kb can probably go up to more but...
+									   unsigned int numberOfCentroids,
+									   unsigned int maxSharedmemory){
 	//we block takes care of only on centroid. a centroid is made of point_dim floats
 	unsigned long centroidSharedMemorySize_f = point_dim;
 	//how many blocks needed to cover m.

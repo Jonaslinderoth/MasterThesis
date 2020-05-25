@@ -79,7 +79,8 @@ void pointsContainedKernelSharedMemory(unsigned int dimGrid,
 									   unsigned int no_data,
 									   unsigned int no_dims,
 									   unsigned int m,
-									   unsigned int numberOfCentroids);
+									   unsigned int numberOfCentroids,
+									   unsigned int maxSharedmemory = 48000);
 
 /*
  * this fuction has the data and the centroids in Shared Memory
