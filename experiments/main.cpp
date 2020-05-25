@@ -23,8 +23,6 @@ int main() {
 	};
 	auto mex0 = new fakeExperiment("fakeExperiment", "output");
     runner->addExperiment(mex0);
-	auto a1 = new PointsContainedDeviceNormalDataSharedMem("PointsContainedDeviceSharedMemSize", "output");
-	runner->addExperiment(a1);
 	
 	
 	for(unsigned int i = 0; i < 10; i++){
@@ -61,6 +59,8 @@ int main() {
 		// auto ex7 = new TerminalComandExperiment("cd bin; nvprof --csv --log-file ../output/MineClusNaiveMnistTest_"+std::to_string(i)+".csv ./experimentMineClusNaiveMnist", "", "output");
 		//runner->addExperiment(mex1);
 		// runner->addExperiment(mex2);
+		auto mex4 = new PointsContainedDeviceNormalData("PointsContainedDeviceNormalData", "output");
+		runner_inner->addExperiment(mex4);
 		auto ex12 = new ExperimentClusteringSpeed("ExperimentClusteringSpeed", "output");
 		auto mex1 = new breakingIntervallExperiment("BreakingIntervallExperiment", "output");
 		runner_inner->addExperiment(mex1);
@@ -68,8 +68,7 @@ int main() {
 		runner_inner->addExperiment(mex2);
 		auto mex3 = new BreakingIntervallExperimentNormalData("BreakingIntervallExperimentNormalData", "output");
 		runner_inner->addExperiment(mex3);
-		auto mex4 = new PointsContainedDeviceNormalData("PointsContainedDeviceNormalData", "output");
-		runner_inner->addExperiment(mex4);
+
 		// runner_inner->addExperiment(ex5);
 		// runner_inner->addExperiment(ex12);
 		// runner_inner->addExperiment(ex6);
@@ -115,6 +114,8 @@ int main() {
 		runner_inner->addExperiment(ex4);
 		runner_inner->addExperiment(ex3);
 		runner_inner->addExperiment(ex);
+		auto a1 = new PointsContainedDeviceNormalDataSharedMem("PointsContainedDeviceSharedMemSize", "output");
+		runner->addExperiment(a1);
 
 
 		auto ex111 = new ExperimentFindDimensions("FindDim","output");
