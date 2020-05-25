@@ -355,9 +355,9 @@ void PointsContainedDeviceNormalDataSharedMem::start(){
 
 
 	cudaDeviceReset();
-}
 
 
-Experiment::stop();
+
+	Experiment::stop();
 
 }
