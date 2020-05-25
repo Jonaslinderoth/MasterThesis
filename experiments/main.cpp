@@ -24,9 +24,7 @@ int main() {
 	};
 	auto mex0 = new fakeExperiment("fakeExperiment", "output");
     runner->addExperiment(mex0);
-	
-	auto ex12 = new ExperimentClusteringSpeedLarge("ClusteringSpeed", "output");
-	runner->addExperiment(ex12);
+   
 
 	for(unsigned int i = 0; i < 10; i++){
 		auto runner_inner = new Runner("iteration " + std::to_string(i));
@@ -45,7 +43,7 @@ int main() {
 
 
 		auto ex6_2 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/MineClusBestSmallTest_"+std::to_string(i)+".csv ./experimentMineClusNaive", "MineClusBestSmall", "output");
-		auto ex7_2 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/MineClusBestMediumTest_"+std::to_string(i)+".csv ./experimentMineClusNaiveMedium", "MineClusBestMedium", "output");
+		auto ex7_2 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --printapi-trace --csv --log-file ../output/MineClusBestMediumTest_"+std::to_string(i)+".csv ./experimentMineClusNaiveMedium", "MineClusBestMedium", "output");
 
 		auto ex8 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/DOCNaiveSmallTest_"+std::to_string(i)+".csv ./experimentDOCNaive", "DOCNaiveSmall", "output");
 		auto ex9 = new TerminalComandExperiment("cd bin; nvprof --print-gpu-trace --print-api-trace --csv --log-file ../output/DOCNaiveMediumTest_"+std::to_string(i)+".csv ./experimentDOCNaiveMedium", "DOCNaiveMedium", "output");
@@ -127,17 +125,14 @@ int main() {
 
 		
 	}
-
+	auto runner_inner2 = new Runner("speed experiment");
 	for(unsigned int i = 0; i < 10; i++){
-		auto runner_inner = new Runner("iteration " + std::to_string(i));
 		auto ex12 = new ExperimentClusteringSpeed("ClusteringSpeed", "output");
-		runner_inner->addExperiment(ex12);
-		runner->addExperiment(runner_inner);
-
-
-
-
+		runner_inner2->addExperiment(ex12);
 	}
+	runner->addExperiment(runner_inner2);
+	auto ex12 = new ExperimentClusteringSpeedLarge("ClusteringSpeedLarge", "output");
+	runner->addExperiment(ex12);
 	runner->start();			
 	delete runner;
 	
