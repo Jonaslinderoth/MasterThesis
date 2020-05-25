@@ -115,7 +115,7 @@ int main() {
 		runner_inner->addExperiment(ex3);
 		runner_inner->addExperiment(ex);
 		auto a1 = new PointsContainedDeviceNormalDataSharedMem("PointsContainedDeviceSharedMemSize", "output");
-		runner->addExperiment(a1);
+		runner_inner->addExperiment(a1);
 
 
 		auto ex111 = new ExperimentFindDimensions("FindDim","output");
