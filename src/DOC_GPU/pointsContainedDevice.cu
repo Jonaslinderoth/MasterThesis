@@ -792,7 +792,7 @@ void pointsContainedKernelSharedMemoryBreak(unsigned int dimGrid,
 									   	    unsigned int m,
 									   	    unsigned int numberOfCentroids,
 									   	    unsigned int breakingIntervall){
-
+	dimBlock = 64;
 	unsigned long maxSharedmemory = 48000; //48kb can probably go up to more but...
 	//we block takes care of only on centroid. a centroid is made of point_dim floats
 	unsigned long centroidSharedMemorySize_f = point_dim;
@@ -844,7 +844,7 @@ void pointsContainedKernelSharedMemoryFewBank(unsigned int dimGrid,
 											  unsigned int number_of_samples,
 											  unsigned int m,
 											  unsigned int numberOfCentroids){
-
+	dimBlock = 64;
 	unsigned long maxSharedmemory = 48000; //48kb can probably go up to more but...
 	//we block takes care of only on centroid. a centroid is made of point_dim floats
 	unsigned long centroidSharedMemorySize_f = point_dim;
@@ -887,6 +887,7 @@ void pointsContainedKernelSharedMemoryFewerBank(unsigned int dimGrid,
 												unsigned int number_of_samples,
 												unsigned int m,
 												unsigned int numberOfCentroids){
+	dimBlock = 64;
 
 	unsigned long maxSharedmemory = 48000; //48kb can probably go up to more but...
 	//we block takes care of only on centroid. a centroid is made of point_dim floats

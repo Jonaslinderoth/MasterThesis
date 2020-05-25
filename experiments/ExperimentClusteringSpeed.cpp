@@ -133,7 +133,7 @@ void ExperimentClusteringSpeed::start(){
 						c.setAlpha(0.1);
 						c.setBeta(0.25);
 						c.setFindDimVersion(chunksFindDim);
-						// c.setPointsContainedVersion(pointContainedSmem);
+						c.setPointsContainedVersion(pointContainedSmem);
 						c.setNumberOfSamples(4096*2);
 
 						// start timer
@@ -178,7 +178,7 @@ void ExperimentClusteringSpeed::start(){
 						c.setAlpha(0.1);
 						c.setBeta(0.25);
 						c.setFindDimVersion(chunksFindDim);
-						// c.setPointsContainedVersion(pointContainedSmem);
+						c.setPointsContainedVersion(pointContainedSmem);
 						c.setNumberOfSamples(4096*2);
 
 						// start timer
