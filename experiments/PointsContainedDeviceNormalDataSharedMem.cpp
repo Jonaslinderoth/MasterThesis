@@ -89,7 +89,7 @@ void PointsContainedDeviceNormalDataSharedMem::start(){
 	if(prints){
 		point_dim = 2;
 	}
-	std::size_t no_of_points = 10000; //NEED to be dividable by the clusteres
+	std::size_t no_of_points = 50000; //NEED to be dividable by the clusteres
 	if(prints){
 		no_of_points = 20;
 	}
