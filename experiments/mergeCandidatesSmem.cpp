@@ -7,9 +7,9 @@
 void MergeCandidatesExperimentSmem::start(){
 	
 	unsigned int c = 0;
-	for(unsigned int numberOfCandidates = 2; numberOfCandidates < 1000000; numberOfCandidates*=2){
+	for(unsigned int numberOfCandidates = 32; numberOfCandidates < 1000000; numberOfCandidates*=2){
 		for(unsigned int dim = 32; dim < 48000; dim *= 2){
-			for(unsigned int chunkSize = 32; chunkSize < 12000; chunkSize *=2){
+			for(unsigned int chunkSize = 2; chunkSize < 12000; chunkSize *=2){
 				unsigned int numberOfNewCandidates = ((float)(numberOfCandidates*(numberOfCandidates+1)) / 2) - numberOfCandidates;
 				unsigned int numberOfBlocks = ceilf((float)dim/32);
 
@@ -36,9 +36,9 @@ void MergeCandidatesExperimentSmem::start(){
 	Experiment::addTests(c);
 	Experiment::start();
 
-	for(unsigned int numberOfCandidates = 2; numberOfCandidates < 1000000; numberOfCandidates*=2){
+	for(unsigned int numberOfCandidates = 32; numberOfCandidates < 1000000; numberOfCandidates*=2){
 		for(unsigned int dim = 32; dim < 48000; dim *= 2){
-			for(unsigned int chunkSize = 32; chunkSize < 12000; chunkSize *=2){
+			for(unsigned int chunkSize = 2; chunkSize < 12000; chunkSize *=2){
 				unsigned int numberOfNewCandidates = ((float)(numberOfCandidates*(numberOfCandidates+1)) / 2) - numberOfCandidates;
 				unsigned int numberOfBlocks = ceilf((float)dim/32);
 

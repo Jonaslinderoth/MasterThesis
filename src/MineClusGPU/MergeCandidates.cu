@@ -230,8 +230,7 @@ void mergeCandidatesWrapper(unsigned int dimGrid,
 		gridDimmension = max(gridDimmension,1);
 
 		dimBlock = min(dimBlock, numberOfBlocks*numberOfBlocks);
-		dimBlock = min(dimBlock, 256);
-
+		dimBlock = min(dimBlock, 1024);
 		mergeCandidatesSmem<<<gridDimmension, dimBlock, smemSize, stream>>>(candidates, numberOfCandidates, dim, itrNr, chunkSize, output, toBeDeleted);
 	}
 };

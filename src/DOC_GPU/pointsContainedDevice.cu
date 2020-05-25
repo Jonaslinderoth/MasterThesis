@@ -1005,7 +1005,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 	cudaMemcpy(centroids_d, centroids_h, size_of_centroids, cudaMemcpyHostToDevice);
 
 
-	Call kernel
+	//Call kernel
 	pointsContainedDeviceNaive<<<ceil((no_of_dims)/256.0), 256>>>(data_d,
 																  centroids_d,
 																  dims_d,
