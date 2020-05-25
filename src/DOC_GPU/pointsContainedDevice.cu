@@ -940,6 +940,7 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 																					   std::vector<std::vector<float>*>* data,
 																					   std::vector<unsigned int>* centroids,
 																					   int m, float width){
+	
 
 	// Calculaating sizes
 	int point_dim = data->at(0)->size();
@@ -1004,13 +1005,22 @@ std::pair<std::vector<std::vector<bool>*>*,std::vector<unsigned int>*> pointsCon
 	cudaMemcpy(centroids_d, centroids_h, size_of_centroids, cudaMemcpyHostToDevice);
 
 
-	// Call kernel
+	Call kernel
 	pointsContainedDeviceNaive<<<ceil((no_of_dims)/256.0), 256>>>(data_d,
 																  centroids_d,
 																  dims_d,
 																  output_d,
 																  output_count_d,
 																  width, point_dim, no_of_points, no_of_dims, m);
+
+	// pointsContainedWrapper(ceil((no_of_dims)/256.0), 256, NULL,
+	// 					   data_d,
+	// 					   centroids_d,
+	// 					   dims_d,
+	// 					   output_d,
+	// 					   output_count_d,
+	// 					   width, point_dim, no_of_points, no_of_dims, m,pointContainedSmem
+	// 					   );
 
 
 	// copy from device

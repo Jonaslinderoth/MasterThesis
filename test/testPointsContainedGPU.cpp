@@ -50,6 +50,9 @@ TEST_F(testPointsContainedGPU, testSimple){
 	EXPECT_EQ(c.first->at(0)->at(0), true);
 }
 
+
+
+
 TEST_F(testPointsContainedGPU, testSimple2){
 	auto dims = new std::vector<std::vector<bool>*>;
 	auto data = new std::vector<std::vector<float>*>;
@@ -189,6 +192,11 @@ TEST_F(testPointsContainedGPU, testWithSimpleData2_2){
 	EXPECT_EQ(c1.second->at(0), 2);
 	EXPECT_EQ(c1.second->at(1), 1);
 }
+
+
+
+
+
 /*
 
 
@@ -889,7 +897,6 @@ TEST_F(testPointsContainedGPU, testBreak){
 
 
 
-
 TEST_F(testPointsContainedGPU, testNaive){
 	//by having with 5 and all the numbers being at least 10 from each other, the there are no point in with 5 from a medoid exept it self.
 
@@ -904,7 +911,7 @@ TEST_F(testPointsContainedGPU, testNaive){
 	unsigned long width = 5;
 	// Calculaating sizes
 	std::size_t point_dim = 200;
-	std::size_t no_of_points = 10000;
+	std::size_t no_of_points = 1000;
 	std::size_t no_of_dims = 1024*4*20; //idk
 	std::size_t no_of_centroids = 20;
 	unsigned int m = ceilf((float)no_of_dims/(float)no_of_centroids);
@@ -1063,7 +1070,7 @@ TEST_F(testPointsContainedGPU, testShared){
 	unsigned long width = 5;
 	// Calculaating sizes
 	std::size_t point_dim = 200;
-	std::size_t no_of_points = 10000;
+	std::size_t no_of_points = 1000;
 	std::size_t no_of_dims = 1024*4*20; //idk
 	std::size_t no_of_centroids = 20;
 	unsigned int m = ceilf((float)no_of_dims/(float)no_of_centroids);

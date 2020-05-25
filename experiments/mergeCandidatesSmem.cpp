@@ -25,7 +25,7 @@ void MergeCandidatesExperimentSmem::start(){
 				unsigned int largestChunkSize = ((48000/4)/2/numberOfBlocks);
 				largestChunkSize = log2(largestChunkSize);
 				largestChunkSize = pow(2, largestChunkSize);
-				if(largestChunkSize > chunkSize){
+				if(largestChunkSize <= chunkSize){
 					continue;
 				}
 				c++;
@@ -53,7 +53,7 @@ void MergeCandidatesExperimentSmem::start(){
 				unsigned int largestChunkSize = ((48000/4)/2/numberOfBlocks);
 				largestChunkSize = log2(largestChunkSize);
 				largestChunkSize = pow(2, largestChunkSize);
-				if(largestChunkSize > chunkSize){
+				if(largestChunkSize <= chunkSize){
 					continue;
 				}
 				

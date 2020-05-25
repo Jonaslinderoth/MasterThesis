@@ -301,6 +301,7 @@ std::pair<std::vector<unsigned int>,std::vector<bool>> mergeCandidatesTester(std
 		gridDimmension = ceilf((float)(gridDimmension*(gridDimmension+1)/2) -gridDimmension);
 		gridDimmension = max(gridDimmension,1);
 		dimBlock = 256;
+		std::cout << "chunkSize: " << chunkSize << std::endl;
 		mergeCandidatesSmem<<<gridDimmension, dimBlock, smemSize>>>(candidates_d, numberOfCandidates, dim, itrNr, chunkSize, output_d, toBeDeleted_d);
 	}
 

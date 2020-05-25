@@ -60,6 +60,10 @@ int main() {
 		// auto ex7 = new TerminalComandExperiment("cd bin; nvprof --csv --log-file ../output/MineClusNaiveMnistTest_"+std::to_string(i)+".csv ./experimentMineClusNaiveMnist", "", "output");
 		//runner->addExperiment(mex1);
 		// runner->addExperiment(mex2);
+		runner_inner->addExperiment(ex2);
+		runner_inner->addExperiment(ex5);
+		
+		
 		auto mex4 = new PointsContainedDeviceNormalData("PointsContainedDeviceNormalData", "output");
 		runner_inner->addExperiment(mex4);
 		auto ex12 = new ExperimentClusteringSpeed("ExperimentClusteringSpeed", "output");
@@ -94,8 +98,8 @@ int main() {
 	    
 		
 
+
 		runner_inner->addExperiment(ex13);
-		runner_inner->addExperiment(ex5);
 		
 		runner_inner->addExperiment(ex6);
 		runner_inner->addExperiment(ex6_2);
@@ -111,7 +115,6 @@ int main() {
 		runner_inner->addExperiment(ex11);
 		runner_inner->addExperiment(ex11_2);
 		
-		runner_inner->addExperiment(ex2);
 		runner_inner->addExperiment(ex4);
 		runner_inner->addExperiment(ex3);
 		runner_inner->addExperiment(ex);
