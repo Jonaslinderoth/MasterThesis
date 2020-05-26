@@ -17,8 +17,8 @@
 #include <chrono>
 
 void ExperimentClusteringSpeedLarge::start(){
-	unsigned int dim = 2000;
-	unsigned int numberOfPointsPerCluster = 100000;
+	unsigned int dim = 2000/2;
+	unsigned int numberOfPointsPerCluster = 100000/2;
 	unsigned int usedDim = 5;
 	unsigned int c = 0; 
 	// Count number of tests
@@ -50,49 +50,7 @@ void ExperimentClusteringSpeedLarge::start(){
 					Experiment::testDone("Cluster generated. Number of points: " + std::to_string(j*10) + " Dims used: " + std::to_string(k) + "Dim " + std::to_string(i));
 				}
 				seed = i*k*j;
-				/******************************** DOC TESTS ********************************/
-	
-
-				try{
-					if(true){
-						DataReader* dr = new DataReader("testData/test1");
-						DOCGPUnified c = DOCGPUnified(dr);
-						c.setWidth(15);
-						c.setSeed(seed);
-						c.setAlpha(0.1);
-						c.setBeta(0.25);
-						c.setFindDimVersion(chunksFindDim);
-						c.setPointsContainedVersion(pointContainedSmem);
-						c.setNumberOfSamples(4096*2);
-
-						// start timer
-						auto t1 = std::chrono::high_resolution_clock::now();
-						auto result = c.findKClusters(10);
-						auto t2 = std::chrono::high_resolution_clock::now();
-						// stop timer
-						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-						float acc = 0;
-
-
-						
-						this->writeLineToFile(std::to_string(10) + ", "
-											  + std::to_string(j*10) + ", "
-											  +  std::to_string(i) + ", "
-											  + std::to_string(k) +
-											  ",DOC GPU unified, "
-											  + std::to_string(time) + ", "
-											  + std::to_string(result.size()) + ", "
-											  + std::to_string(acc));
-   
-						delete dr;
-						Experiment::testDone("DOC GPUnified Number of points: " + std::to_string(j*10) + " Dims used: " + std::to_string(k) + "Dim " + std::to_string(i));
-					}else{
-						Experiment::testDone("timeout");
-					}
-				}catch (std::exception& e){
-					this->repportError("DOC GPU unified Exception caught : " + std::string(e.what()), this->getName());
-					checkCudaErrors(cudaDeviceReset());								
-				}
+				
 				
 				/****************************** FAST DOC TESTS *****************************/
 
@@ -217,6 +175,51 @@ void ExperimentClusteringSpeedLarge::start(){
 					}
 				}catch (std::exception& e){
 					this->repportError("MineClus GPU unified concurent Exception caught : " + std::string(e.what()), this->getName());
+					checkCudaErrors(cudaDeviceReset());								
+				}
+
+
+				/******************************** DOC TESTS ********************************/
+	
+
+				try{
+					if(true){
+						DataReader* dr = new DataReader("testData/test1");
+						DOCGPUnified c = DOCGPUnified(dr);
+						c.setWidth(15);
+						c.setSeed(seed);
+						c.setAlpha(0.1);
+						c.setBeta(0.25);
+						c.setFindDimVersion(chunksFindDim);
+						c.setPointsContainedVersion(pointContainedSmem);
+						c.setNumberOfSamples(4096*2);
+
+						// start timer
+						auto t1 = std::chrono::high_resolution_clock::now();
+						auto result = c.findKClusters(10);
+						auto t2 = std::chrono::high_resolution_clock::now();
+						// stop timer
+						auto time = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+						float acc = 0;
+
+
+						
+						this->writeLineToFile(std::to_string(10) + ", "
+											  + std::to_string(j*10) + ", "
+											  +  std::to_string(i) + ", "
+											  + std::to_string(k) +
+											  ",DOC GPU unified, "
+											  + std::to_string(time) + ", "
+											  + std::to_string(result.size()) + ", "
+											  + std::to_string(acc));
+   
+						delete dr;
+						Experiment::testDone("DOC GPUnified Number of points: " + std::to_string(j*10) + " Dims used: " + std::to_string(k) + "Dim " + std::to_string(i));
+					}else{
+						Experiment::testDone("timeout");
+					}
+				}catch (std::exception& e){
+					this->repportError("DOC GPU unified Exception caught : " + std::string(e.what()), this->getName());
 					checkCudaErrors(cudaDeviceReset());								
 				}
 

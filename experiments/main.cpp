@@ -124,7 +124,7 @@ int main() {
 
 		auto ex111 = new ExperimentFindDimensions("FindDim","output");
 		runner_inner->addExperiment(ex111);
-		runner->addExperiment(runner_inner);
+		//runner->addExperiment(runner_inner);
 
 		
 	}
@@ -133,7 +133,7 @@ int main() {
 		auto ex12 = new ExperimentClusteringSpeed("ClusteringSpeed", "output");
 		runner_inner2->addExperiment(ex12);
 	}
-	runner->addExperiment(runner_inner2);
+	//runner->addExperiment(runner_inner2);
 	auto ex12 = new ExperimentClusteringSpeedLarge("ClusteringSpeedLarge", "output");
 	runner->addExperiment(ex12);
 	runner->start();			
